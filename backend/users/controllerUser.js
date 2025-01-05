@@ -1,0 +1,171 @@
+import jwt from "jsonwebtoken";
+import User from "./modelUser.js";
+import { PatientCard } from "../patientCard/modelPatientCard.js";
+import bcrypt from "bcrypt";
+import dotenv from "dotenv";
+import { format } from "date-fns";
+import { ru } from "date-fns/locale";
+
+dotenv.config();
+
+const JWT_SECRET = process.env.JWT_SECRET; // Секретный ключ для JWT
+
+// Авторизация пользователя
+export const login = async (req, res) => {
+  try {
+    const { email, password } = req.body;
+
+    // Находим пользователя по email
+    const user = await User.findOne({ where: { email } });
+    if (!user) {
+      return res.status(400).json({ message: "Пользователь не найден" });
+    }
+
+    // Сравниваем пароли
+    const isPasswordValid = await user.comparePassword(password);
+    if (!isPasswordValid) {
+      return res.status(400).json({ message: "Неверный пароль" });
+    }
+
+    // Обновляем поле lastLogin
+    user.lastLogin = new Date();
+    await user.save();
+
+    // Создание JWT токена
+    const token = jwt.sign(
+      { id: user.id, email: user.email, role: user.role },
+      JWT_SECRET,
+      { expiresIn: "10h" } // Токен будет действовать 5 часов
+    );
+
+    // Отправка токена клиенту
+    return res.status(200).json({ token });
+  } catch (error) {
+    console.error("Ошибка при авторизации:", error);
+    res.status(500).json({ message: "Ошибка сервера" });
+  }
+};
+
+export const getClientProfile = async (req, res) => {
+  try {
+    // Получение токена из заголовка Authorization
+    const token = req.headers.authorization?.split(" ")[1];
+    if (!token) {
+      return res.status(401).json({ message: "Токен не предоставлен" });
+    }
+
+    // Расшифровываем токен
+    let decoded;
+    try {
+      decoded = jwt.verify(token, JWT_SECRET);
+    } catch (err) {
+      return res.status(401).json({ message: "Неверный или истёкший токен" });
+    }
+
+    // Извлекаем ID пользователя из токена
+    const userId = decoded.id;
+
+    // Получаем данные пользователя с привязкой к карте пациента
+    const user = await User.findOne({
+      where: { id: userId, role: "client" },
+      include: [
+        {
+          model: PatientCard,
+          as: "patientCard", // Убедитесь, что связь между User и PatientCard настроена
+        },
+      ],
+    });
+
+    if (!user) {
+      return res.status(404).json({ message: "Клиент не найден" });
+    }
+
+    const patientCard = user.patientCard;
+
+    // Форматируем дату рождения и дату последнего входа
+    const dateOfBirthFormatted = patientCard
+      ? format(new Date(patientCard.dateOfBirth), "dd.MM.yyyy", { locale: ru })
+      : "Не указана";
+
+    const lastLoginFormatted = user.lastLogin
+      ? format(new Date(user.lastLogin), "dd MMMM yyyy, HH:mm", { locale: ru })
+      : "Неизвестно";
+
+    // Формируем данные профиля
+    const profile = {
+      fullName: `${user.firstName} ${user.lastName} ${
+        patientCard?.patronymic || ""
+      }`.trim(),
+      dateOfBirth: dateOfBirthFormatted,
+      policy: patientCard?.policyNumber || "Не указан",
+      phoneNumber: patientCard?.phoneNumber || "Не указан",
+      email: user.email,
+      address: patientCard?.address || "Не указан",
+      lastLogin: lastLoginFormatted,
+    };
+
+    return res.status(200).json({ profile });
+  } catch (error) {
+    console.error("Ошибка при получении профиля клиента:", error);
+    return res.status(500).json({ message: "Ошибка сервера" });
+  }
+};
+
+export const getPatientCardIdByFullName = async (req, res) => {
+  try {
+    // Получение токена из заголовка Authorization
+    const token = req.headers.authorization?.split(" ")[1];
+    if (!token) {
+      return res.status(401).json({ message: "Токен не предоставлен" });
+    }
+
+    // Расшифровываем токен
+    let decoded;
+    try {
+      decoded = jwt.verify(token, JWT_SECRET);
+    } catch (err) {
+      return res.status(401).json({ message: "Неверный или истёкший токен" });
+    }
+
+    // Проверяем роль пользователя
+    if (decoded.role !== "doctor" && decoded.role !== "admin") {
+      return res.status(403).json({ message: "Доступ запрещён" });
+    }
+
+    // Извлечение ФИО из тела запроса
+    const { fullName } = req.body;
+    if (!fullName) {
+      return res
+        .status(400)
+        .json({ message: "Полное имя пациента обязательно" });
+    }
+
+    // Разделение ФИО на составляющие
+    const parts = fullName.trim().split(/\s+/);
+    if (parts.length < 2) {
+      return res
+        .status(400)
+        .json({ message: "ФИО должно содержать минимум имя и фамилию" });
+    }
+
+    const [lastName, firstName, patronymic] = parts;
+
+    // Поиск карты пациента
+    const patientCard = await PatientCard.findOne({
+      where: {
+        firstName,
+        lastName,
+        ...(patronymic && { patronymic }), // Условие по отчеству, если оно передано
+      },
+    });
+
+    if (!patientCard) {
+      return res.status(404).json({ message: "Карта пациента не найдена" });
+    }
+
+    return res.status(200).json({ patientCardId: patientCard.id });
+  } catch (error) {
+    console.error("Ошибка при поиске карты пациента по ФИО:", error);
+    return res.status(500).json({ message: "Ошибка сервера" });
+  }
+};

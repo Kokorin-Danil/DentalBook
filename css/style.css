@@ -1,0 +1,193 @@
+body {
+    background: linear-gradient(to bottom, #d9e9f5, #f0f4f8);
+    font-family: 'Roboto', sans-serif;
+}
+
+.profile-card {
+    background: #fff;
+    border-radius: 15px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    padding: 20px;
+}
+
+.profile-header {
+    background: #007bff;
+    color: #fff;
+    padding: 20px;
+    border-radius: 15px 15px 0 0;
+}
+
+.profile-header h2 {
+    margin: 0;
+}
+
+.profile-details label {
+    font-weight: bold;
+    color: #333;
+}
+
+.action-buttons a {
+    transition: all 0.3s ease;
+}
+
+.action-buttons a:hover {
+    transform: scale(1.05);
+}
+
+.modal-header {
+    background: #007bff;
+    color: #fff;
+}
+
+.btn-primary {
+    background-color: #007bff;
+    border-color: #007bff;
+}
+
+.btn-primary:hover {
+    background-color: #0056b3;
+    border-color: #004085;
+}
+
+.profile-icon {
+    width: 150px;
+    height: 150px;
+}
+
+
+        /* Стили навигационного меню */
+        #sidebar {
+            width: 250px;
+            background-color: #f8f9fa;
+            padding: 20px;
+            height: 100vh;
+            position: fixed;
+            top: 0;
+            left: 0;
+            overflow-y: auto;
+            border-right: 1px solid #ddd;
+            box-shadow: 2px 0 8px rgba(0, 0, 0, 0.05);
+        }
+
+        #sidebar h4 {
+            font-weight: bold;
+            color: #007bff;
+            text-align: center;
+            margin-bottom: 1.5rem;
+        }
+
+        #sidebar a {
+            font-size: 1rem;
+            color: #495057;
+            display: flex;
+            align-items: center;
+            text-decoration: none;
+            margin-bottom: 15px;
+            padding: 10px 15px;
+            border-radius: 5px;
+            transition: background-color 0.3s, color 0.3s;
+        }
+
+        #sidebar a:hover {
+            background-color: #e9ecef;
+            color: #007bff;
+        }
+
+        #sidebar a i {
+            font-size: 1.2rem;
+            margin-right: 10px;
+        }
+
+        /* Контент страницы */
+        #content {
+            margin-left: 270px;
+            padding: 20px;
+            background-color: #f4f6f9;
+            min-height: 100vh;
+        }
+
+        body {
+            background-color: #f4f6f9;
+        }
+
+        .header h2 {
+            margin: 0;
+            font-size: 1.8rem;
+            color: #343a40;
+            border-bottom: 2px solid #ddd;
+            padding-bottom: 10px;
+            margin-bottom: 20px;
+        }
+
+        .patient-info {
+            background-color: #ffffff;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .tabs {
+            margin-bottom: 20px;
+        }
+
+        .tabs .nav-tabs .nav-link {
+            color: #495057;
+            margin-right: 5px;
+            border-radius: 5px;
+        }
+
+        .tabs .nav-tabs .nav-link.active {
+            color: #ffffff;
+            background-color: #007bff;
+        }
+
+        .table-container {
+            background-color: #ffffff;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .btn-add {
+            margin-bottom: 15px;
+        }
+
+        .profile-card {
+            background-color: #ffffff;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .profile-icon {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 150px;
+            width: 150px;
+            background-color: #f8f9fa;
+            border: 1px solid #ddd;
+            border-radius: 50%;
+            margin: auto;
+        }
+
+        .actions button {
+            margin-right: 10px;
+        }
+
+        .modal-content {
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+        }
+
+        .btn-primary {
+            background: linear-gradient(45deg, #007bff, #0056b3);
+            border: none;
+        }
+
+        .btn-primary:hover {
+            background: linear-gradient(45deg, #0056b3, #003f88);
+        }
