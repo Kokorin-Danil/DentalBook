@@ -39,7 +39,9 @@ export const createPatientCard = async (req, res) => {
       phoneNumber,
       email,
       gender,
-      policyNumber, // Добавлено новое поле
+      policyNumber,
+      snils,
+      passport,
     } = req.body;
 
     // Проверка на существование карты с таким номером полиса
@@ -78,7 +80,9 @@ export const createPatientCard = async (req, res) => {
       email,
       gender,
       clientId: clientUser.id,
-      policyNumber, // Сохранение номера полиса
+      policyNumber,
+      snils,
+      passport,
     });
 
     return res.status(201).json({

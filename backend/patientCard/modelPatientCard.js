@@ -62,6 +62,20 @@ PatientCard.init(
         is: /^\d{4}\s\d{4}\s\d{4}\s\d{4}$/, // Проверка формата: 1234 5678 9101 1121
       },
     },
+    snils: {
+      type: DataTypes.STRING,
+      allowNull: false, // СНИЛС обязателен
+      validate: {
+        is: /^\d{3}-\d{3}-\d{3}\s\d{2}$/, // Формат: 123-456-789 00
+      },
+    },
+    passport: {
+      type: DataTypes.STRING,
+      allowNull: false, // Паспорт обязателен
+      validate: {
+        is: /^\d{4}\s\d{6}$/, // Формат: 1234 567890
+      },
+    },
   },
   {
     sequelize: dbST,
