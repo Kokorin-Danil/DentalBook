@@ -640,3 +640,83 @@ export const getPatientCards = async (req, res) => {
     res.status(500).json({ message: "Ошибка сервера" });
   }
 };
+
+export const getPatientProfile = async (req, res) => {
+  try {
+    // Получение токена из заголовка Authorization
+    const token = req.headers.authorization?.split(" ")[1];
+    if (!token) {
+      return res.status(401).json({ message: "Токен не предоставлен" });
+    }
+
+    // Расшифровываем токен
+    let decoded;
+    try {
+      decoded = jwt.verify(token, process.env.JWT_SECRET);
+    } catch (err) {
+      return res.status(401).json({ message: "Неверный или истёкший токен" });
+    }
+
+    // Проверяем, что роль пользователя не "client"
+    if (decoded.role === "client") {
+      return res.status(403).json({ message: "Доступ запрещен" });
+    }
+
+    // Получение ID карты пациента из параметров запроса
+    const { patientCardId } = req.params;
+
+    // Поиск карты пациента по ID
+    const patientCard = await PatientCard.findOne({
+      where: { id: patientCardId },
+      attributes: [
+        "id",
+        "firstName",
+        "lastName",
+        "patronymic",
+        "phoneNumber",
+        "address",
+        "policyNumber",
+        "dateOfBirth",
+      ],
+      include: [
+        {
+          model: User,
+          as: "user", // Предполагается связь между PatientCard и User
+          attributes: ["email", "lastLogin"],
+        },
+      ],
+    });
+
+    if (!patientCard) {
+      return res.status(404).json({ message: "Карта пациента не найдена" });
+    }
+
+    // Форматируем дату рождения
+    const dateOfBirthFormatted = patientCard.dateOfBirth
+      ? dayjs(patientCard.dateOfBirth).format("DD.MM.YYYY")
+      : "Не указана";
+
+    // Форматируем дату последнего входа
+    const lastLoginFormatted = patientCard.user?.lastLogin
+      ? dayjs(patientCard.user.lastLogin).format("DD.MM.YYYY HH:mm")
+      : "Неизвестно";
+
+    // Формирование профиля пациента
+    const profile = {
+      fullName: `${patientCard.lastName} ${patientCard.firstName} ${
+        patientCard.patronymic || ""
+      }`.trim(),
+      dateOfBirth: dateOfBirthFormatted,
+      policy: patientCard.policyNumber || "Не указан",
+      phoneNumber: patientCard.phoneNumber || "Не указан",
+      address: patientCard.address || "Не указан",
+      email: patientCard.user?.email || "Не указан",
+      lastLogin: lastLoginFormatted,
+    };
+
+    return res.status(200).json({ profile });
+  } catch (error) {
+    console.error("Ошибка при получении профиля пациента:", error);
+    return res.status(500).json({ message: "Ошибка сервера" });
+  }
+};
