@@ -6,6 +6,7 @@ import {
   getClientVisits,
   getDoctorsSchedule,
   getWeeklyVisits,
+  getPatientCards,
 } from "./patientCardController.js";
 
 const PatientCardRouter = express.Router();
@@ -17,5 +18,6 @@ PatientCardRouter.post("/visit/change", changeVisitStatus);
 PatientCardRouter.get("/visit/all/:clientId", getClientVisits);
 PatientCardRouter.get("/schedule/:date", getDoctorsSchedule);
 PatientCardRouter.get("/visits/weekly/:date", getWeeklyVisits);
+PatientCardRouter.get("/get/all", getPatientCards);
 
 export default PatientCardRouter;

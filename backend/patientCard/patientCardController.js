@@ -151,12 +151,13 @@ export const createVisit = async (req, res) => {
     if (!doctor) {
       return res.status(404).json({ message: "Doctor not found" });
     }
-
-    // Поиск карты пациента по полному ФИО
+    const [patientLastName, patientFirstName, patientPatronymic] =
+      patientFullName.split(" ");
     const patientCard = await PatientCard.findOne({
       where: {
-        firstName: patientFullName.split(" ")[0],
-        lastName: patientFullName.split(" ")[1],
+        firstName: patientFirstName,
+        lastName: patientLastName,
+        patronymic: patientPatronymic || null, // Учет отчества, если указано
       },
     });
     if (!patientCard) {
@@ -576,5 +577,66 @@ export const getWeeklyVisits = async (req, res) => {
   } catch (error) {
     console.error(error);
     return res.status(500).json({ message: "Server error" });
+  }
+};
+
+export const getPatientCards = async (req, res) => {
+  try {
+    // Извлекаем токен из заголовков
+    const token = req.headers.authorization?.split(" ")[1];
+    if (!token) {
+      return res.status(401).json({ message: "Токен отсутствует" });
+    }
+
+    // Проверяем токен и извлекаем роль пользователя
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    if (decoded.role === "client") {
+      return res.status(403).json({ message: "Доступ запрещен" });
+    }
+
+    // Текущая дата для сравнения
+    const today = dayjs().format("YYYY-MM-DD");
+
+    // Загружаем данные о пациентах
+    const patientCards = await PatientCard.findAll({
+      attributes: ["id", "firstName", "lastName", "patronymic", "phoneNumber"],
+      include: [
+        {
+          model: Visit,
+          as: "visits",
+          attributes: ["visitDate", "visitTime"],
+          where: {
+            visitDate: {
+              [Op.lte]: today, // Исключаем визиты с датой больше текущей
+            },
+          },
+          order: [
+            ["visitDate", "DESC"],
+            ["visitTime", "DESC"],
+          ],
+          limit: 1, // Последний визит
+        },
+      ],
+    });
+
+    // Преобразуем данные для вывода
+    const result = patientCards.map((card) => {
+      const lastVisit = card.visits[0]; // Последний визит
+      return {
+        id: card.id,
+        fullName: `${card.lastName} ${card.firstName} ${
+          card.patronymic || ""
+        }`.trim(),
+        phoneNumber: card.phoneNumber,
+        lastVisit: lastVisit
+          ? `${lastVisit.visitDate} ${lastVisit.visitTime}`
+          : "Нет данных",
+      };
+    });
+
+    res.status(200).json(result);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Ошибка сервера" });
   }
 };
