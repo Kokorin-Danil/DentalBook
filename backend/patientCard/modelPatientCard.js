@@ -138,7 +138,67 @@ Visit.init(
   }
 );
 
-// Устанавливаем связи между моделями
+class PatientNote extends Model {}
+
+PatientNote.init(
+  {
+    id: {
+      type: DataTypes.INTEGER,
+      autoIncrement: true,
+      primaryKey: true,
+    },
+    patientCardId: {
+      type: DataTypes.INTEGER,
+      allowNull: false,
+      references: {
+        model: PatientCard, // Ссылка на модель карты пациента
+        key: "id",
+      },
+    },
+    doctorId: {
+      type: DataTypes.INTEGER,
+      allowNull: false,
+      references: {
+        model: Doctor, // Ссылка на модель доктора
+        key: "id",
+      },
+    },
+    name: {
+      type: DataTypes.STRING,
+      allowNull: false,
+    },
+    description: {
+      type: DataTypes.TEXT,
+      allowNull: false,
+    },
+    importance: {
+      type: DataTypes.ENUM("Высокая", "Средняя", "Низкая"),
+      allowNull: false,
+      defaultValue: "Средняя",
+    },
+  },
+  {
+    sequelize: dbST,
+    modelName: "PatientNote",
+    tableName: "patient_notes",
+    timestamps: true, // Автоматические поля createdAt и updatedAt
+  }
+);
+
+// Ассоциации для PatientNote
+PatientCard.hasMany(PatientNote, {
+  as: "patientNotes",
+  foreignKey: "patientCardId",
+});
+PatientNote.belongsTo(PatientCard, {
+  foreignKey: "patientCardId",
+  as: "patientCard",
+});
+
+Doctor.hasMany(PatientNote, { as: "doctorNotes", foreignKey: "doctorId" });
+PatientNote.belongsTo(Doctor, { foreignKey: "doctorId", as: "doctor" });
+
+// Ассоциации для Visit
 PatientCard.hasMany(Visit, { foreignKey: "patientCardId", as: "visits" });
 Visit.belongsTo(PatientCard, {
   foreignKey: "patientCardId",
@@ -148,7 +208,8 @@ Visit.belongsTo(PatientCard, {
 Doctor.hasMany(Visit, { foreignKey: "doctorId", as: "visits" });
 Visit.belongsTo(Doctor, { foreignKey: "doctorId", as: "doctor" });
 
+// Ассоциация между User и PatientCard
 User.hasOne(PatientCard, { foreignKey: "clientId", as: "patientCard" });
 PatientCard.belongsTo(User, { foreignKey: "clientId", as: "user" });
 
-export { PatientCard, Visit };
+export { PatientCard, Visit, PatientNote };

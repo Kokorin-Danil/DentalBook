@@ -8,6 +8,8 @@ import {
   getWeeklyVisits,
   getPatientCards,
   getPatientProfile,
+  createPatientNote,
+  getPatientNotes,
 } from "./patientCardController.js";
 
 const PatientCardRouter = express.Router();
@@ -21,5 +23,7 @@ PatientCardRouter.get("/schedule/:date", getDoctorsSchedule);
 PatientCardRouter.get("/visits/weekly/:date", getWeeklyVisits);
 PatientCardRouter.get("/get/all", getPatientCards);
 PatientCardRouter.get("/get/patient_profile/:patientCardId", getPatientProfile);
+PatientCardRouter.post("/notes/create", createPatientNote);
+PatientCardRouter.get("/notes/getall/:patientCardId", getPatientNotes);
 
 export default PatientCardRouter;

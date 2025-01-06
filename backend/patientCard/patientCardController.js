@@ -1,4 +1,4 @@
-import { PatientCard, Visit } from "./modelPatientCard.js";
+import { PatientCard, Visit, PatientNote } from "./modelPatientCard.js";
 import User from "../users/modelUser.js";
 import jwt from "jsonwebtoken";
 import dotenv from "dotenv";
@@ -717,6 +717,92 @@ export const getPatientProfile = async (req, res) => {
     return res.status(200).json({ profile });
   } catch (error) {
     console.error("Ошибка при получении профиля пациента:", error);
+    return res.status(500).json({ message: "Ошибка сервера" });
+  }
+};
+
+export const createPatientNote = async (req, res) => {
+  try {
+    // Получаем токен из заголовков
+    const token = req.headers.authorization?.split(" ")[1];
+    if (!token) {
+      return res.status(401).json({ message: "Токен не предоставлен" });
+    }
+
+    // Декодируем токен и получаем id пользователя
+    let decoded;
+    try {
+      decoded = jwt.verify(token, process.env.JWT_SECRET);
+    } catch (err) {
+      return res.status(401).json({ message: "Неверный или истёкший токен" });
+    }
+
+    const userId = decoded.id;
+
+    // Проверяем, что пользователь — доктор
+    const doctor = await Doctor.findOne({ where: { userId } });
+    if (!doctor) {
+      return res
+        .status(403)
+        .json({ message: "Только доктора могут создавать примечания" });
+    }
+
+    // Получаем данные из тела запроса
+    const { patientCardId, name, description, importance } = req.body;
+
+    // Проверяем, что все необходимые данные присутствуют
+    if (!patientCardId || !name || !description) {
+      return res
+        .status(400)
+        .json({ message: "Все поля должны быть заполнены" });
+    }
+
+    // Создаем примечание
+    const newNote = await PatientNote.create({
+      patientCardId,
+      doctorId: doctor.id, // Подставляем id доктора
+      name,
+      description,
+      importance,
+    });
+
+    return res
+      .status(201)
+      .json({ message: "Примечание успешно создано", note: newNote });
+  } catch (error) {
+    console.error("Ошибка при создании примечания:", error);
+    return res.status(500).json({ message: "Ошибка сервера" });
+  }
+};
+
+export const getPatientNotes = async (req, res) => {
+  try {
+    const { patientCardId } = req.params; // Получаем ID карты пациента из параметров запроса
+
+    if (!patientCardId) {
+      return res.status(400).json({ message: "ID карты пациента обязателен" });
+    }
+
+    // Ищем все примечания, связанные с указанной картой пациента
+    const notes = await PatientNote.findAll({
+      where: { patientCardId },
+      include: [
+        {
+          model: Doctor,
+          as: "doctor", // Связь с доктором, подставляем его данные в ответ
+          attributes: ["firstName", "lastName", "specialty"], // Можно указать нужные поля доктора
+        },
+      ],
+      order: [["createdAt", "DESC"]], // Сортируем по дате создания (по убыванию)
+    });
+
+    if (notes.length === 0) {
+      return res.status(404).json({ message: "Примечания не найдены" });
+    }
+
+    return res.status(200).json({ notes });
+  } catch (error) {
+    console.error("Ошибка при получении примечаний:", error);
     return res.status(500).json({ message: "Ошибка сервера" });
   }
 };
