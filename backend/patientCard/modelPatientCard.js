@@ -105,7 +105,7 @@ Visit.init(
       },
     },
     visitType: {
-      type: DataTypes.ENUM("лечение", "осмотр", "консультация"),
+      type: DataTypes.ENUM("Лечение", "Осмотр", "Консультация"),
       allowNull: false,
     },
     doctorId: {
@@ -125,7 +125,7 @@ Visit.init(
       allowNull: false,
     },
     visitStatus: {
-      type: DataTypes.ENUM("не подтвержден", "подтвержден", "отменен"),
+      type: DataTypes.ENUM("Не подтвержден", "Подтвержден", "Отменен"),
       allowNull: false,
       defaultValue: "не подтвержден", // Статус по умолчанию
     },

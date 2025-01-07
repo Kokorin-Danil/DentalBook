@@ -17,7 +17,7 @@ const PatientCardRouter = express.Router();
 // Создание карты пациента
 PatientCardRouter.post("/create", createPatientCard);
 PatientCardRouter.post("/visit/create", createVisit);
-PatientCardRouter.post("/visit/change", changeVisitStatus);
+PatientCardRouter.post("/visit/change/:visitId", changeVisitStatus);
 PatientCardRouter.get("/visit/all/:PatientCardId", getClientVisits);
 PatientCardRouter.get("/schedule/:date", getDoctorsSchedule);
 PatientCardRouter.get("/visits/weekly/:date", getWeeklyVisits);

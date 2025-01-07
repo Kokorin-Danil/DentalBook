@@ -294,10 +294,11 @@ export const changeVisitStatus = async (req, res) => {
     }
 
     // Извлекаем данные из тела запроса
-    const { visitId, newStatus } = req.body;
+    const { newStatus } = req.body;
+    const visitId = req.params.visitId;
 
     // Проверяем, что статус визита является допустимым
-    const validStatuses = ["не подтвержден", "подтвержден", "отменен"];
+    const validStatuses = ["Не подтвержден", "Подтвержден", "Отменен"];
     if (!validStatuses.includes(newStatus)) {
       return res.status(400).json({ message: "Invalid visit status" });
     }
