@@ -43,28 +43,29 @@
     <?php include 'navbar.php'; ?>
     <div class="container">
         <h1 class="mb-4">Создание карты пациента</h1>
-        <form>
+        <div id="responseMessage"></div> <!-- Для отображения ответа от сервера -->
+        <form id="patientForm">
             <!-- Personal Information -->
             <div class="row mb-3">
                 <div class="col-md-4">
                     <label for="firstName" class="form-label">Имя:</label>
                     <div class="input-group">
                         <span class="input-group-text"><i class="fas fa-user"></i></span>
-                        <input type="text" class="form-control" id="firstName" placeholder="Введите имя">
+                        <input type="text" class="form-control" id="firstName" placeholder="Введите имя" required>
                     </div>
                 </div>
                 <div class="col-md-4">
                     <label for="lastName" class="form-label">Фамилия:</label>
                     <div class="input-group">
                         <span class="input-group-text"><i class="fas fa-user"></i></span>
-                        <input type="text" class="form-control" id="lastName" placeholder="Введите фамилию">
+                        <input type="text" class="form-control" id="lastName" placeholder="Введите фамилию" required>
                     </div>
                 </div>
                 <div class="col-md-4">
-                    <label for="middleName" class="form-label">Отчество:</label>
+                    <label for="patronymic" class="form-label">Отчество:</label>
                     <div class="input-group">
                         <span class="input-group-text"><i class="fas fa-user"></i></span>
-                        <input type="text" class="form-control" id="middleName" placeholder="Введите отчество">
+                        <input type="text" class="form-control" id="patronymic" placeholder="Введите отчество">
                     </div>
                 </div>
             </div>
@@ -75,7 +76,7 @@
                     <label for="gender" class="form-label">Пол:</label>
                     <div class="input-group">
                         <span class="input-group-text"><i class="fas fa-venus-mars"></i></span>
-                        <select class="form-select" id="gender">
+                        <select class="form-select" id="gender" required>
                             <option value="">Выберите пол</option>
                             <option value="male">Мужской</option>
                             <option value="female">Женский</option>
@@ -86,14 +87,14 @@
                     <label for="birthDate" class="form-label">Дата рождения:</label>
                     <div class="input-group">
                         <span class="input-group-text"><i class="fas fa-calendar-alt"></i></span>
-                        <input type="date" class="form-control" id="birthDate">
+                        <input type="date" class="form-control" id="birthDate" required>
                     </div>
                 </div>
                 <div class="col-md-4">
                     <label for="address" class="form-label">Адрес:</label>
                     <div class="input-group">
                         <span class="input-group-text"><i class="fas fa-map-marker-alt"></i></span>
-                        <input type="text" class="form-control" id="address" placeholder="Введите адрес">
+                        <input type="text" class="form-control" id="address" placeholder="Введите адрес" required>
                     </div>
                 </div>
             </div>
@@ -104,14 +105,14 @@
                     <label for="email" class="form-label">Email:</label>
                     <div class="input-group">
                         <span class="input-group-text"><i class="fas fa-envelope"></i></span>
-                        <input type="email" class="form-control" id="email" placeholder="example@email.com">
+                        <input type="email" class="form-control" id="email" placeholder="example@email.com" required>
                     </div>
                 </div>
                 <div class="col-md-4">
                     <label for="phone" class="form-label">Телефон:</label>
                     <div class="input-group">
                         <span class="input-group-text"><i class="fas fa-phone"></i></span>
-                        <input type="tel" class="form-control" id="phone" placeholder="+7 (___) ___-__-__">
+                        <input type="tel" class="form-control" id="phone" placeholder="+7 (___) ___-__-__" required>
                     </div>
                 </div>
             </div>
@@ -148,6 +149,70 @@
     <!-- Bootstrap JavaScript -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"
         integrity="sha384-geWF76RCwLtnZ8qwWowPQNguL3RmwHVBC9FhGdlKrxdiJJigb/j/68SIy3Te4Bkz" crossorigin="anonymous"></script>
+
+    <script>
+        function getCookie(name) {
+            const value = `; ${document.cookie}`;
+            const parts = value.split(`; ${name}=`);
+            if (parts.length === 2) return parts.pop().split(';').shift();
+        }
+
+        const token = getCookie('token');
+        
+        if (!token) {
+            alert('Вы не авторизованы. Пожалуйста, выполните вход.');
+            window.location.href = '/auth.php';
+        }
+
+        document.getElementById('patientForm').addEventListener('submit', async (event) => {
+            event.preventDefault();
+
+            const patientData = {
+                firstName: document.getElementById('firstName').value,
+                lastName: document.getElementById('lastName').value,
+                patronymic: document.getElementById('patronymic').value,
+                gender: document.getElementById('gender').value,
+                dateOfBirth: document.getElementById('birthDate').value,
+                address: document.getElementById('address').value,
+                email: document.getElementById('email').value,
+                phoneNumber: document.getElementById('phone').value,
+                policyNumber: document.getElementById('policy').value,
+                snils: document.getElementById('snils').value,
+                passport: document.getElementById('passport').value,
+            };
+
+            try {
+                const response = await fetch('http://127.0.0.1:3003/api/patient-cards/create', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        Authorization: `Bearer ${token}`,
+                    },
+                    body: JSON.stringify(patientData),
+                });
+
+                const data = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(data.message || 'Ошибка при создании карты пациента');
+                }
+
+                document.getElementById('responseMessage').innerHTML = `
+                    <div class="alert alert-success">
+                        <strong>${data.message}</strong><br>
+                        <strong>Email клиента:</strong> ${data.clientCredentials.email}<br>
+                        <strong>Пароль клиента:</strong> ${data.clientCredentials.password}
+                    </div>
+                `;
+
+                document.getElementById('patientForm').reset();
+            } catch (error) {
+                document.getElementById('responseMessage').innerHTML = `
+                    <div class="alert alert-danger">Ошибка: ${error.message}</div>
+                `;
+            }
+        });
+    </script>
 </body>
 
 </html>
