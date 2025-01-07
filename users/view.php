@@ -6,100 +6,11 @@
     <title>Профиль пациента | DentalBook</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
-    <style>
-        body {
-            background-color: #f4f6f9;
-        }
-
-        .profile-card {
-            background-color: #ffffff;
-            border: 1px solid #ddd;
-            border-radius: 8px;
-            padding: 20px;
-            margin-bottom: 20px;
-            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
-        }
-
-        .profile-icon {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100px;
-            width: 100px;
-            background-color: #f8f9fa;
-            border: 1px solid #ddd;
-            border-radius: 50%;
-            margin: auto;
-        }
-
-        .actions {
-            display: flex;
-            gap: 10px;
-            margin-bottom: 15px;
-        }
-
-        .tabs {
-            margin-top: 20px;
-        }
-
-        .table-container {
-            background-color: #ffffff;
-            border: 1px solid #ddd;
-            border-radius: 8px;
-            padding: 20px;
-            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
-        }
-
-        .btn-add {
-            margin-bottom: 15px;
-        }
-    </style>
 </head>
 <body>
-<?php include 'navbar.php'; ?>
+    <?php include 'profile.php'; ?>
+    <?php include 'navbar.php'; ?>
     <div class="container mt-5">
-        <h2 class="mb-4">Профиль пациента | DentalBook</h2>
-
-        <!-- Карточка профиля -->
-        <div id="patientProfile" class="profile-card mb-4">
-            <div class="text-center">Загрузка данных...</div>
-        </div>
-
-        <!-- Действия -->
-        <div class="actions">
-            <button class="btn btn-primary"><i class="fas fa-file-alt"></i> Анкета</button>
-            <button class="btn btn-secondary"><i class="fas fa-file-contract"></i> Договор</button>
-            <button class="btn btn-info"><i class="fas fa-star"></i> Оценка</button>
-            <button class="btn btn-danger"><i class="fas fa-print"></i> Печать</button>
-        </div>
-
-        <!-- Вкладки -->
-        <div class="tabs">
-            <ul class="nav nav-tabs">
-                <li class="nav-item">
-                    <a class="nav-link active" href="#"><i class="fas fa-calendar-check"></i> Визиты</a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link" href="#"><i class="fas fa-tooth"></i> Формула</a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link" href="#"><i class="fas fa-dollar-sign"></i> Оплаты</a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link" href="#"><i class="fas fa-notes-medical"></i> План лечения</a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link" href="#"><i class="fas fa-image"></i> Снимки</a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link" href="#"><i class="fas fa-sticky-note"></i> Примечания</a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link" href="#"><i class="fas fa-folder"></i> Документы</a>
-                </li>
-            </ul>
-        </div>
-
         <!-- Таблица визитов -->
         <div class="table-container">
             <button class="btn btn-primary btn-add" data-bs-toggle="modal" data-bs-target="#addVisitModal">Добавить визит</button>
@@ -207,6 +118,16 @@
             const params = new URLSearchParams(window.location.search);
             return params.get('patientCardId');
         }
+        
+        document.addEventListener('DOMContentLoaded', () => {
+        const patientCardId = getPatientCardId(); // Извлекаем patientCardId из URL
+        const notesLink = document.getElementById('notesLink'); // Получаем элемент ссылки на примечания
+        if (patientCardId) {
+            notesLink.href = `/users/notes.php?patientCardId=${patientCardId}`; // Устанавливаем ссылку с параметром
+        } else {
+            notesLink.href = "#"; // Если ID отсутствует, ссылка будет неактивной
+        }
+    });
 
         // Получение токена из cookies
         function getCookie(name) {
@@ -227,18 +148,13 @@
                 document.getElementById('patientProfile').innerHTML = `
                     <div class="row">
                         <div class="col-md-9">
-                            <p><strong><i class="fas fa-user"></i> ФИО:</strong> ${data.profile.fullName}</p>
-                            <p><strong><i class="fas fa-calendar"></i> Дата рождения:</strong> ${data.profile.dateOfBirth}</p>
-                            <p><strong><i class="fas fa-file-alt"></i> Полис:</strong> ${data.profile.policy}</p>
-                            <p><strong><i class="fas fa-phone"></i> Контактный телефон:</strong> ${data.profile.phoneNumber}</p>
-                            <p><strong><i class="fas fa-envelope"></i> Email:</strong> ${data.profile.email}</p>
-                            <p><strong><i class="fas fa-map-marker-alt"></i> Адрес:</strong> ${data.profile.address}</p>
-                            <p><strong><i class="fas fa-clock"></i> Последний вход:</strong> ${data.profile.lastLogin}</p>
-                        </div>
-                        <div class="col-md-3 text-center">
-                            <div class="profile-icon">
-                                <i class="fas fa-user fa-3x"></i>
-                            </div>
+                            <p><strong>ФИО:</strong> ${data.profile.fullName}</p>
+                            <p><strong>Дата рождения:</strong> ${data.profile.dateOfBirth}</p>
+                            <p><strong>Полис:</strong> ${data.profile.policy}</p>
+                            <p><strong>Контактный телефон:</strong> ${data.profile.phoneNumber}</p>
+                            <p><strong>Email:</strong> ${data.profile.email}</p>
+                            <p><strong>Адрес:</strong> ${data.profile.address}</p>
+                            <p><strong>Последний вход:</strong> ${data.profile.lastLogin}</p>
                         </div>
                     </div>`;
 

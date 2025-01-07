@@ -50,7 +50,7 @@
 </head>
 <body>
     <?php include 'profile.php'; ?>
-
+    <?php include 'navbar.php'; ?>
     <div class="container mt-5">
         <div class="table-container">
             <form>

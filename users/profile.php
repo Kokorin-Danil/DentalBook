@@ -6,13 +6,9 @@
     <title>Профиль пациента | DentalBook</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
-    <link href="ccs/style.css" rel="stylesheet">
     <style>
-        #content {
-            margin-left: 270px;
-            padding: 20px;
+        body {
             background-color: #f4f6f9;
-            min-height: 100vh;
         }
 
         .profile-card {
@@ -20,6 +16,7 @@
             border: 1px solid #ddd;
             border-radius: 8px;
             padding: 20px;
+            margin-bottom: 20px;
             box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
         }
 
@@ -27,23 +24,38 @@
             display: flex;
             justify-content: center;
             align-items: center;
-            height: 150px;
-            width: 150px;
+            height: 100px;
+            width: 100px;
             background-color: #f8f9fa;
             border: 1px solid #ddd;
             border-radius: 50%;
             margin: auto;
         }
 
-        .tabs .nav-tabs .nav-link.active {
-            background-color: #007bff;
-            color: #fff;
+        .actions {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        .tabs {
+            margin-top: 20px;
+        }
+
+        .table-container {
+            background-color: #ffffff;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .btn-add {
+            margin-bottom: 15px;
         }
     </style>
 </head>
 <body>
-    <!-- Навигационное меню -->
-    <?php include 'navbar.php'; ?>
 
     <div id="content" class="container mt-5">
         <h2 class="mb-4">Профиль пациента | DentalBook</h2>
@@ -53,6 +65,14 @@
             <div class="text-center">Загрузка данных...</div>
         </div>
 
+        <!-- Действия -->
+        <div class="actions">
+            <button class="btn btn-primary"><i class="fas fa-file-alt"></i> Анкета</button>
+            <button class="btn btn-secondary"><i class="fas fa-file-contract"></i> Договор</button>
+            <button class="btn btn-info"><i class="fas fa-star"></i> Оценка</button>
+            <button class="btn btn-danger"><i class="fas fa-print"></i> Печать</button>
+        </div>
+        
         <!-- Tabs -->
         <div class="tabs">
             <ul class="nav nav-tabs" id="tabs">
@@ -72,7 +92,7 @@
                     <a class="nav-link" href="/users/pictures.php"><i class="fas fa-image"></i> Снимки</a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link" href="/users/notes.php"><i class="fas fa-sticky-note"></i> Примечания</a>
+                    <a class="nav-link" id="notesLink"><i class="fas fa-sticky-note"></i> Примечания</a>
                 </li>
                 <li class="nav-item">
                     <a class="nav-link" href="#documents" data-bs-toggle="tab"><i class="fas fa-folder"></i> Документы</a>
