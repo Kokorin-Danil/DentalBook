@@ -10,27 +10,27 @@
         /* Стили навигационного меню */
         #sidebar {
             width: 250px;
-            background-color: #ffffff; /* Белый фон */
+            background-color: #ffffff;
             padding: 20px;
-            height: 100vh; /* Высота на весь экран */
+            height: 100vh;
             position: fixed;
             top: 0;
             left: 0;
             overflow-y: auto;
-            border-right: 1px solid #ddd; /* Лёгкий бордюр */
+            border-right: 1px solid #ddd;
             box-shadow: 2px 0 8px rgba(0, 0, 0, 0.05);
         }
 
         #sidebar h4 {
             font-weight: bold;
-            color: #007bff; /* Синий текст заголовка */
+            color: #007bff;
             text-align: center;
             margin-bottom: 1.5rem;
         }
 
         #sidebar a {
             font-size: 1rem;
-            color: #495057; /* Тёмно-серый текст */
+            color: #495057;
             display: flex;
             align-items: center;
             text-decoration: none;
@@ -41,37 +41,34 @@
         }
 
         #sidebar a:hover {
-            background-color: #e9ecef; /* Лёгкий серый фон при наведении */
-            color: #007bff; /* Синий текст при наведении */
+            background-color: #e9ecef;
+            color: #007bff;
         }
 
         #sidebar a i {
-            font-size: 1.2rem; /* Размер иконок */
+            font-size: 1.2rem;
             margin-right: 10px;
         }
 
-        /* Контент страницы */
         #content {
-            margin-left: 270px; /* Сдвигаем основной контент вправо */
+            margin-left: 270px;
             padding: 20px;
-            background-color: #f8f9fa; /* Светлый фон контента */
-            min-height: 100vh; /* Полная высота экрана */
+            background-color: #f8f9fa;
+            min-height: 100vh;
         }
 
-        /* Карточка профиля */
         .profile-card {
-            background-color: #ffffff; /* Белый фон */
-            border: 1px solid #ddd; /* Бордюр */
+            background-color: #ffffff;
+            border: 1px solid #ddd;
             border-radius: 10px;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1); /* Лёгкая тень */
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
             padding: 20px;
         }
 
-        /* Иконка профиля */
         .profile-icon {
             width: 150px;
             height: 150px;
-            background-color: #e9ecef; /* Светло-серый фон */
+            background-color: #e9ecef;
             display: flex;
             align-items: center;
             justify-content: center;
@@ -85,13 +82,6 @@
             height: 100%;
             object-fit: cover;
         }
-
-        .photo-buttons {
-            display: flex;
-            justify-content: center;
-            gap: 10px;
-            margin-top: 10px;
-        }
     </style>
 </head>
 <body>
@@ -99,26 +89,13 @@
     <nav id="sidebar">
         <h4>DentalBook</h4>
         <ul class="list-unstyled">
-        <!-- Секция "Мой профиль" -->
-        <li>
-            <a href="profilepatient.php" class="d-flex align-items-center text-decoration-none">
-                <div class="d-flex justify-content-center align-items-center rounded-circle bg-light me-3" style="width: 40px; height: 40px;">
-                    <i class="fas fa-user" style="font-size: 1.5rem;"></i>
-                </div>
-                <div>
-                    <span class="fw-bold">Анна Смирнова</span><br>
-                    <small class="text-muted">Пациент</small>
-                </div>
-            </a>
-        </li>
-
-        <!-- Остальные ссылки меню -->
-        <li><a href="/appointments.php"><i class="fas fa-calendar-alt"></i> Мои записи</a></li>
-        <li><a href="/cardpatient/cardpatient.php"><i class="fas fa-folder-open"></i> Моя карта</a></li>
-        <li><a href="/history.php"><i class="fas fa-history"></i> История посещений</a></li>
-        <li><a href="#" onclick="logout()"><i class="fas fa-sign-out-alt me-2"></i> Выйти</a></li>
-    </ul>
-</nav>
+            <li><a href="profilepatient.php"><i class="fas fa-user"></i> Мой профиль</a></li>
+            <li><a href="/appointments.php"><i class="fas fa-calendar-alt"></i> Мои записи</a></li>
+            <li><a href="/cardpatient/cardpatient.php"><i class="fas fa-folder-open"></i> Моя карта</a></li>
+            <li><a href="/history.php"><i class="fas fa-history"></i> История посещений</a></li>
+            <li><a href="#" onclick="logout()"><i class="fas fa-sign-out-alt"></i> Выйти</a></li>
+        </ul>
+    </nav>
 
     <!-- Основной контент -->
     <div id="content">
@@ -127,186 +104,106 @@
             
             <!-- Карточка профиля -->
             <div class="profile-card">
-                <!-- Контент с сеткой -->
                 <div class="row align-items-center">
                     <!-- Левая колонка: информация о пациенте -->
-                    <div class="col-md-8">
-                        <div class="row mb-3">
-                            <div class="col-1 text-center">
-                                <i class="fas fa-user"></i>
-                            </div>
-                            <div class="col-11">
-                                <strong>ФИО:</strong> Анна Смирнова Валерьевна
-                            </div>
-                        </div>
-
-                        <div class="row mb-3">
-                            <div class="col-1 text-center">
-                                <i class="fas fa-calendar"></i>
-                            </div>
-                            <div class="col-11">
-                                <strong>Дата рождения:</strong> 12.05.1990
-                            </div>
-                        </div>
-
-                        <div class="row mb-3">
-                            <div class="col-1 text-center">
-                                <i class="fas fa-file-alt"></i>
-                            </div>
-                            <div class="col-11">
-                                <strong>Полис:</strong> 1234 5678 9101 1121
-                            </div>
-                        </div>
-
-                        <div class="row mb-3">
-                            <div class="col-1 text-center">
-                                <i class="fas fa-phone"></i>
-                            </div>
-                            <div class="col-11">
-                                <strong>Контактный телефон:</strong> +7 (900) 123-45-67
-                            </div>
-                        </div>
-
-                        <div class="row mb-3">
-                            <div class="col-1 text-center">
-                                <i class="fas fa-envelope"></i>
-                            </div>
-                            <div class="col-11">
-                                <strong>Email:</strong> anna.smirnova@example.com
-                            </div>
-                        </div>
-
-                        <div class="row mb-3">
-                            <div class="col-1 text-center">
-                                <i class="fas fa-map-marker-alt"></i>
-                            </div>
-                            <div class="col-11">
-                                <strong>Адрес:</strong> г. Москва, ул. Ленина, д. 10, кв. 5
-                            </div>
-                        </div>
-
-                        <div class="row mb-3">
-                            <div class="col-1 text-center">
-                                <i class="fas fa-sign-in-alt"></i>
-                            </div>
-                            <div class="col-11">
-                                <strong>Последний вход:</strong> 18 декабря 2024, 14:30
-                            </div>
-                        </div>
-
-                        <!-- Кнопка редактирования -->
-                        <button class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#editProfileModal">
-                            <span class="fas fa-edit"></span> Редактировать
-                        </button>
+                    <div class="col-md-8" id="profileInfo">
+                        <div>Загрузка данных...</div>
                     </div>
 
                     <!-- Правая колонка: иконка профиля -->
                     <div class="col-md-4 text-center">
-                        <div class="profile-icon" id="profileImageContainer">
+                        <div class="profile-icon">
                             <i class="fas fa-user fa-5x"></i>
                         </div>
-                        <div class="photo-buttons">     
-                        </div>
                     </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Модальное окно редактирования профиля -->
-    <div class="modal fade" id="editProfileModal" tabindex="-1" aria-labelledby="editProfileModalLabel" aria-hidden="true">
-        <div class="modal-dialog modal-lg">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="editProfileModalLabel">Редактирование профиля</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <div class="modal-body">
-                    <form>
-                        <div class="mb-3">
-                            <label class="form-label"><strong>ФИО:</strong></label>
-                            <div class="input-group">
-                                <span class="input-group-text"><i class="fas fa-user"></i></span>
-                                <input type="text" class="form-control" value="Анна Смирнова">
-                            </div>
-                        </div>
-                        <div class="mb-3">
-                            <label class="form-label"><strong>Дата рождения:</strong></label>
-                            <div class="input-group">
-                                <span class="input-group-text"><i class="fas fa-calendar"></i></span>
-                                <input type="date" class="form-control" value="1990-05-12">
-                            </div>
-                        </div> 
-
-                        <div class="mb-3">
-                            <label class="form-label"><strong>Полис:</strong></label>
-                            <div class="input-group">
-                                <span class="input-group-text"><i class="fas fa-file-alt"></i></span>
-                                <input type="text" class="form-control" value="1234 5678 9101 1121">
-                            </div>
-                        </div>
-
-                        <div class="mb-3">
-                            <label class="form-label"><strong>Контактный телефон:</strong></label>
-                            <div class="input-group">
-                                <span class="input-group-text"><i class="fas fa-phone"></i></span>
-                                <input type="text" class="form-control" value="+7 (900) 123-45-67">
-                            </div>
-                        </div>
-                        <div class="mb-3">
-                            <label class="form-label"><strong>Email:</strong></label>
-                            <div class="input-group">
-                                <span class="input-group-text"><i class="fas fa-envelope"></i></span>
-                                <input type="email" class="form-control" value="anna.smirnova@example.com">
-                            </div>
-                        </div>
-                        <div class="mb-3">
-                            <label class="form-label"><strong>Адрес:</strong></label>
-                            <div class="input-group">
-                                <span class="input-group-text"><i class="fas fa-map-marker-alt"></i></span>
-                                <input type="text" class="form-control" value="г. Москва, ул. Ленина, д. 10, кв. 5">
-                            </div>
-                        </div>
-                        <div class="mb-3">
-                            <label class="form-label"><strong>Фотография профиля:</strong></label>
-                            <div class="input-group">
-                                <input type="file" class="form-control" id="profilePhoto" accept="image/*">
-                                <button class="btn btn-danger ms-2" type="button" onclick="removeProfilePhoto()">Удалить фото</button>
-                            </div>
-                        </div>
-                    </form>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Закрыть</button>
-                    <button type="button" class="btn btn-primary">Сохранить изменения</button>
                 </div>
             </div>
         </div>
     </div>
 
     <script>
-        // Логика выхода из системы
-        function logout() {
-            if (confirm('Вы уверены, что хотите выйти из системы?')) {
-                location.href = '/logout';
+        // Функция для получения токена из cookies
+        function getCookie(name) {
+            const value = `; ${document.cookie}`;
+            const parts = value.split(`; ${name}=`);
+            if (parts.length === 2) return parts.pop().split(';').shift();
+        }
+
+        const token = getCookie('token');
+
+        if (!token) {
+            alert('Вы не авторизованы. Пожалуйста, выполните вход.');
+            window.location.href = '/auth.php';
+        }
+
+        // Функция для загрузки данных профиля
+        async function loadUserProfile() {
+            try {
+                const response = await fetch('http://localhost:3003/api/users/profile', {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+
+                if (!response.ok) {
+                    throw new Error('Не удалось загрузить профиль');
+                }
+
+                const data = await response.json();
+                const profile = data.profile;
+
+                // Обновление информации на странице
+                const profileInfo = `
+                    <div class="row mb-3">
+                        <div class="col-1 text-center"><i class="fas fa-user"></i></div>
+                        <div class="col-11"><strong>ФИО:</strong> ${profile.fullName}</div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-1 text-center"><i class="fas fa-calendar"></i></div>
+                        <div class="col-11"><strong>Дата рождения:</strong> ${profile.dateOfBirth}</div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-1 text-center"><i class="fas fa-file-alt"></i></div>
+                        <div class="col-11"><strong>Полис:</strong> ${profile.policy}</div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-1 text-center"><i class="fas fa-phone"></i></div>
+                        <div class="col-11"><strong>Контактный телефон:</strong> ${profile.phoneNumber}</div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-1 text-center"><i class="fas fa-envelope"></i></div>
+                        <div class="col-11"><strong>Email:</strong> ${profile.email}</div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-1 text-center"><i class="fas fa-map-marker-alt"></i></div>
+                        <div class="col-11"><strong>Адрес:</strong> ${profile.address}</div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-1 text-center"><i class="fas fa-sign-in-alt"></i></div>
+                        <div class="col-11"><strong>Последний вход:</strong> ${profile.lastLogin}</div>
+                    </div>
+                `;
+
+                document.getElementById('profileInfo').innerHTML = profileInfo;
+            } catch (error) {
+                console.error('Ошибка загрузки профиля:', error);
+                alert('Не удалось загрузить данные профиля.');
             }
         }
 
-        // Удаление фото профиля
-        function removeProfilePhoto() {
-            const container = document.getElementById('profileImageContainer');
-            container.innerHTML = '<i class="fas fa-user fa-5x text-secondary"></i>';
-            document.getElementById('profilePhoto').value = ""; // Сбрасываем поле ввода
+        // Логика выхода из системы
+        function logout() {
+            if (confirm('Вы уверены, что хотите выйти из системы?')) {
+                document.cookie = 'token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
+                window.location.href = '/auth.php';
+            }
         }
 
-        // Сохранение изменений профиля
-        function saveProfileChanges() {
-            alert('Изменения сохранены.');
-            const modal = bootstrap.Modal.getInstance(document.getElementById('editProfileModal'));
-            modal.hide();
-        }
+        // Загрузка данных профиля при загрузке страницы
+        loadUserProfile();
     </script>
+
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/js/all.min.js"></script>
 </body>
 </html>

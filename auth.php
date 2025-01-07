@@ -6,6 +6,7 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
     <link rel="stylesheet" href="css/style.css">
     <title>Авторизация</title>
+    <script src="https://cdn.jsdelivr.net/npm/jwt-decode/build/jwt-decode.min.js"></script>
 </head>
 <body>
 <div class="container">
@@ -60,6 +61,7 @@
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-geWF76RCwLtnZ8qwWowPQNguL3RmwHVBC9FhGdlKrxdiJJigb/j/68SIy3Te4Bkz" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/jwt-decode/build/jwt-decode.min.js"></script>
 <script>
     document.querySelector('#authForm').addEventListener('submit', async (event) => {
         event.preventDefault(); // Предотвращаем отправку формы и перезагрузку страницы
@@ -73,7 +75,7 @@
         }
 
         try {
-            const response = await fetch('http://127.0.0.1:3001/api/users/login', {
+            const response = await fetch('http://127.0.0.1:3003/api/users/login', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
@@ -87,16 +89,31 @@
             }
 
             const data = await response.json();
-            alert(`Успешно авторизован! Ваш токен: ${data.token}`);
-            
-            // Сохраняем токен в localStorage для дальнейшего использования
-            localStorage.setItem('token', data.token);
+            const token = data.token;
 
-            // Перенаправление на другую страницу после успешной авторизации
-            window.location.href = '/dashboard.html';
+            // Сохраняем токен в cookies
+            document.cookie = `token=${token}; path=/; samesite=strict`;
+
+            // Расшифровываем токен и извлекаем роль
+            const decodedToken = jwt_decode(token);
+            console.log('Декодированный токен:', decodedToken); // Debug: вывод декодированного токена
+            const role = decodedToken.role;
+
+            if (!role) {
+                throw new Error('Роль пользователя отсутствует в токене');
+            }
+
+            // Перенаправляем пользователя в зависимости от его роли
+            if (role === 'doctor') {
+                window.location.href = '/personal/profiledoctor.php';
+            } else if (role === 'client') {
+                window.location.href = '/profile/profilepatient.php';
+            } else {
+                throw new Error('Неизвестная роль');
+            }
         } catch (error) {
-            console.error('Ошибка запроса:', error);
-            alert(`Ошибка: ${error.message || 'Произошла ошибка при подключении к серверу'}`);
+            console.error('Ошибка авторизации:', error);
+            alert(`Ошибка: ${error.message}`);
         }
     });
 </script>
