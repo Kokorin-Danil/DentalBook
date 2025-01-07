@@ -23,7 +23,7 @@ PatientCardRouter.get("/schedule/:date", getDoctorsSchedule);
 PatientCardRouter.get("/visits/weekly/:date", getWeeklyVisits);
 PatientCardRouter.get("/get/all", getPatientCards);
 PatientCardRouter.get("/get/patient_profile/:patientCardId", getPatientProfile);
-PatientCardRouter.post("/notes/create", createPatientNote);
+PatientCardRouter.post("/notes/create/:patientCardId", createPatientNote);
 PatientCardRouter.get("/notes/getall/:patientCardId", getPatientNotes);
 
 export default PatientCardRouter;

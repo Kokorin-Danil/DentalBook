@@ -749,7 +749,8 @@ export const createPatientNote = async (req, res) => {
     }
 
     // Получаем данные из тела запроса
-    const { patientCardId, name, description, importance } = req.body;
+    const { name, description, importance } = req.body;
+    const patientCardId = req.params.patientCardId;
 
     // Проверяем, что все необходимые данные присутствуют
     if (!patientCardId || !name || !description) {
