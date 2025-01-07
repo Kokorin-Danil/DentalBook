@@ -5,6 +5,8 @@ import bcrypt from "bcrypt";
 import dotenv from "dotenv";
 import { format } from "date-fns";
 import { ru } from "date-fns/locale";
+import fs from "fs";
+import path from "path";
 
 dotenv.config();
 
@@ -166,6 +168,68 @@ export const getPatientCardIdByFullName = async (req, res) => {
     return res.status(200).json({ patientCardId: patientCard.id });
   } catch (error) {
     console.error("Ошибка при поиске карты пациента по ФИО:", error);
+    return res.status(500).json({ message: "Ошибка сервера" });
+  }
+};
+
+export const updateUser = async (req, res) => {
+  try {
+    const userId = req.user.id; // ID пользователя из токена
+    const { firstName, lastName, email, gender } = req.body;
+
+    const user = await User.findByPk(userId);
+
+    if (!user) {
+      return res.status(404).json({ message: "Пользователь не найден" });
+    }
+
+    // Обновление данных пользователя
+    if (firstName) user.firstName = firstName;
+    if (lastName) user.lastName = lastName;
+    if (email) user.email = email;
+    if (gender) user.gender = gender;
+
+    // Если есть файл, обновляем аватарку
+    if (req.file) {
+      const avatar = `uploads/avatars/${req.file.filename}`;
+
+      // Удаляем предыдущий файл аватарки
+      if (user.avatar) {
+        const oldAvatarPath = path.join("uploads/avatars", user.avatar);
+        try {
+          if (fs.existsSync(oldAvatarPath)) {
+            fs.unlinkSync(oldAvatarPath);
+          }
+        } catch (unlinkError) {
+          console.error("Ошибка при удалении старой аватарки:", unlinkError);
+        }
+      }
+
+      user.avatar = avatar;
+    }
+
+    // Сохраняем все изменения за один раз
+    await user.save();
+
+    return res.status(200).json({
+      message: "Данные пользователя успешно обновлены",
+      user,
+    });
+  } catch (error) {
+    console.error("Ошибка при обновлении данных пользователя:", error);
+
+    // Удаляем загруженный файл, если произошла ошибка
+    if (req.file) {
+      const newAvatarPath = path.join("uploads/avatars", req.file.filename);
+      try {
+        if (fs.existsSync(newAvatarPath)) {
+          fs.unlinkSync(newAvatarPath);
+        }
+      } catch (err) {
+        console.error("Ошибка при удалении файла:", err);
+      }
+    }
+
     return res.status(500).json({ message: "Ошибка сервера" });
   }
 };

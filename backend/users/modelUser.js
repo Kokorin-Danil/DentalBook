@@ -1,6 +1,6 @@
 import { DataTypes, Model } from "sequelize";
 import bcrypt from "bcrypt";
-import dbST from "../database.js";
+import dbST from "../utils/database.js";
 
 class User extends Model {}
 
@@ -37,6 +37,11 @@ User.init(
     role: {
       type: DataTypes.ENUM("client", "admin", "doctor"),
       defaultValue: "client",
+    },
+    avatar: {
+      type: DataTypes.STRING,
+      allowNull: true,
+      defaultValue: "uploads/avatars/default_avatar.png",
     },
     lastLogin: {
       type: DataTypes.DATE,

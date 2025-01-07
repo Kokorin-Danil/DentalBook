@@ -1,5 +1,5 @@
 import { DataTypes, Model } from "sequelize";
-import dbST from "../database.js";
+import dbST from "../utils/database.js";
 import User from "../users/modelUser.js"; // Импорт модели User
 
 class Doctor extends Model {}

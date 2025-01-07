@@ -323,7 +323,7 @@ export const changeVisitStatus = async (req, res) => {
 export const getClientVisits = async (req, res) => {
   try {
     // Получаем ID клиента из параметров маршрута
-    const clientId = req.params.clientId;
+    const cardId = req.params.PatientCardId;
 
     // Проверка наличия токена в заголовке Authorization
     const token = req.headers.authorization?.split(" ")[1];
@@ -341,7 +341,7 @@ export const getClientVisits = async (req, res) => {
 
     // Найдем карту пациента для клиента
     const patientCard = await PatientCard.findOne({
-      where: { clientId: clientId },
+      where: { id: cardId },
     });
     if (!patientCard) {
       return res

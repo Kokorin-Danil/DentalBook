@@ -1,5 +1,5 @@
 import express from "express";
-import dbST from "./database.js";
+import dbST from "./utils/database.js";
 import bodyParser from "body-parser";
 import authRouter from "./users/routerUser.js";
 import User from "./users/modelUser.js";
@@ -19,6 +19,7 @@ app.use(bodyParser.json()); // Для обработки JSON-запросов
 app.use("/api/users", authRouter); // Все маршруты авторизации будут начинаться с /api/auth
 app.use("/api/patient-cards", PatientCardRouter);
 app.use("/api/doctors", doctorRouter);
+app.use("/uploads", express.static("uploads"));
 
 // async function createUser() {
 //   try {

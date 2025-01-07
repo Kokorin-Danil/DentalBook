@@ -1,5 +1,5 @@
 import { DataTypes, Model } from "sequelize";
-import dbST from "../database.js";
+import dbST from "../utils/database.js";
 import Doctor from "../doctors/modelDoctor.js"; // Импорт модели врача
 import User from "../users/modelUser.js";
 
