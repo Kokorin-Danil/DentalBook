@@ -24,35 +24,10 @@
             padding: 20px;
         }
 
-        .schedule-header {
-            display: flex;
-            align-items: center;
-            justify-content: flex-start;
-            gap: 20px;
-            margin-bottom: 15px;
-        }
-
-        .schedule-header .form-select,
-        .schedule-header .form-control {
-            max-width: 150px;
-        }
-
-        .dropdown-header {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-
-        .table {
-            border-collapse: collapse;
-            width: 100%;
-        }
-
         .table th {
             background-color: #007bff;
             color: white;
             text-align: center;
-            padding: 10px;
         }
 
         .table td {
@@ -61,250 +36,156 @@
             border: 1px solid #ddd;
         }
 
-        .time-column {
-            text-align: right;
-            padding-right: 15px;
-            font-weight: bold;
-        }
-
-        .appointment {
-            border-radius: 5px;
-            padding: 5px;
-            margin: 5px 0;
-            font-size: 0.9rem;
-            text-align: center;
-            border: 1px solid #ccc;
-        }
-
-        .appointment.booked {
+        .appointment.available {
             background-color: #d1e7dd;
         }
 
-        .appointment.pending {
+        .appointment.booked {
             background-color: #f8d7da;
         }
 
-        .appointment.confirmed {
-            background-color: #fff3cd;
-        }
-
-        .schedule-grid {
-            display: grid;
-            grid-template-columns: repeat(7, 1fr);
-            gap: 10px;
-        }
-
-        .day-column {
-            display: flex;
-            flex-direction: column;
-            background-color: #fff;
-            border: 1px solid #ddd;
-            border-radius: 8px;
-            padding: 10px;
-            min-height: 500px;
-        }
-
-        .day-header {
-            text-align: center;
+        .current-date {
+            margin-bottom: 20px;
+            font-size: 1.2rem;
             font-weight: bold;
-            margin-bottom: 10px;
-            background-color: #007bff;
-            color: #fff;
-            padding: 10px;
-            border-radius: 8px;
-        }
-
-        .month-grid {
-            display: grid;
-            grid-template-columns: repeat(7, 1fr);
-            gap: 10px;
-            margin-top: 20px;
-        }
-
-        .month-cell {
-            display: flex;
-            flex-direction: column;
-            justify-content: space-between;
-            background-color: #ffffff;
-            border: 1px solid #ddd;
-            border-radius: 8px;
-            padding: 15px;
-            height: 150px;
-            transition: transform 0.2s, box-shadow 0.2s;
-        }
-
-        .month-cell:hover {
-            transform: scale(1.02);
-            box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.15);
-        }
-
-        .month-cell-header {
-            font-weight: bold;
-            font-size: 1rem;
-            color: #007bff;
-            text-align: center;
-            margin-bottom: 10px;
-        }
-
-        .has-visit {
-            font-size: 0.9rem;
-            font-weight: bold;
-            color: #28a745;
-            text-align: center;
-        }
-
-        .no-visit {
-            font-size: 0.9rem;
-            font-weight: bold;
-            color: #dc3545;
-            text-align: center;
-        }
-
-        .month-cell-footer {
-            margin-top: auto;
-            font-size: 0.8rem;
-            text-align: center;
-            color: #6c757d;
         }
     </style>
 </head>
 <body>
     <?php include '../users/navbar.php'; ?>
+
     <div class="container mt-5">
         <div class="header">
             <h2>Расписание</h2>
             <button class="btn btn-primary">Новый визит</button>
         </div>
 
+        <div class="current-date" id="currentDate">Сегодня: </div>
+
         <div class="schedule-container">
-            <div class="schedule-header">
-                <div class="dropdown-header">
-                    <label for="viewSelector">Расписание:</label>
-                    <select class="form-select" id="viewSelector">
-                        <option value="day">На день</option>
-                        <option value="week">На неделю</option>
-                        <option value="month">На месяц</option>
-                    </select>
-                </div>
-                <div class="dropdown-header">
-                    <label for="doctorFilter">Фильтр:</label>
-                    <select class="form-select" id="doctorFilter">
-                        <option value="all">Все доктора</option>
-                        <option value="aska">Аска Димаска</option>
-                        <option value="ivanov">Иванов Иван</option>
-                        <option value="artur">Пироков Артур</option>
-                    </select>
-                </div>
-                <input type="date" class="form-control d-inline" id="scheduleDate">
+            <div class="schedule-header mb-3">
+                <label for="scheduleDate" class="form-label">Выберите дату:</label>
+                <input type="date" id="scheduleDate" class="form-control d-inline" style="max-width: 200px; margin-right: 10px;">
+                <label for="doctorFilter" class="form-label">Выберите врача:</label>
+                <select class="form-select d-inline" id="doctorFilter" style="max-width: 200px;">
+                    <option value="all">Все врачи</option>
+                    <!-- Опции врачей добавляются динамически -->
+                </select>
             </div>
 
-            <!-- Day View -->
-            <div id="dayView">
-                <table class="table">
-                    <thead>
-                        <tr>
-                            <th>Время</th>
-                            <th class="doctor-header" data-doctor="aska">Аска Димаска</th>
-                            <th class="doctor-header" data-doctor="ivanov">Иванов Иван</th>
-                            <th class="doctor-header" data-doctor="artur">Пироков Артур</th>
-                        </tr>
-                    </thead>
-                    <tbody id="dayScheduleBody">
-                        <!-- Day schedule dynamically generated -->
-                    </tbody>
-                </table>
-            </div>
-
-            <!-- Week View -->
-            <div id="weekView" style="display: none;">
-                <div class="schedule-grid">
-                    <div class="day-column">
-                        <div class="day-header">9 августа, пн</div>
-                        <div class="appointment booked">11:10 - 11:40<br>Ника Ивбуфх</div>
-                    </div>
-                    <div class="day-column">
-                        <div class="day-header">10 августа, вт</div>
-                        <div class="appointment confirmed">10:30 - 11:00<br>Камил</div>
-                        <div class="appointment pending">11:30 - 12:50<br>Лебедев Виктор</div>
-                    </div>
-                    <div class="day-column">
-                        <div class="day-header">11 августа, ср</div>
-                        <div class="appointment booked">13:30 - 14:50<br>Жеребцов Вадим</div>
-                    </div>
-                    <div class="day-column">
-                        <div class="day-header">12 августа, чт</div>
-                    </div>
-                    <div class="day-column">
-                        <div class="day-header">13 августа, пт</div>
-                    </div>
-                    <div class="day-column">
-                        <div class="day-header">14 августа, сб</div>
-                    </div>
-                    <div class="day-column">
-                        <div class="day-header">15 августа, вс</div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Month View -->
-            <div id="monthView" style="display: none;">
-                <div class="month-grid">
-                    <script>
-                        const today = new Date();
-                        const year = today.getFullYear();
-                        const month = today.getMonth();
-                        const daysInMonth = new Date(year, month + 1, 0).getDate();
-
-                        let monthHTML = '';
-                        for (let day = 1; day <= daysInMonth; day++) {
-                            const visitInfo = day % 2 === 0 ? `<div class="has-visit">1 Визит</div>` : `<div class="no-visit">Визитов нет</div>`;
-                            monthHTML += `<div class="month-cell">
-                                <div class="month-cell-header">${day} Декабря</div>
-                                ${visitInfo}
-                            </div>`;
-                        }
-                        document.write(monthHTML);
-                    </script>
-                </div>
-            </div>
+            <table class="table">
+                <thead>
+                    <tr id="tableHeader">
+                        <th>Время</th>
+                        <!-- Врачи добавляются динамически -->
+                    </tr>
+                </thead>
+                <tbody id="scheduleTableBody">
+                    <!-- Данные будут загружены динамически -->
+                </tbody>
+            </table>
         </div>
     </div>
 
     <script>
-        document.getElementById('viewSelector').addEventListener('change', function () {
-            const selectedView = this.value;
-            document.getElementById('dayView').style.display = 'none';
-            document.getElementById('weekView').style.display = 'none';
-            document.getElementById('monthView').style.display = 'none';
+    const scheduleTableBody = document.getElementById('scheduleTableBody');
+    const tableHeader = document.getElementById('tableHeader');
+    const scheduleDateInput = document.getElementById('scheduleDate');
+    const doctorFilter = document.getElementById('doctorFilter');
+    const today = new Date().toISOString().split('T')[0]; // Получаем текущую дату в формате YYYY-MM-DD
 
-            if (selectedView === 'day') {
-                document.getElementById('dayView').style.display = 'block';
-            } else if (selectedView === 'week') {
-                document.getElementById('weekView').style.display = 'block';
-            } else if (selectedView === 'month') {
-                document.getElementById('monthView').style.display = 'block';
-            }
+    let scheduleData = {}; // Переменная для хранения расписания
+
+    // Устанавливаем текущую дату в поле выбора даты
+    scheduleDateInput.value = today;
+
+    // Загружаем расписание при загрузке страницы
+    document.addEventListener('DOMContentLoaded', async () => {
+        await loadSchedule(today);
+    });
+
+    // Событие изменения даты
+    scheduleDateInput.addEventListener('change', async () => {
+        const selectedDate = scheduleDateInput.value;
+
+        if (!selectedDate) {
+            alert('Выберите дату для отображения расписания');
+            return;
+        }
+
+        await loadSchedule(selectedDate);
+    });
+
+    // Событие изменения фильтра врачей
+    doctorFilter.addEventListener('change', () => {
+        const filteredDoctor = doctorFilter.value;
+        renderSchedule(scheduleData, filteredDoctor);
+    });
+
+    // Функция загрузки расписания
+    async function loadSchedule(date) {
+        try {
+            const response = await fetch(`http://localhost:3003/api/patient-cards/schedule/${date}`);
+            scheduleData = await response.json();
+
+            populateDoctorFilter(scheduleData);
+            renderSchedule(scheduleData);
+        } catch (error) {
+            console.error('Ошибка при загрузке расписания:', error);
+            alert('Не удалось загрузить расписание');
+        }
+    }
+
+    // Функция заполнения фильтра врачей
+    function populateDoctorFilter(data) {
+        doctorFilter.innerHTML = '<option value="all">Все врачи</option>';
+        Object.keys(data).forEach(doctor => {
+            const doctorName = doctor.split('-')[1];
+            const option = document.createElement('option');
+            option.value = doctor;
+            option.textContent = doctorName;
+            doctorFilter.appendChild(option);
+        });
+    }
+
+    // Функция рендеринга расписания
+    function renderSchedule(data, filter = 'all') {
+        // Очистить предыдущие данные
+        scheduleTableBody.innerHTML = '';
+        tableHeader.innerHTML = '<th>Время</th>';
+
+        // Получаем список врачей
+        const doctors = filter === 'all' ? Object.keys(data) : [filter];
+
+        // Добавляем врачей в заголовок таблицы
+        doctors.forEach(doctor => {
+            const doctorName = doctor.split('-')[1];
+            const th = document.createElement('th');
+            th.textContent = doctorName;
+            tableHeader.appendChild(th);
         });
 
-        const dayScheduleBody = document.getElementById('dayScheduleBody');
-        const startTime = 9;
-        const endTime = 18;
-        const interval = 30;
+        // Генерируем расписание
+        const times = data[Object.keys(data)[0]].map(item => item.time); // Времена из расписания первого врача
+        times.forEach(time => {
+            const row = document.createElement('tr');
+            const timeCell = document.createElement('td');
+            timeCell.textContent = time;
+            row.appendChild(timeCell);
 
-        for (let hour = startTime; hour < endTime; hour++) {
-            for (let min = 0; min < 60; min += interval) {
-                const time = `${String(hour).padStart(2, '0')}:${String(min).padStart(2, '0')}`;
-                dayScheduleBody.innerHTML += `
-                    <tr>
-                        <td class="time-column">${time}</td>
-                        <td class="appointment" data-doctor="aska">Свободно</td>
-                        <td class="appointment" data-doctor="ivanov">Свободно</td>
-                        <td class="appointment" data-doctor="artur">Свободно</td>
-                    </tr>
-                `;
-            }
-        }
-    </script>
+            doctors.forEach(doctor => {
+                const doctorSchedule = data[doctor]?.find(item => item.time === time) || {};
+                const cell = document.createElement('td');
+                cell.textContent = doctorSchedule.status === 'available' ? 'Свободно' : 'Забронировано';
+                cell.className = `appointment ${doctorSchedule.status || ''}`;
+                row.appendChild(cell);
+            });
+
+            scheduleTableBody.appendChild(row);
+        });
+    }
+</script>
+
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 </body>

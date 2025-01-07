@@ -163,6 +163,8 @@
             }
 
             async function loadVisits() {
+                const token = document.cookie.split('; ').find(row => row.startsWith('token=')).split('=')[1];
+                const patientCardId = new URLSearchParams(window.location.search).get('patientCardId');
                 const response = await fetch(`http://localhost:3003/api/patient-cards/visit/all/${patientCardId}`, {
                     headers: { Authorization: `Bearer ${token}` }
                 });
@@ -211,7 +213,6 @@
                 }
             });
 
-            await loadPatientProfile();
             await loadVisits();
         });
     </script>
