@@ -506,81 +506,6 @@ export const getDoctorsSchedule = async (req, res) => {
   }
 };
 
-export const getWeeklyVisits = async (req, res) => {
-  try {
-    const { date } = req.params; // Дата в формате 2024-12-27
-
-    if (!dayjs(date).isValid()) {
-      return res.status(400).json({ message: "Invalid date format" });
-    }
-
-    // Определяем начало и конец недели
-    const inputDate = dayjs(date);
-    const weekStart = inputDate.startOf("week").add(1, "day"); // Начало недели (понедельник)
-    const weekEnd = inputDate.endOf("week").add(1, "day"); // Конец недели (воскресенье)
-
-    // Получаем записи за указанную неделю
-    const visits = await Visit.findAll({
-      where: {
-        visitDate: {
-          [Op.between]: [
-            weekStart.format("YYYY-MM-DD"),
-            weekEnd.format("YYYY-MM-DD"),
-          ],
-        },
-      },
-      include: [
-        {
-          model: Doctor,
-          as: "doctor", // Указываем alias, используемый в связи
-          attributes: ["firstName", "lastName"], // Имя и фамилия врача
-        },
-      ],
-    });
-
-    // Группируем записи по датам и форматируем вывод
-    const visitsByDay = {};
-
-    visits.forEach((visit) => {
-      const visitDate = visit.visitDate;
-      const visitStartTime = dayjs(`${visitDate}T${visit.visitTime}`);
-      const visitDuration = visit.visitType === "лечение" ? 60 : 30; // Определяем длительность визита
-      const visitEndTime = visitStartTime.add(visitDuration, "minute");
-
-      // Формируем строку дня недели
-      const dayOfWeek = dayjs(visitDate).format("dddd"); // Пример: "понедельник"
-
-      // Добавляем визит в соответствующий день
-      if (!visitsByDay[visitDate]) {
-        visitsByDay[visitDate] = {
-          dayOfWeek,
-          visits: [],
-        };
-      }
-
-      visitsByDay[visitDate].visits.push({
-        timeRange: `${visitStartTime.format("HH:mm")} - ${visitEndTime.format(
-          "HH:mm"
-        )}`,
-        doctorName: `${visit.Doctor.lastName} ${visit.Doctor.firstName}`,
-      });
-    });
-
-    // Формируем итоговый результат
-    const result = Object.entries(visitsByDay).map(
-      ([date, { dayOfWeek, visits }]) => ({
-        date: `${date} (${dayOfWeek})`,
-        visits,
-      })
-    );
-
-    return res.status(200).json(result);
-  } catch (error) {
-    console.error(error);
-    return res.status(500).json({ message: "Server error" });
-  }
-};
-
 export const getPatientCards = async (req, res) => {
   try {
     // Извлекаем токен из заголовков
@@ -805,6 +730,61 @@ export const getPatientNotes = async (req, res) => {
     return res.status(200).json({ notes });
   } catch (error) {
     console.error("Ошибка при получении примечаний:", error);
+    return res.status(500).json({ message: "Ошибка сервера" });
+  }
+};
+
+export const getWeeklySchedule = async (req, res) => {
+  try {
+    const { startDate, endDate } = req.params;
+
+    // Проверка, что даты переданы
+    if (!startDate || !endDate) {
+      return res
+        .status(400)
+        .json({ message: "Пожалуйста, укажите даты начала и конца недели." });
+    }
+
+    const visits = await Visit.findAll({
+      where: {
+        visitDate: {
+          [Op.between]: [startDate, endDate], // Промежуток времени
+        },
+      },
+      include: [
+        {
+          model: Doctor,
+          as: "doctor", // Псевдоним, указанный в ассоциации
+          attributes: ["id", "firstName", "lastName"], // Поля доктора
+        },
+      ],
+      order: [
+        ["visitDate", "ASC"],
+        ["visitTime", "ASC"],
+      ], // Сортировка по дате и времени
+    });
+
+    // Формирование расписания
+    const schedule = {};
+
+    visits.forEach((visit) => {
+      const doctorName = `${visit.doctor.firstName} ${visit.doctor.lastName}`;
+      const visitDate = visit.visitDate;
+
+      if (!schedule[doctorName]) schedule[doctorName] = {};
+      if (!schedule[doctorName][visitDate])
+        schedule[doctorName][visitDate] = [];
+
+      schedule[doctorName][visitDate].push({
+        time: visit.visitTime,
+        type: visit.visitType,
+        status: visit.visitStatus,
+      });
+    });
+
+    return res.status(200).json(schedule);
+  } catch (error) {
+    console.error("Ошибка при получении расписания:", error);
     return res.status(500).json({ message: "Ошибка сервера" });
   }
 };
