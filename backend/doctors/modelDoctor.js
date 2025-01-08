@@ -23,6 +23,10 @@ Doctor.init(
       type: DataTypes.STRING,
       allowNull: true,
     },
+    dateOfBirth: {
+      type: DataTypes.DATEONLY,
+      allowNull: false,
+    },
     email: {
       type: DataTypes.STRING,
       allowNull: false,
