@@ -103,20 +103,15 @@ export const createVisit = async (req, res) => {
   const visitDate = req.body.visitDate.trim(); // 2024-12-28
   const visitTime = req.body.visitTime.trim(); // 16:00:00
 
-  // Формируем строку даты и времени для проверки
-  const visitDateTimeString = `${visitDate}T${visitTime}:00`; // Получаем строку: '2024-12-28T16:00:00'
-  console.log("Generated date string:", visitDateTimeString);
-
-  // Преобразуем строку в объект dayjs для даты и времени
+  const visitDateTimeString = `${visitDate}T${visitTime}:00`; // Формируем строку даты и времени
   const visitStartTime = dayjs(visitDateTimeString);
-  console.log("Visit start time:", visitStartTime.format());
 
   if (!visitStartTime.isValid()) {
     return res.status(400).json({ message: "Invalid visit time" });
   }
 
   try {
-    // Проверка наличия токена в заголовке Authorization
+    // Проверка токена
     const token = req.headers.authorization?.split(" ")[1];
     if (!token) {
       return res
@@ -124,13 +119,11 @@ export const createVisit = async (req, res) => {
         .json({ message: "Authorization token is missing" });
     }
 
-    // Верификация JWT токена
     const decoded = jwt.verify(token, JWT_SECRET);
     if (!decoded) {
       return res.status(401).json({ message: "Invalid or expired token" });
     }
 
-    // Проверяем роль пользователя (если требуется)
     const user = await User.findByPk(decoded.id);
     if (!user || !(user.role === "admin" || user.role === "doctor")) {
       return res.status(403).json({
@@ -142,125 +135,101 @@ export const createVisit = async (req, res) => {
     const { doctorFullName, patientFullName, visitType } = req.body;
 
     // Поиск врача по полному ФИО
+    const [doctorLastName, doctorFirstName, doctorPatronymic] =
+      doctorFullName.split(" ");
     const doctor = await Doctor.findOne({
       where: {
-        firstName: doctorFullName.split(" ")[0],
-        lastName: doctorFullName.split(" ")[1],
+        firstName: doctorFirstName,
+        lastName: doctorLastName,
+        patronymic: doctorPatronymic || null, // Если отчество указано
       },
     });
     if (!doctor) {
       return res.status(404).json({ message: "Doctor not found" });
     }
+
+    // Поиск пациента по полному ФИО
     const [patientLastName, patientFirstName, patientPatronymic] =
       patientFullName.split(" ");
     const patientCard = await PatientCard.findOne({
       where: {
         firstName: patientFirstName,
         lastName: patientLastName,
-        patronymic: patientPatronymic || null, // Учет отчества, если указано
+        patronymic: patientPatronymic || null, // Учет отчества
       },
     });
     if (!patientCard) {
       return res.status(404).json({ message: "Patient not found" });
     }
 
-    // Определяем длительность визита в зависимости от типа визита
+    // Определяем длительность визита
     let visitDuration;
     if (visitType === "лечение") {
-      visitDuration = 60; // 1 час для лечения
-    } else if (visitType === "осмотр" || visitType === "консультация") {
-      visitDuration = 30; // 30 минут для осмотра и консультации
+      visitDuration = 60;
+    } else if (["осмотр", "консультация"].includes(visitType)) {
+      visitDuration = 30;
     } else {
       return res.status(400).json({ message: "Invalid visit type" });
     }
 
-    // Преобразуем время окончания визита
     const visitEndTime = visitStartTime.add(visitDuration, "minute");
-    console.log("Visit start time:", visitStartTime.format());
-    console.log("Visit end time:", visitEndTime.format());
 
-    // Проверка на пересечение времени визитов, учитывая длительность визита
+    // Проверка пересечения времени визитов
     const existingVisit = await Visit.findOne({
       where: {
         doctorId: doctor.id,
-        visitDate, // Сравниваем только дату
+        visitDate,
         [Op.and]: [
-          {
-            // Проверяем, что существующий визит не заканчивается раньше, чем новый начинается
-            visitTime: {
-              [Op.lt]: visitEndTime.format("HH:mm:ss"),
-            },
-          },
-          {
-            // Проверяем, что существующий визит не начинается позже, чем новый заканчивается
-            visitTime: {
-              [Op.gte]: visitStartTime.format("HH:mm:ss"),
-            },
-          },
+          { visitTime: { [Op.lt]: visitEndTime.format("HH:mm:ss") } },
+          { visitTime: { [Op.gte]: visitStartTime.format("HH:mm:ss") } },
         ],
       },
     });
 
-    // Если визит пересекается, вернуть ошибку
     if (existingVisit) {
       return res
         .status(400)
         .json({ message: "The doctor already has a visit at this time" });
     }
 
-    // Теперь нужно учитывать "лечение", которое занимает 1 час.
-    // Проверим, если уже есть запись типа "лечение", что следующее время не перекрывает его.
-
+    // Проверка на пересечение с лечением
     if (visitType !== "лечение") {
-      // Если новый визит - не лечение, проверяем, есть ли существующая запись типа "лечение"
       const existingTreatmentVisit = await Visit.findOne({
         where: {
           doctorId: doctor.id,
           visitDate,
-          visitType: "лечение", // Ищем визит типа "лечение"
+          visitType: "лечение",
           [Op.or]: [
-            {
-              visitTime: {
-                [Op.lte]: visitStartTime.format("HH:mm:ss"),
-              },
-            },
-            {
-              visitTime: {
-                [Op.gte]: visitEndTime.format("HH:mm:ss"),
-              },
-            },
+            { visitTime: { [Op.lte]: visitStartTime.format("HH:mm:ss") } },
+            { visitTime: { [Op.gte]: visitEndTime.format("HH:mm:ss") } },
           ],
         },
       });
 
       if (existingTreatmentVisit) {
-        // Если существует визит типа "лечение", который накладывается
         const treatmentEndTime = dayjs(
-          `${visitDate}T${existingTreatmentVisit.visitTime}:00`
-        ).add(60, "minute"); // Добавляем 1 час к времени окончания визита
+          `${visitDate}T${existingTreatmentVisit.visitTime}`
+        ).add(60, "minute");
 
         if (visitStartTime.isBefore(treatmentEndTime)) {
           return res.status(400).json({
             message: `The doctor already has a treatment visit that ends at ${treatmentEndTime.format(
               "HH:mm:ss"
-            )}, and the next visit can only start after ${treatmentEndTime
-              .add(30, "minute")
-              .format("HH:mm:ss")}`,
+            )}.`,
           });
         }
       }
     }
 
-    // Создание нового визита
+    // Создание визита
     const newVisit = await Visit.create({
       patientCardId: patientCard.id,
       doctorId: doctor.id,
       visitType,
-      visitDate, // Храним только дату
-      visitTime: visitStartTime.format("HH:mm:ss"), // Храним только время
+      visitDate,
+      visitTime: visitStartTime.format("HH:mm:ss"),
     });
 
-    // Возвращаем успешно созданный визит
     return res.status(201).json({ visit: newVisit });
   } catch (error) {
     console.error(error);
@@ -361,7 +330,7 @@ export const getClientVisits = async (req, res) => {
         {
           model: Doctor,
           as: "doctor",
-          attributes: ["firstName", "lastName", "specialty"], // Возвращаем только нужные поля
+          attributes: ["firstName", "lastName", "patronymic", "specialty"], // Возвращаем только нужные поля
         },
       ],
     });
@@ -395,7 +364,7 @@ const getVisitsByDate = async (date) => {
       {
         model: Doctor,
         as: "doctor",
-        attributes: ["id", "firstName", "lastName"],
+        attributes: ["id", "firstName", "lastName", "patronymic" || null],
       },
     ],
   });
@@ -406,13 +375,15 @@ const generateSchedule = async (date) => {
   const visits = await getVisitsByDate(date); // Получаем визиты на выбранную дату
 
   const doctors = await Doctor.findAll({
-    attributes: ["id", "firstName", "lastName"],
+    attributes: ["id", "firstName", "lastName", "patronymic"],
   });
 
   // Инициализация расписания для всех врачей
   const doctorSchedules = {};
   doctors.forEach((doctor) => {
-    const doctorKey = `${doctor.id}-${doctor.firstName} ${doctor.lastName}`;
+    const doctorKey = `${doctor.id}-${doctor.firstName} ${doctor.lastName} ${
+      doctor.patronymic || ""
+    }`.trim(); // Добавляем отчество, если оно есть
     doctorSchedules[doctorKey] = timeSlots.map((slot) => ({
       time: slot,
       status: "available",
@@ -421,8 +392,10 @@ const generateSchedule = async (date) => {
 
   // Логика обработки визитов и обновления расписания
   visits.forEach((visit) => {
-    const { id, firstName, lastName, visitTime, visitType } = visit.doctor;
-    const doctorKey = `${id}-${firstName} ${lastName}`;
+    const { id, firstName, lastName, patronymic } = visit.doctor;
+    const doctorKey = `${id}-${firstName} ${lastName} ${
+      patronymic || ""
+    }`.trim();
 
     // Проверяем, есть ли уже расписание для этого врача
     if (!doctorSchedules[doctorKey]) {
@@ -437,40 +410,18 @@ const generateSchedule = async (date) => {
     // Преобразуем visitTime в формат HH:mm
     const formattedVisitTime = visit.visitTime.slice(0, 5); // Отрезаем секунды
 
-    // Логирование для отладки
-    console.log(`Processing visit for doctor: ${doctorKey}`);
-    console.log(`Visit time: ${formattedVisitTime}`);
-    console.log(
-      `Available slots:`,
-      schedule.map((slot) => slot.time)
-    );
-
     // Находим индекс времени визита в расписании
     const visitStartIndex = timeSlots.indexOf(formattedVisitTime);
 
     // Если время визита найдено в расписании
     if (visitStartIndex !== -1) {
-      console.log(
-        `Found visit time in the schedule at index: ${visitStartIndex}`
-      );
-
       const visitDuration = visit.visitType === "лечение" ? 2 : 1; // Определение продолжительности визита
       for (let i = 0; i < visitDuration; i++) {
         const slotIndex = visitStartIndex + i;
         if (slotIndex < schedule.length && schedule[slotIndex]) {
-          // Проверяем, не занят ли слот, если нет - меняем статус на "booked"
-          if (schedule[slotIndex].status === "available") {
-            console.log(`Booking slot at ${schedule[slotIndex].time}`);
-            schedule[slotIndex].status = "booked";
-          } else {
-            console.log(
-              `Slot at ${schedule[slotIndex].time} is already booked.`
-            );
-          }
+          schedule[slotIndex].status = "booked";
         }
       }
-    } else {
-      console.log(`Visit time ${formattedVisitTime} not found in timeSlots.`);
     }
   });
 
@@ -717,7 +668,7 @@ export const getPatientNotes = async (req, res) => {
         {
           model: Doctor,
           as: "doctor", // Связь с доктором, подставляем его данные в ответ
-          attributes: ["firstName", "lastName", "specialty"], // Можно указать нужные поля доктора
+          attributes: ["firstName", "lastName", "patronymic", "specialty"], // Можно указать нужные поля доктора
         },
       ],
       order: [["createdAt", "DESC"]], // Сортируем по дате создания (по убыванию)
@@ -785,6 +736,67 @@ export const getWeeklySchedule = async (req, res) => {
     return res.status(200).json(schedule);
   } catch (error) {
     console.error("Ошибка при получении расписания:", error);
+    return res.status(500).json({ message: "Ошибка сервера" });
+  }
+};
+
+export const getMonthlySchedule = async (req, res) => {
+  try {
+    const { month } = req.params;
+
+    // Проверка, что месяц передан и имеет корректный формат
+    if (!month || !/^\d{4}-\d{2}$/.test(month)) {
+      return res.status(400).json({
+        message: "Пожалуйста, укажите месяц в формате YYYY-MM.",
+      });
+    }
+
+    // Определение начала и конца месяца
+    const startDate = `${month}-01`;
+    const endDate = new Date(
+      new Date(startDate).getFullYear(),
+      new Date(startDate).getMonth() + 1,
+      0
+    )
+      .toISOString()
+      .slice(0, 10);
+
+    // Получение всех записей за указанный месяц
+    const visits = await Visit.findAll({
+      where: {
+        visitDate: {
+          [Op.between]: [startDate, endDate],
+        },
+      },
+      include: [
+        {
+          model: Doctor,
+          as: "doctor",
+          attributes: ["id", "firstName", "lastName"],
+        },
+      ],
+      order: [
+        ["visitDate", "ASC"],
+        ["visitTime", "ASC"],
+      ], // Сортировка по дате и времени
+    });
+
+    // Формирование расписания
+    const schedule = {};
+
+    visits.forEach((visit) => {
+      const doctorName = `${visit.doctor.firstName} ${visit.doctor.lastName}`;
+      const visitDate = visit.visitDate;
+
+      if (!schedule[visitDate]) schedule[visitDate] = {};
+      if (!schedule[visitDate][doctorName]) schedule[visitDate][doctorName] = 0;
+
+      schedule[visitDate][doctorName] += 1; // Увеличиваем счетчик записей
+    });
+
+    return res.status(200).json(schedule);
+  } catch (error) {
+    console.error("Ошибка при получении расписания на месяц:", error);
     return res.status(500).json({ message: "Ошибка сервера" });
   }
 };

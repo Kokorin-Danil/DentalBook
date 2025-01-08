@@ -19,6 +19,10 @@ Doctor.init(
       type: DataTypes.STRING,
       allowNull: false,
     },
+    patronymic: {
+      type: DataTypes.STRING,
+      allowNull: true,
+    },
     email: {
       type: DataTypes.STRING,
       allowNull: false,

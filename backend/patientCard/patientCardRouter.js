@@ -10,6 +10,7 @@ import {
   createPatientNote,
   getPatientNotes,
   getWeeklySchedule,
+  getMonthlySchedule,
 } from "./patientCardController.js";
 
 const PatientCardRouter = express.Router();
@@ -28,5 +29,6 @@ PatientCardRouter.get(
   "/schedule/weekly/:startDate/:endDate",
   getWeeklySchedule
 );
+PatientCardRouter.get("/schedule/monthly/:month", getMonthlySchedule);
 
 export default PatientCardRouter;
