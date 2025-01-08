@@ -696,6 +696,17 @@ export const getWeeklySchedule = async (req, res) => {
         .json({ message: "Пожалуйста, укажите даты начала и конца недели." });
     }
 
+    // Проверка валидности формата дат
+    const isValidStartDate = /^\d{4}-\d{2}-\d{2}$/.test(startDate);
+    const isValidEndDate = /^\d{4}-\d{2}-\d{2}$/.test(endDate);
+
+    if (!isValidStartDate || !isValidEndDate) {
+      return res
+        .status(400)
+        .json({ message: "Неверный формат дат. Используйте YYYY-MM-DD." });
+    }
+
+    // Получение визитов за указанный период
     const visits = await Visit.findAll({
       where: {
         visitDate: {
@@ -706,7 +717,7 @@ export const getWeeklySchedule = async (req, res) => {
         {
           model: Doctor,
           as: "doctor", // Псевдоним, указанный в ассоциации
-          attributes: ["id", "firstName", "lastName"], // Поля доктора
+          attributes: ["id", "firstName", "lastName", "patronymic"], // Поля доктора
         },
       ],
       order: [
@@ -719,19 +730,29 @@ export const getWeeklySchedule = async (req, res) => {
     const schedule = {};
 
     visits.forEach((visit) => {
-      const doctorName = `${visit.doctor.firstName} ${visit.doctor.lastName}`;
+      const doctorKey = `${visit.doctor.id}-${visit.doctor.firstName} ${
+        visit.doctor.lastName
+      } ${visit.doctor.patronymic || ""}`.trim(); // Учет отчества врача
       const visitDate = visit.visitDate;
 
-      if (!schedule[doctorName]) schedule[doctorName] = {};
-      if (!schedule[doctorName][visitDate])
-        schedule[doctorName][visitDate] = [];
+      // Инициализация структуры для врача и даты
+      if (!schedule[doctorKey]) schedule[doctorKey] = {};
+      if (!schedule[doctorKey][visitDate]) schedule[doctorKey][visitDate] = [];
 
-      schedule[doctorName][visitDate].push({
-        time: visit.visitTime,
+      // Добавление информации о визите
+      schedule[doctorKey][visitDate].push({
+        time: visit.visitTime.slice(0, 5), // Форматируем время HH:mm
         type: visit.visitType,
         status: visit.visitStatus,
       });
     });
+
+    // Проверка, есть ли данные для возврата
+    if (Object.keys(schedule).length === 0) {
+      return res
+        .status(200)
+        .json({ message: "Визиты на указанную неделю отсутствуют." });
+    }
 
     return res.status(200).json(schedule);
   } catch (error) {
@@ -759,7 +780,7 @@ export const getMonthlySchedule = async (req, res) => {
       0
     )
       .toISOString()
-      .slice(0, 10);
+      .slice(0, 10); // Конец месяца в формате YYYY-MM-DD
 
     // Получение всех записей за указанный месяц
     const visits = await Visit.findAll({
@@ -772,7 +793,7 @@ export const getMonthlySchedule = async (req, res) => {
         {
           model: Doctor,
           as: "doctor",
-          attributes: ["id", "firstName", "lastName"],
+          attributes: ["id", "firstName", "lastName", "patronymic"], // Указаны все необходимые поля врача
         },
       ],
       order: [
@@ -785,14 +806,28 @@ export const getMonthlySchedule = async (req, res) => {
     const schedule = {};
 
     visits.forEach((visit) => {
-      const doctorName = `${visit.doctor.firstName} ${visit.doctor.lastName}`;
       const visitDate = visit.visitDate;
+      const doctorName = `${visit.doctor.firstName} ${visit.doctor.lastName} ${
+        visit.doctor.patronymic || ""
+      }`.trim(); // Формируем ФИО врача с учетом отчества
 
-      if (!schedule[visitDate]) schedule[visitDate] = {};
-      if (!schedule[visitDate][doctorName]) schedule[visitDate][doctorName] = 0;
+      if (!schedule[visitDate]) {
+        schedule[visitDate] = {};
+      }
+
+      if (!schedule[visitDate][doctorName]) {
+        schedule[visitDate][doctorName] = 0;
+      }
 
       schedule[visitDate][doctorName] += 1; // Увеличиваем счетчик записей
     });
+
+    // Проверка на отсутствие записей
+    if (Object.keys(schedule).length === 0) {
+      return res
+        .status(200)
+        .json({ message: "Записи на указанный месяц отсутствуют." });
+    }
 
     return res.status(200).json(schedule);
   } catch (error) {

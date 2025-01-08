@@ -10,8 +10,15 @@ const createDoctor = async (req, res) => {
       return res.status(400).json({ errors: errors.array() });
     }
 
-    const { firstName, lastName, email, specialty, password, gender } =
-      req.body;
+    const {
+      firstName,
+      lastName,
+      patronymic,
+      email,
+      specialty,
+      password,
+      gender,
+    } = req.body;
 
     // Проверка на существование пользователя с таким email
     const existingUser = await User.findOne({ where: { email } });
@@ -35,6 +42,7 @@ const createDoctor = async (req, res) => {
     const newDoctor = await Doctor.create({
       firstName,
       lastName,
+      patronymic, // Добавляем отчество
       email,
       specialty,
       userId: newUser.id, // Связываем врача с пользователем через userId
