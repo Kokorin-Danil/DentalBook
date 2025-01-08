@@ -14,6 +14,7 @@ const createDoctor = async (req, res) => {
       firstName,
       lastName,
       patronymic,
+      dateOfBirth,
       email,
       specialty,
       password,
@@ -42,7 +43,8 @@ const createDoctor = async (req, res) => {
     const newDoctor = await Doctor.create({
       firstName,
       lastName,
-      patronymic, // Добавляем отчество
+      patronymic,
+      dateOfBirth, // Добавляем отчество
       email,
       specialty,
       userId: newUser.id, // Связываем врача с пользователем через userId
