@@ -185,6 +185,67 @@ PatientNote.init(
   }
 );
 
+class Snapshot extends Model {}
+
+Snapshot.init(
+  {
+    id: {
+      type: DataTypes.INTEGER,
+      autoIncrement: true,
+      primaryKey: true,
+    },
+    createdAt: {
+      type: DataTypes.DATE,
+      allowNull: false,
+      defaultValue: DataTypes.NOW,
+    },
+    visitId: {
+      type: DataTypes.INTEGER,
+      allowNull: false,
+      references: {
+        model: Visit, // Ссылка на модель визитов
+        key: "id",
+      },
+    },
+    patientCardId: {
+      type: DataTypes.INTEGER,
+      allowNull: false,
+      references: {
+        model: PatientCard, // Ссылка на модель карты пациента
+        key: "id",
+      },
+    },
+    snapshotFile: {
+      type: DataTypes.STRING,
+      allowNull: false,
+    },
+    toothNumbers: {
+      type: DataTypes.STRING,
+      allowNull: true,
+    },
+    note: {
+      type: DataTypes.TEXT,
+      allowNull: true,
+    },
+  },
+  {
+    sequelize: dbST,
+    modelName: "Snapshot",
+    tableName: "snapshots",
+    timestamps: false, // Поле createdAt управляется вручную
+  }
+);
+
+// Ассоциации
+Visit.hasMany(Snapshot, { foreignKey: "visitId", as: "snapshots" });
+Snapshot.belongsTo(Visit, { foreignKey: "visitId", as: "visit" });
+
+PatientCard.hasMany(Snapshot, { foreignKey: "patientCardId", as: "snapshots" });
+Snapshot.belongsTo(PatientCard, {
+  foreignKey: "patientCardId",
+  as: "patientCard",
+});
+
 // Ассоциации для PatientNote
 PatientCard.hasMany(PatientNote, {
   as: "patientNotes",
@@ -212,4 +273,4 @@ Visit.belongsTo(Doctor, { foreignKey: "doctorId", as: "doctor" });
 User.hasOne(PatientCard, { foreignKey: "clientId", as: "patientCard" });
 PatientCard.belongsTo(User, { foreignKey: "clientId", as: "user" });
 
-export { PatientCard, Visit, PatientNote };
+export { PatientCard, Visit, PatientNote, Snapshot };

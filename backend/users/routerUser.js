@@ -6,7 +6,7 @@ import {
   updateUser,
 } from "./controllerUser.js";
 import { authenticateToken } from "../utils/authMiddleware.js";
-import upload from "../utils/middleware.js";
+import { uploadAvatar } from "../utils/middleware.js";
 
 const authRouter = Router();
 
@@ -17,7 +17,7 @@ authRouter.post("/patientCard", getPatientCardIdByFullName);
 authRouter.put(
   "/profile/update",
   authenticateToken,
-  upload.single("avatar"),
+  uploadAvatar.single("avatar"),
   updateUser
 );
 

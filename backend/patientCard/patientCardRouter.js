@@ -11,7 +11,10 @@ import {
   getPatientNotes,
   getWeeklySchedule,
   getMonthlySchedule,
+  createSnapshot,
 } from "./patientCardController.js";
+import { uploadSnapshot } from "../utils/middleware.js";
+import { authenticateToken } from "../utils/authMiddleware.js";
 
 const PatientCardRouter = express.Router();
 
@@ -30,5 +33,11 @@ PatientCardRouter.get(
   getWeeklySchedule
 );
 PatientCardRouter.get("/schedule/monthly/:month", getMonthlySchedule);
+PatientCardRouter.post(
+  "/snapshots/create",
+  authenticateToken,
+  uploadSnapshot.single("snapshots"),
+  createSnapshot
+);
 
 export default PatientCardRouter;

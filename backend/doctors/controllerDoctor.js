@@ -57,6 +57,35 @@ const createDoctor = async (req, res) => {
   }
 };
 
+const getDoctorInfo = async (req, res) => {
+  try {
+    const { doctorId } = req.params;
+
+    // Поиск доктора
+    const doctor = await Doctor.findByPk(doctorId);
+
+    if (!doctor) {
+      return res.status(404).json({ message: "Доктор не найден" });
+    }
+
+    // Формируем ответ
+    const response = {
+      fullName: `${doctor.lastName} ${doctor.firstName} ${
+        doctor.patronymic || ""
+      }`.trim(),
+      dateOfBirth: doctor.dateOfBirth,
+      specialty: doctor.specialty,
+      email: doctor.email,
+    };
+
+    res.status(200).json(response);
+  } catch (error) {
+    console.error("Ошибка при получении информации о докторе:", error);
+    res.status(500).json({ message: "Ошибка сервера", error: error.message });
+  }
+};
+
 export default {
   createDoctor,
+  getDoctorInfo,
 };

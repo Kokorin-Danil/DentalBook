@@ -1,4 +1,9 @@
-import { PatientCard, Visit, PatientNote } from "./modelPatientCard.js";
+import {
+  PatientCard,
+  Visit,
+  PatientNote,
+  Snapshot,
+} from "./modelPatientCard.js";
 import User from "../users/modelUser.js";
 import jwt from "jsonwebtoken";
 import dotenv from "dotenv";
@@ -521,7 +526,8 @@ export const getPatientCards = async (req, res) => {
 export const getPatientProfile = async (req, res) => {
   try {
     // Получение токена из заголовка Authorization
-    const token = req.headers.authorization?.split(" ")[1];
+    const authHeader = req.headers.authorization;
+    const token = authHeader && authHeader.split(" ")[1];
     if (!token) {
       return res.status(401).json({ message: "Токен не предоставлен" });
     }
@@ -534,8 +540,9 @@ export const getPatientProfile = async (req, res) => {
       return res.status(401).json({ message: "Неверный или истёкший токен" });
     }
 
-    // Проверяем, что роль пользователя не "client"
-    if (decoded.role === "client") {
+    // Проверяем роль пользователя
+    const allowedRoles = ["admin", "doctor"];
+    if (!allowedRoles.includes(decoded.role)) {
       return res.status(403).json({ message: "Доступ запрещен" });
     }
 
@@ -558,14 +565,16 @@ export const getPatientProfile = async (req, res) => {
       include: [
         {
           model: User,
-          as: "user", // Предполагается связь между PatientCard и User
-          attributes: ["email", "lastLogin"],
+          as: "user", // Связь между PatientCard и User
+          attributes: ["email", "lastLogin", "avatar"], // Добавляем avatar
         },
       ],
     });
 
-    if (!patientCard) {
-      return res.status(404).json({ message: "Карта пациента не найдена" });
+    if (!patientCard || !patientCard.user) {
+      return res
+        .status(404)
+        .json({ message: "Карта пациента или пользователь не найдены" });
     }
 
     // Форматируем дату рождения
@@ -574,7 +583,7 @@ export const getPatientProfile = async (req, res) => {
       : "Не указана";
 
     // Форматируем дату последнего входа
-    const lastLoginFormatted = patientCard.user?.lastLogin
+    const lastLoginFormatted = patientCard.user.lastLogin
       ? dayjs(patientCard.user.lastLogin).format("DD.MM.YYYY HH:mm")
       : "Неизвестно";
 
@@ -587,13 +596,18 @@ export const getPatientProfile = async (req, res) => {
       policy: patientCard.policyNumber || "Не указан",
       phoneNumber: patientCard.phoneNumber || "Не указан",
       address: patientCard.address || "Не указан",
-      email: patientCard.user?.email || "Не указан",
+      email: patientCard.user.email || "Не указан",
       lastLogin: lastLoginFormatted,
+      avatar: patientCard.user.avatar || "uploads/avatars/default_avatar.png", // Добавляем аватар
     };
 
     return res.status(200).json({ profile });
   } catch (error) {
-    console.error("Ошибка при получении профиля пациента:", error);
+    console.error(
+      "Ошибка при получении профиля пациента:",
+      error.message,
+      error.stack
+    );
     return res.status(500).json({ message: "Ошибка сервера" });
   }
 };
@@ -833,5 +847,46 @@ export const getMonthlySchedule = async (req, res) => {
   } catch (error) {
     console.error("Ошибка при получении расписания на месяц:", error);
     return res.status(500).json({ message: "Ошибка сервера" });
+  }
+};
+
+export const createSnapshot = async (req, res) => {
+  try {
+    // Проверка, загрузился ли файл
+    if (!req.file) {
+      return res.status(400).json({ message: "Файл снимка обязателен" });
+    }
+
+    const { visitId, patientCardId, toothNumbers, note } = req.body;
+
+    // Проверка существования визита
+    const visit = await Visit.findByPk(visitId);
+    if (!visit) {
+      return res.status(404).json({ message: "Указанный визит не найден" });
+    }
+
+    // Проверка существования карты пациента
+    const patientCard = await PatientCard.findByPk(patientCardId);
+    if (!patientCard) {
+      return res
+        .status(404)
+        .json({ message: "Указанная карта пациента не найдена" });
+    }
+
+    // Создание снимка
+    const snapshot = await Snapshot.create({
+      visitId,
+      patientCardId,
+      snapshotFile: req.file.path, // Сохраняем путь к файлу
+      toothNumbers, // Сохраняем как строку
+      note,
+    });
+
+    return res.status(201).json({ message: "Снимок успешно создан", snapshot });
+  } catch (error) {
+    console.error(error);
+    return res
+      .status(500)
+      .json({ message: "Ошибка сервера", error: error.message });
   }
 };
