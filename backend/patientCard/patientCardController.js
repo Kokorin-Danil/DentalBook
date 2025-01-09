@@ -898,3 +898,50 @@ export const createSnapshot = async (req, res) => {
       .json({ message: "Ошибка сервера", error: error.message });
   }
 };
+
+export const getSnapshotsByPatientCard = async (req, res) => {
+  try {
+    // Получение patientCardId из параметров запроса
+    const { patientCardId } = req.params;
+
+    // Получаем все снимки, связанные с данным patientCardId
+    const snapshots = await Snapshot.findAll({
+      where: { patientCardId }, // Фильтруем по patientCardId
+      include: [
+        {
+          model: Visit,
+          as: "visit", // Ассоциация с моделью Visit
+          attributes: ["id"], // Только ID визита
+        },
+        {
+          model: PatientCard,
+          as: "patientCard", // Ассоциация с моделью PatientCard
+          attributes: ["id"], // Мы уже фильтруем по patientCardId, поэтому больше ничего не нужно
+        },
+      ],
+    });
+
+    if (!snapshots || snapshots.length === 0) {
+      return res
+        .status(404)
+        .json({ message: "Снимки не найдены для данного пациента" });
+    }
+
+    // Формируем массив снимков с необходимыми данными
+    const snapshotsData = snapshots.map((snapshot) => ({
+      id: snapshot.id, // ID снимка
+      createdAt: snapshot.createdAt, // Дата загрузки
+      snapshotFile: snapshot.snapshotFile, // Путь к снимку
+      visit: snapshot.visit.id, // ID визита
+      toothNumbers: snapshot.toothNumbers, // Зубы
+      note: snapshot.note, // Описание
+    }));
+
+    return res.status(200).json({ snapshots: snapshotsData });
+  } catch (error) {
+    console.error("Ошибка при получении снимков:", error);
+    return res
+      .status(500)
+      .json({ message: "Ошибка сервера", error: error.message });
+  }
+};
