@@ -11,6 +11,7 @@
     <?php include 'profile.php'; ?>
     <?php include 'navbar.php'; ?>
     <div class="container mt-5">
+
         <!-- Таблица визитов -->
         <div class="table-container">
             <button class="btn btn-primary btn-add" data-bs-toggle="modal" data-bs-target="#addVisitModal">Добавить визит</button>
@@ -33,8 +34,8 @@
         </div>
     </div>
 
-<!-- Модальное окно -->
-<div class="modal fade" id="addVisitModal" tabindex="-1" aria-labelledby="addVisitModalLabel" aria-hidden="true">
+    <!-- Модальное окно -->
+    <div class="modal fade" id="addVisitModal" tabindex="-1" aria-labelledby="addVisitModalLabel" aria-hidden="true">
         <div class="modal-dialog">
             <div class="modal-content">
                 <!-- Заголовок модального окна -->
@@ -49,7 +50,7 @@
                         <div class="row mb-3">
                             <div class="col-md-12">
                                 <label for="patientFullName" class="form-label">ФИО пациента</label>
-                                <input type="text" id="patientFullName" class="form-control" placeholder="Введите ФИО пациента" readonly>
+                                <input type="text" id="patientFullName" class="form-control" placeholder="Введите ФИО пациента">
                             </div>
                         </div>
 
@@ -102,7 +103,7 @@
             const visitTimeSelect = document.getElementById('visitTime');
             const startTime = new Date('1970-01-01T09:00:00');
             const endTime = new Date('1970-01-01T17:30:00');
-            const interval = 30; // Интервал в минутах
+            const interval = 30;
 
             while (startTime <= endTime) {
                 const option = document.createElement('option');
@@ -113,58 +114,28 @@
             }
         });
 
-        // Получение ID карты пациента из параметров URL
-        function getPatientCardId() {
-            const params = new URLSearchParams(window.location.search);
-            return params.get('patientCardId');
-        }
-        
-        document.addEventListener('DOMContentLoaded', () => {
-        const patientCardId = getPatientCardId(); // Извлекаем patientCardId из URL
-        const notesLink = document.getElementById('notesLink'); // Получаем элемент ссылки на примечания
-        if (patientCardId) {
-            notesLink.href = `/users/notes.php?patientCardId=${patientCardId}`; // Устанавливаем ссылку с параметром
-        } else {
-            notesLink.href = "#"; // Если ID отсутствует, ссылка будет неактивной
-        }
-    });
-
-        // Получение токена из cookies
-        function getCookie(name) {
-            const value = `; ${document.cookie}`;
-            const parts = value.split(`; ${name}=`);
-            if (parts.length === 2) return parts.pop().split(';').shift();
-        }
-        // Функции для загрузки профиля пациента и визитов
+        // Загрузка данных пациента и визитов
         document.addEventListener('DOMContentLoaded', async () => {
             const patientCardId = new URLSearchParams(window.location.search).get('patientCardId');
-            const token = document.cookie.split('; ').find(row => row.startsWith('token=')).split('=')[1];
+            const token = getCookie('token');
 
             async function loadPatientProfile() {
                 const response = await fetch(`http://localhost:3003/api/patient-cards/get/patient_profile/${patientCardId}`, {
                     headers: { Authorization: `Bearer ${token}` }
                 });
                 const data = await response.json();
-                document.getElementById('patientProfile').innerHTML = `
-                    <div class="row">
-                        <div class="col-md-9">
-                            <p><strong>ФИО:</strong> ${data.profile.fullName}</p>
-                            <p><strong>Дата рождения:</strong> ${data.profile.dateOfBirth}</p>
-                            <p><strong>Полис:</strong> ${data.profile.policy}</p>
-                            <p><strong>Контактный телефон:</strong> ${data.profile.phoneNumber}</p>
-                            <p><strong>Email:</strong> ${data.profile.email}</p>
-                            <p><strong>Адрес:</strong> ${data.profile.address}</p>
-                            <p><strong>Последний вход:</strong> ${data.profile.lastLogin}</p>
-                        </div>
-                    </div>`;
 
-                // Подставить ФИО пациента в модальное окно
+                // Устанавливаем ФИО пациента
                 document.getElementById('patientFullName').value = data.profile.fullName;
+
+                // Устанавливаем ссылку на примечания
+                const notesLink = document.getElementById('notesLink');
+                if (notesLink && patientCardId) {
+                    notesLink.href = `/users/notes.php?patientCardId=${patientCardId}`;
+                }
             }
 
             async function loadVisits() {
-                const token = document.cookie.split('; ').find(row => row.startsWith('token=')).split('=')[1];
-                const patientCardId = new URLSearchParams(window.location.search).get('patientCardId');
                 const response = await fetch(`http://localhost:3003/api/patient-cards/visit/all/${patientCardId}`, {
                     headers: { Authorization: `Bearer ${token}` }
                 });
@@ -186,7 +157,7 @@
                     </tr>`).join('');
             }
 
-            document.getElementById('saveVisitButton').addEventListener('click', async () => {
+            async function saveVisit() {
                 const visitData = {
                     patientFullName: document.getElementById('patientFullName').value,
                     visitType: document.getElementById('visitType').value,
@@ -211,10 +182,19 @@
                 } else {
                     alert('Ошибка при добавлении визита');
                 }
-            });
+            }
 
+            document.getElementById('saveVisitButton').addEventListener('click', saveVisit);
+            await loadPatientProfile();
             await loadVisits();
         });
+
+        // Получение токена из cookies
+        function getCookie(name) {
+            const value = `; ${document.cookie}`;
+            const parts = value.split(`; ${name}=`);
+            if (parts.length === 2) return parts.pop().split(';').shift();
+        }
     </script>
 </body>
 </html>

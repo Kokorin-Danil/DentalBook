@@ -52,32 +52,6 @@
             font-weight: bold;
         }
 
-        .schedule-grid {
-            display: grid;
-            grid-template-columns: repeat(7, 1fr);
-            gap: 10px;
-        }
-
-        .day-column {
-            display: flex;
-            flex-direction: column;
-            background-color: #fff;
-            border: 1px solid #ddd;
-            border-radius: 8px;
-            padding: 10px;
-            min-height: 300px;
-        }
-
-        .day-header {
-            text-align: center;
-            font-weight: bold;
-            margin-bottom: 10px;
-            background-color: #007bff;
-            color: #fff;
-            padding: 10px;
-            border-radius: 8px;
-        }
-
         .month-grid {
             display: grid;
             grid-template-columns: repeat(7, 1fr);
@@ -137,7 +111,7 @@
                 <select class="form-select d-inline" id="viewSelector" style="max-width: 200px; margin-right: 10px;">
                     <option value="day">На день</option>
                     <option value="week">На неделю</option>
-                    <option value="/month.php">На месяц</option>
+                    <option value="month">На месяц</option>
                 </select>
                 <label for="scheduleDate" class="form-label">Выберите дату:</label>
                 <input type="date" id="scheduleDate" class="form-control d-inline" style="max-width: 200px; margin-right: 10px;">
@@ -147,7 +121,6 @@
                 </select>
             </div>
 
-            <!-- Day View -->
             <div id="dayView">
                 <table class="table">
                     <thead>
@@ -158,16 +131,6 @@
                     <tbody id="scheduleTableBody"></tbody>
                 </table>
             </div>
-
-            <!-- Week View -->
-            <div id="weekView" style="display: none;">
-                <div class="schedule-grid" id="weekScheduleBody"></div>
-            </div>
-
-            <!-- Month View -->
-            <div id="monthView" style="display: none;">
-                <div class="month-grid" id="monthScheduleBody"></div>
-            </div>
         </div>
     </div>
 
@@ -177,55 +140,35 @@
         const scheduleDateInput = document.getElementById('scheduleDate');
         const doctorFilter = document.getElementById('doctorFilter');
         const viewSelector = document.getElementById('viewSelector');
-        const weekScheduleBody = document.getElementById('weekScheduleBody');
-        const monthScheduleBody = document.getElementById('monthScheduleBody');
-        const dayView = document.getElementById('dayView');
-        const weekView = document.getElementById('weekView');
-        const monthView = document.getElementById('monthView');
         const today = new Date().toISOString().split('T')[0];
 
         let scheduleData = {};
 
+        // Установка текущей даты
         scheduleDateInput.value = today;
 
+        // Загрузка расписания на день
         document.addEventListener('DOMContentLoaded', async () => {
             await loadSchedule(today);
         });
 
-        viewSelector.addEventListener('change', async () => {
-            const view = viewSelector.value;
-            dayView.style.display = view === 'day' ? 'block' : 'none';
-            weekView.style.display = view === 'week' ? 'block' : 'none';
-            monthView.style.display = view === 'month' ? 'block' : 'none';
-
-            if (view === 'day') {
-                await loadSchedule(scheduleDateInput.value);
-            } else if (view === 'week') {
-                await loadWeeklySchedule();
-            } else if (view === 'month') {
-                renderMonthSchedule();
-            }
-        });
-
+        // Обновление расписания при смене даты
         scheduleDateInput.addEventListener('change', async () => {
-            const view = viewSelector.value;
-            if (view === 'day') {
-                await loadSchedule(scheduleDateInput.value);
-            } else if (view === 'week') {
-                await loadWeeklySchedule();
-            } else if (view === 'month') {
-                renderMonthSchedule();
-            }
+            await loadSchedule(scheduleDateInput.value);
         });
 
-        doctorFilter.addEventListener('change', async () => {
-            const view = viewSelector.value;
-            if (view === 'day') {
-                renderDaySchedule(scheduleData);
-            } else if (view === 'week') {
-                await loadWeeklySchedule();
-            } else if (view === 'month') {
-                renderMonthSchedule();
+        // Фильтр врачей
+        doctorFilter.addEventListener('change', () => {
+            renderDaySchedule(scheduleData);
+        });
+
+        // Переключение видов расписания
+        viewSelector.addEventListener('change', () => {
+            const selectedView = viewSelector.value;
+            if (selectedView === 'week') {
+                window.location.href = '/kalendar/week.php';
+            } else if (selectedView === 'month') {
+                window.location.href = '/kalendar/month.php';
             }
         });
 
@@ -237,21 +180,6 @@
                 renderDaySchedule(scheduleData);
             } catch (error) {
                 console.error('Ошибка при загрузке расписания:', error);
-                alert('Не удалось загрузить расписание');
-            }
-        }
-
-        async function loadWeeklySchedule() {
-            try {
-                const startDate = new Date(scheduleDateInput.value);
-                const endDate = new Date(startDate);
-                endDate.setDate(startDate.getDate() + 6);
-
-                const response = await fetch(`http://localhost:3003/api/patient-cards/schedule/weekly/${startDate.toISOString().split('T')[0]}/${endDate.toISOString().split('T')[0]}`);
-                const weekData = await response.json();
-                renderWeekSchedule(weekData);
-            } catch (error) {
-                console.error('Ошибка при загрузке расписания на неделю:', error);
                 alert('Не удалось загрузить расписание');
             }
         }
@@ -298,66 +226,6 @@
                 scheduleTableBody.appendChild(row);
             });
         }
-
-        function renderWeekSchedule(data) {
-            const filter = doctorFilter.value;
-            weekScheduleBody.innerHTML = '';
-            const daysOfWeek = ["Воскресенье", "Понедельник", "Вторник", "Среда", "Четверг", "Пятница", "Суббота"];
-            const startDate = new Date(scheduleDateInput.value);
-
-            for (let i = 0; i < 7; i++) {
-                const dayColumn = document.createElement('div');
-                dayColumn.className = 'day-column';
-
-                const date = new Date(startDate);
-                date.setDate(startDate.getDate() + i);
-
-                const dayHeader = document.createElement('div');
-                dayHeader.className = 'day-header';
-                dayHeader.textContent = `${date.getDate()} ${daysOfWeek[date.getDay()]}`;
-                dayColumn.appendChild(dayHeader);
-
-                Object.keys(data).forEach(doctor => {
-                    if (filter === 'all' || doctor === filter) {
-                        const appointments = data[doctor]?.[date.toISOString().split('T')[0]] || [];
-                        appointments.forEach(app => {
-                            const appointmentDiv = document.createElement('div');
-                            appointmentDiv.className = `appointment ${app.status.toLowerCase()}`;
-                            appointmentDiv.textContent = `${app.time} - ${app.type} (${app.status})`;
-                            dayColumn.appendChild(appointmentDiv);
-                        });
-                    }
-                });
-
-                weekScheduleBody.appendChild(dayColumn);
-            }
-        }
-
-        function renderMonthSchedule() {
-            const filter = doctorFilter.value;
-            monthScheduleBody.innerHTML = '';
-            const currentDate = new Date(scheduleDateInput.value);
-            const year = currentDate.getFullYear();
-            const month = currentDate.getMonth();
-            const daysInMonth = new Date(year, month + 1, 0).getDate();
-
-            for (let day = 1; day <= daysInMonth; day++) {
-                const cell = document.createElement('div');
-                cell.className = 'month-cell';
-
-                const cellHeader = document.createElement('div');
-                cellHeader.className = 'month-cell-header';
-                cellHeader.textContent = `${day} ${currentDate.toLocaleString('default', { month: 'long' })}`;
-                cell.appendChild(cellHeader);
-
-                const visitInfo = document.createElement('div');
-                visitInfo.className = day % 2 === 0 ? 'has-visit' : 'no-visit';
-                visitInfo.textContent = day % 2 === 0 ? '1 Визит' : 'Визитов нет';
-                cell.appendChild(visitInfo);
-
-                monthScheduleBody.appendChild(cell);
-            }
-        } 
     </script>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>

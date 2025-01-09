@@ -20,16 +20,18 @@
             box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
         }
 
-        .profile-icon {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100px;
+        .profile-icon img {
             width: 100px;
-            background-color: #f8f9fa;
-            border: 1px solid #ddd;
+            height: 100px;
             border-radius: 50%;
-            margin: auto;
+            object-fit: cover;
+            border: 1px solid #ddd;
+            background-color: #f8f9fa;
+        }
+
+        .profile-icon i {
+            font-size: 60px;
+            color: #ddd;
         }
 
         .actions {
@@ -176,7 +178,11 @@
                     </div>
                     <div class="col-md-4 text-center">
                         <div class="profile-icon">
-                            <i class="fas fa-user fa-5x"></i>
+                            ${
+                                profile.avatar 
+                                ? `<img src="${profile.avatar}" alt="Аватар">`
+                                : `<i class="fas fa-user"></i>`
+                            }
                         </div>
                     </div>
                 </div>

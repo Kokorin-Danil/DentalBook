@@ -7,31 +7,10 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
     <style>
-        #sidebar {
-            width: 250px;
-            background-color: #f8f9fa;
-            padding: 20px;
-            height: 100vh;
-            position: fixed;
-            top: 0;
-            left: 0;
-            overflow-y: auto;
-            border-right: 1px solid #ddd;
-            box-shadow: 2px 0 8px rgba(0, 0, 0, 0.05);
-        }
-        #sidebar h4 {
-            font-weight: bold;
-            color: #007bff;
-            text-align: center;
-            margin-bottom: 1.5rem;
-        }
         body {
             background-color: #f4f6f9;
         }
-        #content {
-            margin-left: 270px;
-            padding: 20px;
-        }
+
         .table-container {
             background-color: #ffffff;
             border: 1px solid #ddd;
@@ -39,10 +18,12 @@
             padding: 20px;
             box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
         }
+
         .btn-primary {
             background: linear-gradient(45deg, #007bff, #0056b3);
             border: none;
         }
+
         .btn-primary:hover {
             background: linear-gradient(45deg, #0056b3, #003f88);
         }
@@ -51,15 +32,16 @@
 <body>
     <?php include 'profile.php'; ?>
     <?php include 'navbar.php'; ?>
+
     <div class="container mt-5">
         <div class="table-container">
-            <form>
-                <div class="d-flex justify-content-between align-items-center mb-3">
-                    <h4>Примечания</h4>
-                    <button type="button" class="btn btn-success btn-add" data-bs-toggle="modal" data-bs-target="#addNoteModal">
-                        <i class="fas fa-plus"></i> Добавить
-                    </button>
-                </div>
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h4>Примечания</h4>
+                <button type="button" class="btn btn-success btn-add" data-bs-toggle="modal" data-bs-target="#addNoteModal">
+                    <i class="fas fa-plus"></i> Добавить
+                </button>
+            </div>
+            <div class="table-responsive">
                 <table class="table">
                     <thead>
                         <tr>
@@ -96,10 +78,11 @@
                         </tr>
                     </tbody>
                 </table>
-            </form>
+            </div>
         </div>
     </div>
 
+    <!-- Модальное окно -->
     <div class="modal fade" id="addNoteModal" tabindex="-1" aria-labelledby="addNoteModalLabel" aria-hidden="true">
         <div class="modal-dialog">
             <div class="modal-content">
@@ -145,7 +128,6 @@
             </div>
         </div>
     </div>
-
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 </body>
