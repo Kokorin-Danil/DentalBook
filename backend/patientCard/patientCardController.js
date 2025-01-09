@@ -11,7 +11,7 @@ import crypto from "crypto";
 import Doctor from "../doctors/modelDoctor.js";
 import { Op } from "sequelize";
 import dayjs from "dayjs";
-
+import path from "path";
 dotenv.config();
 
 const JWT_SECRET = process.env.JWT_SECRET;
@@ -875,11 +875,17 @@ export const createSnapshot = async (req, res) => {
         .json({ message: "Указанная карта пациента не найдена" });
     }
 
+    // Преобразование пути к файлу
+    const snapshotPath = path.join(
+      "backend",
+      req.file.path.replace(/\\/g, "/") // Заменяем обратные слэши на прямые
+    );
+
     // Создание снимка
     const snapshot = await Snapshot.create({
       visitId,
       patientCardId,
-      snapshotFile: req.file.path, // Сохраняем путь к файлу
+      snapshotFile: snapshotPath, // Сохраняем преобразованный путь
       toothNumbers, // Сохраняем как строку
       note,
     });
