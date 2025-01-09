@@ -598,7 +598,9 @@ export const getPatientProfile = async (req, res) => {
       address: patientCard.address || "Не указан",
       email: patientCard.user.email || "Не указан",
       lastLogin: lastLoginFormatted,
-      avatar: patientCard.user.avatar || "uploads/avatars/default_avatar.png", // Добавляем аватар
+      avatar:
+        patientCard.user.avatar ||
+        "/backend/uploads/avatars/default_avatar.png", // Добавляем аватар
     };
 
     return res.status(200).json({ profile });

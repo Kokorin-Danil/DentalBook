@@ -41,7 +41,7 @@ User.init(
     avatar: {
       type: DataTypes.STRING,
       allowNull: true,
-      defaultValue: "uploads/avatars/default_avatar.png",
+      defaultValue: "/backend/uploads/avatars/default_avatar.png",
     },
     lastLogin: {
       type: DataTypes.DATE,

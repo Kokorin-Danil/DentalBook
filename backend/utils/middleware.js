@@ -4,7 +4,7 @@ import path from "path";
 // Конфигурация хранилища для аватарок
 const avatarStorage = multer.diskStorage({
   destination: (req, file, cb) => {
-    cb(null, "uploads/avatars/"); // Папка для загрузки аватарок
+    cb(null, "/backend/uploads/avatars/"); // Папка для загрузки аватарок
   },
   filename: (req, file, cb) => {
     const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1e9);
@@ -15,7 +15,7 @@ const avatarStorage = multer.diskStorage({
 // Конфигурация хранилища для снимков
 const snapshotStorage = multer.diskStorage({
   destination: (req, file, cb) => {
-    cb(null, "uploads/snapshots/"); // Папка для загрузки снимков
+    cb(null, "/backend/uploads/snapshots/"); // Папка для загрузки снимков
   },
   filename: (req, file, cb) => {
     const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1e9);
