@@ -876,10 +876,7 @@ export const createSnapshot = async (req, res) => {
     }
 
     // Преобразование пути к файлу
-    const snapshotPath = path.join(
-      "backend",
-      req.file.path.replace(/\\/g, "/") // Заменяем обратные слэши на прямые
-    );
+    const snapshotPath = `/backend/${req.file.path.replace(/\\/g, "/")}`;
 
     // Создание снимка
     const snapshot = await Snapshot.create({
@@ -892,7 +889,7 @@ export const createSnapshot = async (req, res) => {
 
     return res.status(201).json({ message: "Снимок успешно создан", snapshot });
   } catch (error) {
-    console.error(error);
+    console.error("Ошибка при создании снимка:", error);
     return res
       .status(500)
       .json({ message: "Ошибка сервера", error: error.message });

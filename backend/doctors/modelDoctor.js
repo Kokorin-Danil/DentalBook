@@ -34,6 +34,13 @@ Doctor.init(
         isEmail: true,
       },
     },
+    mobilePhone: {
+      type: DataTypes.STRING,
+      allowNull: false,
+      validate: {
+        is: /^\+?[1-9]\d{1,14}$/, // Проверка на международный формат телефона
+      },
+    },
     specialty: {
       type: DataTypes.STRING,
       allowNull: false,

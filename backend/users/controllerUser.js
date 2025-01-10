@@ -191,11 +191,14 @@ export const updateUser = async (req, res) => {
 
     // Если есть файл, обновляем аватарку
     if (req.file) {
-      const avatar = `uploads/avatars/${req.file.filename}`;
+      const avatar = `/backend/uploads/avatars/${req.file.filename}`;
 
       // Удаляем предыдущий файл аватарки
       if (user.avatar) {
-        const oldAvatarPath = path.join("uploads/avatars", user.avatar);
+        const oldAvatarPath = path.join(
+          "/backend/uploads/avatars/",
+          user.avatar
+        );
         try {
           if (fs.existsSync(oldAvatarPath)) {
             fs.unlinkSync(oldAvatarPath);
