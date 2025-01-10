@@ -95,7 +95,7 @@ const getDoctorInfo = async (req, res) => {
         {
           model: User,
           as: "userAccount",
-          attributes: ["firstName", "lastName", "email"],
+          attributes: ["firstName", "lastName", "email", "avatar"], // Подгружаем аватар
         },
       ],
     });
@@ -112,7 +112,8 @@ const getDoctorInfo = async (req, res) => {
       dateOfBirth: doctor.dateOfBirth,
       specialty: doctor.specialty,
       email: doctor.email,
-      mobilePhone: doctor.mobilePhone, // Добавляем мобильный телефон
+      mobilePhone: doctor.mobilePhone,
+      avatar: doctor.userAccount.avatar, // Добавляем аватарку
     };
 
     res.status(200).json(response);
