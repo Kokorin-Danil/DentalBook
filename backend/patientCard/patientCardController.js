@@ -487,23 +487,23 @@ export const getPatientCards = async (req, res) => {
           model: Visit,
           as: "visits",
           attributes: ["visitDate", "visitTime"],
+          required: false, // Включаем пациентов без визитов
           where: {
             visitDate: {
-              [Op.lte]: today, // Исключаем визиты с датой больше текущей
+              [Op.lte]: today, // Визиты на сегодня или раньше
             },
           },
           order: [
             ["visitDate", "DESC"],
             ["visitTime", "DESC"],
           ],
-          limit: 1, // Последний визит
         },
       ],
     });
 
     // Преобразуем данные для вывода
     const result = patientCards.map((card) => {
-      const lastVisit = card.visits[0]; // Последний визит
+      const lastVisit = card.visits?.[0]; // Последний визит, если есть
       return {
         id: card.id,
         fullName: `${card.lastName} ${card.firstName} ${
@@ -512,11 +512,14 @@ export const getPatientCards = async (req, res) => {
         phoneNumber: card.phoneNumber,
         lastVisit: lastVisit
           ? `${lastVisit.visitDate} ${lastVisit.visitTime}`
-          : "Нет данных",
+          : null, // Если визита нет, возвращаем null
       };
     });
 
-    res.status(200).json(result);
+    // Фильтруем пациентов без данных о последнем визите
+    const filteredResult = result.filter((card) => card.lastVisit !== null);
+
+    res.status(200).json(filteredResult);
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: "Ошибка сервера" });

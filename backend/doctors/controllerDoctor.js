@@ -2,6 +2,9 @@ import User from "../users/modelUser.js";
 import Doctor from "./modelDoctor.js";
 import { validationResult } from "express-validator";
 import jwt from "jsonwebtoken";
+import dayjs from "dayjs";
+import { Op } from "sequelize";
+import { PatientCard, Visit } from "../patientCard/modelPatientCard.js";
 
 const createDoctor = async (req, res) => {
   try {
@@ -123,7 +126,66 @@ const getDoctorInfo = async (req, res) => {
   }
 };
 
+const getDoctorVisits = async (req, res) => {
+  try {
+    // Извлекаем токен из заголовков
+    const token = req.headers.authorization?.split(" ")[1];
+    if (!token) {
+      return res.status(401).json({ message: "Токен отсутствует" });
+    }
+
+    // Проверяем токен и извлекаем userId
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const { id: userId } = decoded;
+
+    // Ищем врача по userId
+    const doctor = await Doctor.findOne({ where: { userId } });
+    if (!doctor) {
+      return res.status(404).json({ message: "Врач не найден" });
+    }
+
+    // Текущая дата
+    const today = dayjs().format("YYYY-MM-DD");
+
+    // Находим визиты врача на текущую дату
+    const visits = await Visit.findAll({
+      where: {
+        doctorId: doctor.id,
+        visitDate: today,
+      },
+      include: [
+        {
+          model: PatientCard,
+          as: "patientCard",
+          attributes: ["id", "firstName", "lastName", "patronymic"],
+        },
+      ],
+      order: [["visitTime", "ASC"]], // Сортируем по времени визита
+    });
+
+    // Формируем результат для ответа
+    const result = visits.map((visit) => ({
+      id: visit.id,
+      patient: {
+        id: visit.patientCard.id,
+        fullName: `${visit.patientCard.lastName} ${
+          visit.patientCard.firstName
+        } ${visit.patientCard.patronymic || ""}`.trim(),
+      },
+      visitType: visit.visitType,
+      visitTime: visit.visitTime,
+      visitStatus: visit.visitStatus,
+    }));
+
+    res.status(200).json(result);
+  } catch (error) {
+    console.error("Ошибка при получении визитов врача:", error);
+    res.status(500).json({ message: "Ошибка сервера", error: error.message });
+  }
+};
+
 export default {
   createDoctor,
   getDoctorInfo,
+  getDoctorVisits,
 };
