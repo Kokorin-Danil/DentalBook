@@ -7,5 +7,6 @@ const doctorRouter = Router();
 doctorRouter.post("/create", controllerDoctor.createDoctor);
 doctorRouter.get("/profile", controllerDoctor.getDoctorInfo);
 doctorRouter.get("/shudle", controllerDoctor.getDoctorVisits);
+doctorRouter.get("/get/all", controllerDoctor.getAllDoctors);
 
 export default doctorRouter;

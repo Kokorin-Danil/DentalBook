@@ -184,8 +184,42 @@ const getDoctorVisits = async (req, res) => {
   }
 };
 
+const getAllDoctors = async (req, res) => {
+  try {
+    // Получаем всех врачей из базы данных
+    const doctors = await Doctor.findAll({
+      attributes: [
+        "id",
+        "firstName",
+        "lastName",
+        "patronymic",
+        "email",
+        "mobilePhone",
+        "specialty",
+      ],
+    });
+
+    // Форматируем результат
+    const result = doctors.map((doctor) => ({
+      id: doctor.id,
+      fullName: `${doctor.lastName} ${doctor.firstName} ${
+        doctor.patronymic || ""
+      }`.trim(),
+      email: doctor.email,
+      mobilePhone: doctor.mobilePhone,
+      specialty: doctor.specialty,
+    }));
+
+    res.status(200).json(result);
+  } catch (error) {
+    console.error("Ошибка при получении списка врачей:", error);
+    res.status(500).json({ message: "Ошибка сервера", error: error.message });
+  }
+};
+
 export default {
   createDoctor,
   getDoctorInfo,
   getDoctorVisits,
+  getAllDoctors,
 };
