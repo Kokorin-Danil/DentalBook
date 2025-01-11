@@ -517,9 +517,8 @@ export const getPatientCards = async (req, res) => {
     });
 
     // Фильтруем пациентов без данных о последнем визите
-    const filteredResult = result.filter((card) => card.lastVisit !== null);
 
-    res.status(200).json(filteredResult);
+    res.status(200).json(result);
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: "Ошибка сервера" });
