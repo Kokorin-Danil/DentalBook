@@ -13,6 +13,8 @@ import {
   getMonthlySchedule,
   createSnapshot,
   getSnapshotsByPatientCard,
+  updateTeethStatuses,
+  getTeethWithStatuses,
 } from "./patientCardController.js";
 import { uploadSnapshot } from "../utils/middleware.js";
 import { authenticateToken } from "../utils/authMiddleware.js";
@@ -44,5 +46,7 @@ PatientCardRouter.get(
   "/snapshots/getall/:patientCardId",
   getSnapshotsByPatientCard
 );
+PatientCardRouter.put("/teeth/update/:patientCardId", updateTeethStatuses);
+PatientCardRouter.get("/teeth/get/:patientCardId", getTeethWithStatuses);
 
 export default PatientCardRouter;

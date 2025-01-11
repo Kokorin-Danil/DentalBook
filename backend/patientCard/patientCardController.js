@@ -3,6 +3,8 @@ import {
   Visit,
   PatientNote,
   Snapshot,
+  Tooth,
+  ToothStatus,
 } from "./modelPatientCard.js";
 import User from "../users/modelUser.js";
 import jwt from "jsonwebtoken";
@@ -942,5 +944,89 @@ export const getSnapshotsByPatientCard = async (req, res) => {
     return res
       .status(500)
       .json({ message: "Ошибка сервера", error: error.message });
+  }
+};
+
+export const updateTeethStatuses = async (req, res) => {
+  const { patientCardId } = req.params; // Получение patientCardId из параметров
+  const { teeth } = req.body; // Получение данных о зубах из тела запроса
+
+  if (!patientCardId || !Array.isArray(teeth)) {
+    return res
+      .status(400)
+      .json({ message: "Укажите корректный patientCardId и массив teeth" });
+  }
+
+  try {
+    for (const { toothNumber, statuses } of teeth) {
+      if (!toothNumber) {
+        return res.status(400).json({
+          message: "Каждый зуб должен содержать toothNumber",
+        });
+      }
+
+      // Находим зуб
+      const tooth = await Tooth.findOne({
+        where: { patientCardId, toothNumber },
+        include: { model: ToothStatus, as: "statuses" },
+      });
+
+      if (!tooth) {
+        return res.status(404).json({
+          message: `Зуб с номером ${toothNumber} не найден для карты пациента ${patientCardId}`,
+        });
+      }
+
+      // Удаляем текущие статусы зуба
+      await ToothStatus.destroy({ where: { toothId: tooth.id } });
+
+      // Если статусы переданы, создаём новые записи
+      if (statuses && Array.isArray(statuses) && statuses.length > 0) {
+        const newStatuses = statuses.map((status) => ({
+          toothId: tooth.id,
+          status,
+        }));
+
+        await ToothStatus.bulkCreate(newStatuses);
+      }
+    }
+
+    res.status(200).json({ message: "Статусы зубов обновлены успешно" });
+  } catch (error) {
+    console.error("Ошибка при обновлении статусов зубов:", error);
+    res.status(500).json({ message: "Ошибка сервера", error: error.message });
+  }
+};
+
+export const getTeethWithStatuses = async (req, res) => {
+  const { patientCardId } = req.params; // Получение patientCardId из параметров
+
+  if (!patientCardId) {
+    return res
+      .status(400)
+      .json({ message: "Укажите patientCardId в параметрах" });
+  }
+
+  try {
+    // Получение всех зубов с их статусами
+    const teeth = await Tooth.findAll({
+      where: { patientCardId },
+      include: {
+        model: ToothStatus,
+        as: "statuses",
+        attributes: ["status"], // Возвращаем только поле "status" из статусов
+      },
+    });
+
+    if (!teeth || teeth.length === 0) {
+      return res.status(404).json({
+        message: `Зубы для карты пациента с ID ${patientCardId} не найдены`,
+      });
+    }
+
+    res.status(200).json(teeth);
+  } catch (error) {
+    console.error("Ошибка при получении зубов:", error);
+    res.status(500).json({ message: "Ошибка сервера", error: error.message });
   }
 };

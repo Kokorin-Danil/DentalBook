@@ -236,6 +236,107 @@ Snapshot.init(
   }
 );
 
+class Tooth extends Model {}
+
+Tooth.init(
+  {
+    id: {
+      type: DataTypes.INTEGER,
+      autoIncrement: true,
+      primaryKey: true,
+    },
+    patientCardId: {
+      type: DataTypes.INTEGER,
+      allowNull: false,
+      references: {
+        model: "patient_cards", // Название таблицы карт пациентов
+        key: "id",
+      },
+    },
+    toothNumber: {
+      type: DataTypes.ENUM(
+        "11",
+        "12",
+        "13",
+        "14",
+        "15",
+        "16",
+        "17",
+        "18",
+        "21",
+        "22",
+        "23",
+        "24",
+        "25",
+        "26",
+        "27",
+        "28",
+        "31",
+        "32",
+        "33",
+        "34",
+        "35",
+        "36",
+        "37",
+        "38",
+        "41",
+        "42",
+        "43",
+        "44",
+        "45",
+        "46",
+        "47",
+        "48"
+      ),
+      allowNull: false,
+    },
+  },
+  {
+    sequelize: dbST,
+    modelName: "Tooth",
+    tableName: "teeth",
+    timestamps: true,
+  }
+);
+
+class ToothStatus extends Model {}
+
+ToothStatus.init(
+  {
+    id: {
+      type: DataTypes.INTEGER,
+      autoIncrement: true,
+      primaryKey: true,
+    },
+    toothId: {
+      type: DataTypes.INTEGER,
+      allowNull: false,
+      references: {
+        model: "Teeth", // Название таблицы зубов
+        key: "id",
+      },
+    },
+    status: {
+      type: DataTypes.ENUM(
+        "Лечение",
+        "Удаление",
+        "Коронка",
+        "Кариес",
+        "Пломба",
+        "Протез",
+        "Киста"
+      ),
+      allowNull: false,
+    },
+  },
+  {
+    sequelize: dbST,
+    modelName: "ToothStatus",
+    tableName: "tooth_statuses",
+    timestamps: true,
+  }
+);
+
 // Ассоциации
 Visit.hasMany(Snapshot, { foreignKey: "visitId", as: "snapshots" });
 Snapshot.belongsTo(Visit, { foreignKey: "visitId", as: "visit" });
@@ -273,4 +374,57 @@ Visit.belongsTo(Doctor, { foreignKey: "doctorId", as: "doctor" });
 User.hasOne(PatientCard, { foreignKey: "clientId", as: "patientCard" });
 PatientCard.belongsTo(User, { foreignKey: "clientId", as: "user" });
 
-export { PatientCard, Visit, PatientNote, Snapshot };
+PatientCard.afterCreate(async (patientCard, options) => {
+  const toothNumbers = [
+    "11",
+    "12",
+    "13",
+    "14",
+    "15",
+    "16",
+    "17",
+    "18",
+    "21",
+    "22",
+    "23",
+    "24",
+    "25",
+    "26",
+    "27",
+    "28",
+    "31",
+    "32",
+    "33",
+    "34",
+    "35",
+    "36",
+    "37",
+    "38",
+    "41",
+    "42",
+    "43",
+    "44",
+    "45",
+    "46",
+    "47",
+    "48",
+  ];
+
+  const teeth = toothNumbers.map((toothNumber) => ({
+    patientCardId: patientCard.id,
+    toothNumber,
+    statuses: [],
+  }));
+
+  await Tooth.bulkCreate(teeth, { transaction: options.transaction });
+});
+
+PatientCard.hasMany(Tooth, { foreignKey: "patientCardId", as: "teeth" });
+Tooth.belongsTo(PatientCard, {
+  foreignKey: "patientCardId",
+  as: "patientCardtooth",
+});
+Tooth.hasMany(ToothStatus, { foreignKey: "toothId", as: "statuses" });
+ToothStatus.belongsTo(Tooth, { foreignKey: "toothId", as: "tooth" });
+
+export { PatientCard, Visit, PatientNote, Snapshot, Tooth, ToothStatus };
