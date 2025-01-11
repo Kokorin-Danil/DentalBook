@@ -217,9 +217,100 @@ const getAllDoctors = async (req, res) => {
   }
 };
 
+const getDoctorInfoById = async (req, res) => {
+  try {
+    const { doctorId } = req.params;
+
+    // Поиск доктора по doctorId
+    const doctor = await Doctor.findOne({
+      where: { id: doctorId },
+      include: [
+        {
+          model: User,
+          as: "userAccount",
+          attributes: ["firstName", "lastName", "email", "avatar"], // Подгружаем аватар
+        },
+      ],
+    });
+
+    if (!doctor) {
+      return res.status(404).json({ message: "Доктор не найден" });
+    }
+
+    // Формируем ответ
+    const response = {
+      fullName: `${doctor.lastName} ${doctor.firstName} ${
+        doctor.patronymic || ""
+      }`.trim(),
+      dateOfBirth: doctor.dateOfBirth,
+      specialty: doctor.specialty,
+      email: doctor.email,
+      mobilePhone: doctor.mobilePhone,
+      avatar: doctor.userAccount.avatar, // Добавляем аватарку
+    };
+
+    res.status(200).json(response);
+  } catch (error) {
+    console.error("Ошибка при получении информации о докторе по ID:", error);
+    res.status(500).json({ message: "Ошибка сервера", error: error.message });
+  }
+};
+
+const getDoctorVisitsById = async (req, res) => {
+  try {
+    const { doctorId } = req.params;
+
+    // Проверяем, существует ли доктор с таким ID
+    const doctor = await Doctor.findByPk(doctorId);
+    if (!doctor) {
+      return res.status(404).json({ message: "Врач не найден" });
+    }
+
+    // Текущая дата
+    const today = dayjs().format("YYYY-MM-DD");
+
+    // Находим визиты врача на текущую дату
+    const visits = await Visit.findAll({
+      where: {
+        doctorId: doctorId,
+        visitDate: today,
+      },
+      include: [
+        {
+          model: PatientCard,
+          as: "patientCard",
+          attributes: ["id", "firstName", "lastName", "patronymic"],
+        },
+      ],
+      order: [["visitTime", "ASC"]], // Сортируем по времени визита
+    });
+
+    // Формируем результат для ответа
+    const result = visits.map((visit) => ({
+      id: visit.id,
+      patient: {
+        id: visit.patientCard.id,
+        fullName: `${visit.patientCard.lastName} ${
+          visit.patientCard.firstName
+        } ${visit.patientCard.patronymic || ""}`.trim(),
+      },
+      visitType: visit.visitType,
+      visitTime: visit.visitTime,
+      visitStatus: visit.visitStatus,
+    }));
+
+    res.status(200).json(result);
+  } catch (error) {
+    console.error("Ошибка при получении визитов врача по ID:", error);
+    res.status(500).json({ message: "Ошибка сервера", error: error.message });
+  }
+};
+
 export default {
   createDoctor,
   getDoctorInfo,
   getDoctorVisits,
   getAllDoctors,
+  getDoctorInfoById,
+  getDoctorVisitsById,
 };

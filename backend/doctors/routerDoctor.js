@@ -8,5 +8,7 @@ doctorRouter.post("/create", controllerDoctor.createDoctor);
 doctorRouter.get("/profile", controllerDoctor.getDoctorInfo);
 doctorRouter.get("/shudle", controllerDoctor.getDoctorVisits);
 doctorRouter.get("/get/all", controllerDoctor.getAllDoctors);
+doctorRouter.get("/profile/:doctorId", controllerDoctor.getDoctorInfoById);
+doctorRouter.get("/shudle/:doctorId", controllerDoctor.getDoctorVisitsById);
 
 export default doctorRouter;
