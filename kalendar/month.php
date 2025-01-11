@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Расписание</title>
+    <title>Расписание на месяц</title> 
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <style>
         body {
@@ -90,11 +90,12 @@
 
         <div class="schedule-container">
             <div class="schedule-header">
+                <!-- Исправленный переключатель -->
                 <label for="viewSelector" class="form-label">Вид расписания:</label>
-                <select class="form-select d-inline" id="viewSelector" style="max-width: 200px;">
-                    <option value="day">На день</option>
-                    <option value="week">На неделю</option>
-                    <option value="month">На месяц</option>
+                <select class="form-select d-inline" id="viewSelector" style="max-width: 200px;" onchange="navigateToView(this.value)">
+                    <option value="kalendar.php">На день</option>
+                    <option value="week.php">На неделю</option>
+                    <option value="month.php" selected>На месяц</option>
                 </select>
                 <label for="doctorFilter" class="form-label">Фильтр:</label>
                 <select class="form-select d-inline" id="doctorFilter" style="max-width: 200px;">
@@ -123,26 +124,24 @@
         scheduleDateInput.value = today;
 
         document.addEventListener('DOMContentLoaded', async () => {
-            if (viewSelector.value === 'month') {
+            if (viewSelector.value === 'month.php') {
                 await loadMonthlySchedule(scheduleDateInput.value);
             }
         });
 
-        viewSelector.addEventListener('change', async () => {
-            if (viewSelector.value === 'month') {
-                monthView.style.display = 'block';
-                await loadMonthlySchedule(scheduleDateInput.value);
-            }
+        viewSelector.addEventListener('change', () => {
+            const selectedView = viewSelector.value;
+            navigateToView(selectedView);
         });
 
         scheduleDateInput.addEventListener('change', async () => {
-            if (viewSelector.value === 'month') {
+            if (viewSelector.value === 'month.php') {
                 await loadMonthlySchedule(scheduleDateInput.value);
             }
         });
 
         doctorFilter.addEventListener('change', () => {
-            if (viewSelector.value === 'month') {
+            if (viewSelector.value === 'month.php') {
                 renderMonthSchedule(monthData);
             }
         });
@@ -218,6 +217,10 @@
                 cell.appendChild(visitInfo);
                 monthScheduleBody.appendChild(cell);
             }
+        }
+
+        function navigateToView(viewUrl) {
+            window.location.href = viewUrl;
         }
     </script>
 

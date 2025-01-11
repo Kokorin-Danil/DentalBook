@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+<!DOCTYPE html> 
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -56,13 +56,17 @@
             border-radius: 4px;
         }
 
-        .appointment.free {
-            background-color: #d1e7dd;
+        /* Цвета для статусов */
+        .appointment.confirmed {
+            background-color: #d4edda; /* Зеленый */
             color: #155724;
         }
-
-        .appointment.occupied {
-            background-color: #f8d7da;
+        .appointment.unconfirmed {
+            background-color: #fff3cd; /* Желтый */
+            color: #856404;
+        }
+        .appointment.cancelled {
+            background-color: #f8d7da; /* Красный */
             color: #721c24;
         }
     </style>
@@ -72,14 +76,23 @@
 
     <div class="container mt-5">
         <div class="header">
-            <h2>Расписание на неделю</h2>
+            <h2>Расписание</h2>
             <button class="btn btn-primary">Новый визит</button>
         </div>
 
         <div class="schedule-container">
             <div class="schedule-header mb-3">
+                <!-- Добавлен переключатель -->
+                <label for="viewSelector" class="form-label">Вид расписания:</label>
+                <select class="form-select d-inline" id="viewSelector" style="max-width: 200px;" onchange="navigateToView(this.value)">
+                    <option value="kalendar.php">На день</option>
+                    <option value="week_schedule.php" selected>На неделю</option>
+                    <option value="month.php">На месяц</option>
+                </select>
+
                 <label for="scheduleDate" class="form-label">Выберите дату:</label>
                 <input type="date" id="scheduleDate" class="form-control d-inline" style="max-width: 200px; margin-right: 10px;">
+
                 <label for="doctorFilter" class="form-label">Выберите врача:</label>
                 <select class="form-select d-inline" id="doctorFilter" style="max-width: 200px;">
                     <option value="all">Все врачи</option>
@@ -152,6 +165,12 @@
             const daysOfWeek = ["Понедельник", "Вторник", "Среда", "Четверг", "Пятница", "Суббота", "Воскресенье"];
             const startDate = getMonday(new Date(scheduleDateInput.value));
 
+            const statusClassMap = {
+                "Подтвержден": "confirmed",
+                "Не подтвержден": "unconfirmed",
+                "Отменен": "cancelled"
+            };
+
             for (let i = 0; i < 7; i++) {
                 const dayColumn = document.createElement('div');
                 dayColumn.className = 'day-column';
@@ -169,8 +188,12 @@
                         const appointments = data[doctor]?.[date.toISOString().split('T')[0]] || [];
                         appointments.forEach(app => {
                             const appointmentDiv = document.createElement('div');
-                            appointmentDiv.className = `appointment ${app.status.toLowerCase()}`;
-                            appointmentDiv.textContent = `${app.time} - ${app.type} (${app.status})`;
+                            const statusClass = statusClassMap[app.status] || 'unconfirmed';
+                            appointmentDiv.className = `appointment ${statusClass}`;
+                            appointmentDiv.innerHTML = `
+                                <div><strong>${app.time}</strong> - ${app.type}</div>
+                                <div>Статус: ${app.status}</div>
+                            `;
                             dayColumn.appendChild(appointmentDiv);
                         });
                     }
@@ -178,6 +201,10 @@
 
                 weekScheduleBody.appendChild(dayColumn);
             }
+        }
+
+        function navigateToView(viewUrl) {
+            window.location.href = viewUrl;
         }
     </script>
 

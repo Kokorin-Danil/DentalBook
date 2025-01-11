@@ -65,21 +65,7 @@
     </style>
 </head>
 <body>
-    <!-- Навигационное меню слева -->
-    <nav id="sidebar">
-        <h4>DentalBook</h4>
-        <ul class="list-unstyled">
-            <li><a href="#"><i class="fas fa-tachometer-alt"></i> Панель управления</a></li>
-            <li><a href="#"><i class="fas fa-users"></i> Пользователи</a></li>
-            <li><a href="/users/patients.php"><i class="fas fa-users"></i> Пациенты</a></li>
-            <li><a href="/personal/personal.php"><i class="fas fa-users"></i> Персонал</a></li>
-            <li><a href="#"><i class="fas fa-calendar-alt"></i> Записи</a></li>
-            <li><a href="#"><i class="fas fa-folder-open"></i> Карты пациентов</a></li>
-            <li><a href="#"><i class="fas fa-chart-bar"></i> Статистика</a></li>
-            <li><a href="#"><i class="fas fa-cogs"></i> Настройки</a></li>
-            <li><a href="#" onclick="logout()"><i class="fas fa-sign-out-alt"></i> Выйти</a></li>
-        </ul>
-    </nav>
+    <?php include '../users/navbar.php'; ?>
 
     <!-- Основной контент -->
     <div id="content">

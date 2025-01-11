@@ -45,55 +45,6 @@
             background-color: #f8d7da;
             color: #721c24;
         }
-
-        .current-date {
-            margin-bottom: 20px;
-            font-size: 1.2rem;
-            font-weight: bold;
-        }
-
-        .month-grid {
-            display: grid;
-            grid-template-columns: repeat(7, 1fr);
-            gap: 10px;
-        }
-
-        .month-cell {
-            background-color: #fff;
-            border: 1px solid #ddd;
-            border-radius: 8px;
-            padding: 10px;
-            min-height: 100px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            text-align: center;
-            transition: transform 0.2s;
-        }
-
-        .month-cell:hover {
-            transform: scale(1.05);
-        }
-
-        .month-cell-header {
-            font-weight: bold;
-            color: #007bff;
-            margin-bottom: 10px;
-        }
-
-        .month-cell-visit {
-            font-size: 0.9rem;
-            font-weight: bold;
-        }
-
-        .month-cell-visit.has-visit {
-            color: #28a745;
-        }
-
-        .month-cell-visit.no-visit {
-            color: #dc3545;
-        }
     </style>
 </head>
 <body>
@@ -102,7 +53,7 @@
     <div class="container mt-5">
         <div class="header">
             <h2>Расписание</h2>
-            <button class="btn btn-primary">Новый визит</button>
+            <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addVisitModal">Новый визит</button>
         </div>
 
         <div class="schedule-container">
@@ -134,41 +85,135 @@
         </div>
     </div>
 
+    <!-- Модальное окно для добавления визита -->
+    <div class="modal fade" id="addVisitModal" tabindex="-1" aria-labelledby="addVisitModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="addVisitModalLabel">Новый визит</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Закрыть"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="visitForm">
+                        <div class="mb-3">
+                            <label for="visitPatient" class="form-label">ФИО пациента</label>
+                            <input type="text" id="visitPatient" class="form-control" placeholder="Введите ФИО пациента" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="visitDoctor" class="form-label">ФИО врача</label>
+                            <input type="text" id="visitDoctor" class="form-control" placeholder="Введите ФИО врача" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="visitType" class="form-label">Тип визита</label>
+                            <select id="visitType" class="form-select" required>
+                                <option value="осмотр">Осмотр</option>
+                                <option value="лечение">Лечение</option>
+                                <option value="консультация">Консультация</option>
+                            </select>
+                        </div>
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="visitDate" class="form-label">Дата визита</label>
+                                <input type="date" id="visitDate" class="form-control" required>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="visitTime" class="form-label">Время визита</label>
+                                <select id="visitTime" class="form-select" required>
+                                    <!-- Временные интервалы будут заполняться динамически -->
+                                </select>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+                    <button type="button" class="btn btn-primary" id="saveVisitButton">Сохранить</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <script>
         const scheduleTableBody = document.getElementById('scheduleTableBody');
         const tableHeader = document.getElementById('tableHeader');
         const scheduleDateInput = document.getElementById('scheduleDate');
         const doctorFilter = document.getElementById('doctorFilter');
         const viewSelector = document.getElementById('viewSelector');
+        const saveVisitButton = document.getElementById('saveVisitButton');
+        const visitForm = document.getElementById('visitForm');
         const today = new Date().toISOString().split('T')[0];
 
         let scheduleData = {};
 
-        // Установка текущей даты
         scheduleDateInput.value = today;
 
-        // Загрузка расписания на день
+        // Заполняем временные интервалы
+        document.addEventListener('DOMContentLoaded', () => {
+            const visitTimeSelect = document.getElementById('visitTime');
+            const startTime = new Date('1970-01-01T09:00:00');
+            const endTime = new Date('1970-01-01T17:30:00');
+            const interval = 30;
+
+            while (startTime <= endTime) {
+                const option = document.createElement('option');
+                option.value = startTime.toTimeString().substring(0, 5);
+                option.textContent = startTime.toTimeString().substring(0, 5);
+                visitTimeSelect.appendChild(option);
+                startTime.setMinutes(startTime.getMinutes() + interval);
+            }
+        });
+
+        // Загрузка расписания
         document.addEventListener('DOMContentLoaded', async () => {
             await loadSchedule(today);
         });
 
-        // Обновление расписания при смене даты
         scheduleDateInput.addEventListener('change', async () => {
             await loadSchedule(scheduleDateInput.value);
         });
 
-        // Фильтр врачей
         doctorFilter.addEventListener('change', () => {
             renderDaySchedule(scheduleData);
         });
 
-        // Переключение видов расписания
         viewSelector.addEventListener('change', () => {
             const selectedView = viewSelector.value;
             if (selectedView === 'week') {
                 window.location.href = '/kalendar/week.php';
             } else if (selectedView === 'month') {
                 window.location.href = '/kalendar/month.php';
+            }
+        });
+
+        saveVisitButton.addEventListener('click', async () => {
+            const visitData = {
+                patientFullName: document.getElementById('visitPatient').value,
+                doctorFullName: document.getElementById('visitDoctor').value,
+                visitType: document.getElementById('visitType').value,
+                visitDate: document.getElementById('visitDate').value,
+                visitTime: document.getElementById('visitTime').value + ':00'
+            };
+
+            try {
+                const response = await fetch('http://localhost:3003/api/patient-cards/visit/create', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        Authorization: `Bearer ${getCookie('token')}`
+                    },
+                    body: JSON.stringify(visitData)
+                });
+
+                if (!response.ok) {
+                    const error = await response.json();
+                    throw new Error(error.message || 'Ошибка при добавлении визита');
+                }
+
+                alert('Визит успешно добавлен!');
+                visitForm.reset();
+                await loadSchedule(scheduleDateInput.value);
+            } catch (error) {
+                alert(`Ошибка: ${error.message}`);
             }
         });
 
@@ -225,6 +270,12 @@
 
                 scheduleTableBody.appendChild(row);
             });
+        }
+
+        function getCookie(name) {
+            const value = `; ${document.cookie}`;
+            const parts = value.split(`; ${name}=`);
+            if (parts.length === 2) return parts.pop().split(';').shift();
         }
     </script>
 

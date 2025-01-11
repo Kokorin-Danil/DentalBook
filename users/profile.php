@@ -6,104 +6,68 @@
     <title>Профиль пациента | DentalBook</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
-    <style>
-        body {
-            background-color: #f4f6f9;
-        }
-
-        .profile-card {
-            background-color: #ffffff;
-            border: 1px solid #ddd;
-            border-radius: 8px;
-            padding: 20px;
-            margin-bottom: 20px;
-            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
-        }
-
-        .profile-icon img {
-            width: 100px;
-            height: 100px;
-            border-radius: 50%;
-            object-fit: cover;
-            border: 1px solid #ddd;
-            background-color: #f8f9fa;
-        }
-
-        .profile-icon i {
-            font-size: 60px;
-            color: #ddd;
-        }
-
-        .actions {
-            display: flex;
-            gap: 10px;
-            margin-bottom: 15px;
-        }
-
-        .tabs {
-            margin-top: 20px;
-        }
-
-        .table-container {
-            background-color: #ffffff;
-            border: 1px solid #ddd;
-            border-radius: 8px;
-            padding: 20px;
-            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
-        }
-
-        .btn-add {
-            margin-bottom: 15px;
-        }
-    </style>
 </head>
 <body>
-
     <div id="content" class="container mt-5">
         <h2 class="mb-4">Профиль пациента | DentalBook</h2>
 
         <!-- Карточка профиля -->
-        <div id="patientProfile" class="profile-card">
-            <div class="text-center">Загрузка данных...</div>
+        <div id="patientProfile" class="card shadow-sm mb-4">
+            <div class="row g-0">
+                <div class="col-md-8">
+                    <div class="card-body">
+                        <p><strong>ФИО:</strong> Загрузка...</p>
+                        <p><strong>Дата рождения:</strong> Загрузка...</p>
+                        <p><strong>Полис:</strong> Загрузка...</p>
+                        <p><strong>Телефон:</strong> Загрузка...</p>
+                        <p><strong>Адрес:</strong> Загрузка...</p>
+                        <p><strong>Email:</strong> Загрузка...</p>
+                        <p><strong>Последний вход:</strong> Загрузка...</p>
+                    </div>
+                </div>
+                <div class="col-md-4 d-flex justify-content-center align-items-center">
+                    <div class="rounded-circle overflow-hidden" style="width: 150px; height: 150px;">
+                        <img id="avatar" src="" alt="Аватар" class="img-fluid">
+                    </div>
+                </div>
+            </div>
         </div>
 
         <!-- Действия -->
-        <div class="actions">
+        <div class="mb-4">
             <button class="btn btn-primary"><i class="fas fa-file-alt"></i> Анкета</button>
             <button class="btn btn-secondary"><i class="fas fa-file-contract"></i> Договор</button>
             <button class="btn btn-info"><i class="fas fa-star"></i> Оценка</button>
             <button class="btn btn-danger"><i class="fas fa-print"></i> Печать</button>
         </div>
-        
+
         <!-- Tabs -->
-        <div class="tabs">
-            <ul class="nav nav-tabs" id="tabs">
-                <li class="nav-item">
-                    <a id="visitsTab" class="nav-link" href="/users/view.php"><i class="fas fa-calendar-check"></i> Визиты</a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link" href="/users/formula.php"><i class="fas fa-tooth"></i> Формула</a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link" href="#payments" data-bs-toggle="tab"><i class="fas fa-dollar-sign"></i> Оплаты</a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link" href="/users/treatmentplan.php"><i class="fas fa-notes-medical"></i> План лечения</a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link" href="/users/pictures.php"><i class="fas fa-image"></i> Снимки</a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link" id="notesLink"><i class="fas fa-sticky-note"></i> Примечания</a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link" href="#documents" data-bs-toggle="tab"><i class="fas fa-folder"></i> Документы</a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link" href="#personal-data" data-bs-toggle="tab"><i class="fas fa-id-card"></i> Персональные данные</a>
-                </li>
-            </ul>
-        </div>
+        <ul class="nav nav-tabs">
+            <li class="nav-item">
+                <a id="visitsTab" class="nav-link" href="/users/view.php"><i class="fas fa-calendar-check"></i> Визиты</a>
+            </li>
+            <li class="nav-item">
+                <a id="formulaTab" class="nav-link" href="/users/formula.php"><i class="fas fa-tooth"></i> Формула</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="#payments" data-bs-toggle="tab"><i class="fas fa-dollar-sign"></i> Оплаты</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="/users/treatmentplan.php"><i class="fas fa-notes-medical"></i> План лечения</a>
+            </li>
+            <li class="nav-item">
+                <a id="picturesLink" class="nav-link" href="#"><i class="fas fa-image"></i> Снимки</a>
+            </li>
+            <li class="nav-item">
+                <a id="notesLink" class="nav-link" href="#"><i class="fas fa-sticky-note"></i> Примечания</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="#documents" data-bs-toggle="tab"><i class="fas fa-folder"></i> Документы</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="#personal-data" data-bs-toggle="tab"><i class="fas fa-id-card"></i> Персональные данные</a>
+            </li>
+        </ul>
     </div>
 
     <!-- Скрипты -->
@@ -156,6 +120,20 @@
                 // Устанавливаем ссылку для вкладки "Визиты"
                 const visitsTab = document.getElementById('visitsTab');
                 visitsTab.href = `/users/view.php?patientCardId=${patientCardId}`;
+
+                // Устанавливаем ссылку для вкладки "Формула"
+                const formulaTab = document.getElementById('formulaTab');
+                formulaTab.href = `/users/formula.php?patientCardId=${patientCardId}`;
+
+                // Устанавливаем ссылки для других вкладок
+                const picturesLink = document.getElementById('picturesLink');
+                const notesLink = document.getElementById('notesLink');
+                if (picturesLink && patientCardId) {
+                    picturesLink.href = `/users/pictures.php?patientCardId=${patientCardId}`;
+                }
+                if (notesLink && patientCardId) {
+                    notesLink.href = `/users/notes.php?patientCardId=${patientCardId}`;
+                }
             } catch (error) {
                 console.error('Ошибка:', error);
                 alert('Не удалось загрузить данные пациента.');
@@ -164,29 +142,19 @@
 
         // Заполняем карточку профиля данными пациента
         function populateProfile(profile) {
-            const profileContainer = document.getElementById('patientProfile');
+            const profileContainer = document.querySelector('.card-body');
             profileContainer.innerHTML = `
-                <div class="row">
-                    <div class="col-md-8">
-                        <p><strong>ФИО:</strong> ${profile.fullName}</p>
-                        <p><strong>Дата рождения:</strong> ${profile.dateOfBirth}</p>
-                        <p><strong>Полис:</strong> ${profile.policy}</p>
-                        <p><strong>Телефон:</strong> ${profile.phoneNumber}</p>
-                        <p><strong>Адрес:</strong> ${profile.address}</p>
-                        <p><strong>Email:</strong> ${profile.email}</p>
-                        <p><strong>Последний вход:</strong> ${profile.lastLogin || 'Неизвестно'}</p>
-                    </div>
-                    <div class="col-md-4 text-center">
-                        <div class="profile-icon">
-                            ${
-                                profile.avatar 
-                                ? `<img src="${profile.avatar}" alt="Аватар">`
-                                : `<i class="fas fa-user"></i>`
-                            }
-                        </div>
-                    </div>
-                </div>
+                <p><strong>ФИО:</strong> ${profile.fullName}</p>
+                <p><strong>Дата рождения:</strong> ${profile.dateOfBirth}</p>
+                <p><strong>Полис:</strong> ${profile.policy}</p>
+                <p><strong>Телефон:</strong> ${profile.phoneNumber}</p>
+                <p><strong>Адрес:</strong> ${profile.address}</p>
+                <p><strong>Email:</strong> ${profile.email}</p>
+                <p><strong>Последний вход:</strong> ${profile.lastLogin || 'Неизвестно'}</p>
             `;
+
+            const avatarElement = document.getElementById('avatar');
+            avatarElement.src = profile.avatar || 'default_avatar.png';
         }
 
         // Инициализация загрузки данных

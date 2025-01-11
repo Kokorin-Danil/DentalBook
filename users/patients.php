@@ -47,6 +47,15 @@
             left: -30px;
             color: #6c757d;
         }
+
+        /* Убираем серое выделение на строках */
+        table tr:hover {
+            background-color: transparent !important;
+        }
+
+        table tr {
+            background-color: #fff;
+        }
     </style>
 </head>
 <body>
@@ -63,13 +72,13 @@
                 <a href="/users/createcardpatient.php" class="btn btn-success ms-2"><i class="fas fa-plus"></i> Добавить пациента</a>
             </div>
 
-            <table class="table table-bordered table-striped">
+            <table class="table table-bordered">
                 <thead>
                     <tr>
                         <th>Номер карты</th>
                         <th>ФИО</th>
                         <th>Телефон</th>
-                        <th>Последний визит</th>
+                        <th>Следующий визит</th>
                         <th>Действия</th>
                     </tr>
                 </thead>
@@ -121,16 +130,25 @@
         // Заполняем таблицу данными пациентов
         function populatePatientTable(patients) {
             const tableBody = document.getElementById('patientTableBody');
+            const today = new Date();
+            today.setHours(0, 0, 0, 0); // Устанавливаем начало текущего дня
+            const tomorrow = new Date(today);
+            tomorrow.setDate(today.getDate() + 1); // Завтрашний день
+
             tableBody.innerHTML = ''; // Очищаем таблицу
 
             patients.forEach((patient) => {
-                const row = document.createElement('tr');
+                const lastVisitDate = patient.lastVisit ? new Date(patient.lastVisit) : null;
 
+                // Проверяем, если дата визита больше или равна завтрашнему дню
+                const nextVisitDisplay = lastVisitDate && lastVisitDate >= tomorrow ? lastVisitDate.toLocaleDateString() : 'Нет записей';
+
+                const row = document.createElement('tr');
                 row.innerHTML = `
                     <td>${patient.id}</td>
                     <td>${patient.fullName}</td>
                     <td>${patient.phoneNumber}</td>
-                    <td>${patient.lastVisit}</td>
+                    <td>${nextVisitDisplay}</td>
                     <td class="table-actions">
                         <a href="/users/view.php?id=${patient.id}" class="btn btn-sm btn-info view-patient" data-id="${patient.id}">
                             <i class="fas fa-eye"></i> Просмотреть

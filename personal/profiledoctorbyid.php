@@ -106,7 +106,7 @@
                             <i class="fas fa-phone"></i>
                         </div>
                         <div class="col-11">
-                            <strong>Контактный телефон:</strong> <span id="doctorPhone" href="#">Загрузка...</span>
+                            <strong>Контактный телефон:</strong> <span id="doctorPhone">Загрузка...</span>
                         </div>
                     </div>
                     <div class="row mb-3">
@@ -114,7 +114,7 @@
                             <i class="fas fa-envelope"></i>
                         </div>
                         <div class="col-11">
-                            <strong>Email:</strong> <span id="doctorEmail" href="#">Загрузка...</span>
+                            <strong>Email:</strong> <span id="doctorEmail">Загрузка...</span>
                         </div>
                     </div>
                 </div>
@@ -161,31 +161,27 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <script>
         document.addEventListener('DOMContentLoaded', async () => {
-            const token = getCookie('token');
-            if (!token) {
-                alert('Необходима авторизация');
+            const urlParams = new URLSearchParams(window.location.search);
+            const doctorId = urlParams.get('doctorId');
+
+            if (!doctorId) {
+                alert('Доктор ID не указан');
                 return;
             }
 
             try {
                 // Загрузка профиля доктора
-                const profileResponse = await fetch('http://localhost:3003/api/doctors/profile', {
-                    headers: { Authorization: `Bearer ${token}` }
-                });
+                const profileResponse = await fetch(`http://localhost:3003/api/doctors/profile/${doctorId}`);
                 const profileData = await profileResponse.json();
                 document.getElementById('doctorFullName').textContent = profileData.fullName;
                 document.getElementById('doctorBirthDate').textContent = profileData.dateOfBirth;
                 document.getElementById('doctorSpecialty').textContent = profileData.specialty;
-                document.getElementById('doctorPhone').href = `tel:${profileData.mobilePhone}`;
                 document.getElementById('doctorPhone').textContent = profileData.mobilePhone;
-                document.getElementById('doctorEmail').href = `mailto:${profileData.email}`;
                 document.getElementById('doctorEmail').textContent = profileData.email;
                 document.getElementById('doctorAvatar').src = profileData.avatar;
 
                 // Загрузка расписания
-                const scheduleResponse = await fetch('http://localhost:3003/api/doctors/shudle', {
-                    headers: { Authorization: `Bearer ${token}` }
-                });
+                const scheduleResponse = await fetch(`http://localhost:3003/api/doctors/shudle/${doctorId}`);
                 const scheduleData = await scheduleResponse.json();
 
                 // Сортировка расписания по времени
@@ -210,12 +206,6 @@
                 alert('Ошибка загрузки данных');
             }
         });
-
-        function getCookie(name) {
-            const value = `; ${document.cookie}`;
-            const parts = value.split(`; ${name}=`);
-            if (parts.length === 2) return parts.pop().split(';').shift();
-        }
     </script>
 </body>
 </html>

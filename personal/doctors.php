@@ -48,6 +48,13 @@
         table {
             margin-bottom: 0;
         }
+        /* Убираем серое выделение на строках */
+        table tr:hover {
+            background-color: transparent !important;
+        }
+        table tr {
+            background-color: #fff;
+        }
     </style>
 </head>
 <body>
@@ -63,25 +70,25 @@
         <div class="filters">
             <form class="row g-2">
                 <div class="col-md-3">
-                    <input type="text" class="form-control" placeholder="Поиск по ФИО">
+                    <input type="text" id="searchInput" class="form-control" placeholder="Поиск по ФИО">
                 </div>
                 <div class="col-md-3">
-                    <select class="form-select">
+                    <select id="specialtyFilter" class="form-select">
                         <option selected>Выберите специальность</option>
-                        <option value="1">Терапевт</option>
-                        <option value="2">Хирург</option>
-                        <option value="3">Ортодонт</option>
+                        <option value="Dentist">Стоматолог</option>
+                        <option value="Therapist">Терапевт</option>
+                        <option value="Orthodontist">Ортодонт</option>
                     </select>
                 </div>
                 <div class="col-md-2">
-                    <button type="submit" class="btn btn-primary w-100"><i class="fas fa-search"></i> Искать</button>
+                    <button type="button" id="filterButton" class="btn btn-primary w-100"><i class="fas fa-search"></i> Искать</button>
                 </div>
             </form>
         </div>
 
         <!-- Table Section -->
         <div class="table-container">
-            <table class="table table-striped">
+            <table class="table">
                 <thead class="table-light">
                     <tr>
                         <th>Id</th>
@@ -92,59 +99,8 @@
                         <th>Действия</th>
                     </tr>
                 </thead>
-                <tbody>
-                    <tr>
-                        <td>1037474</td>
-                        <td>Визькин Илья Петрович</td>
-                        <td>support@mail.ru</td>
-                        <td>+7 (926) 123-45-67</td>
-                        <td>Терапевт, Ортодонт</td>
-                        <td class="action-buttons">
-                        <a href="/personal/profiledoctor.php" class="btn btn-sm btn-info" title="Просмотр">
-                            <i class="fas fa-eye"></i>
-                        </a>
-                            <button class="btn btn-sm btn-warning" title="Редактировать"><i class="fas fa-edit"></i></button>
-                            <button class="btn btn-sm btn-danger" title="Удалить"><i class="fas fa-trash"></i></button>
-                        </td>
-                    </tr>
-                    <tr>
-                        <td>564229</td>
-                        <td>Иванов Иван Иванович</td>
-                        <td>korvovka@gmail.com</td>
-                        <td>+7 (926) 123-45-67</td>
-                        <td>Хирург, Ортопед</td>
-                        <td class="action-buttons">
-                        <a href="doctor_profile.php" class="btn btn-sm btn-info" title="Просмотр">
-                            <i class="fas fa-eye"></i>
-                        </a>
-                            <button class="btn btn-sm btn-warning" title="Редактировать"><i class="fas fa-edit"></i></button>
-                            <button class="btn btn-sm btn-danger" title="Удалить"><i class="fas fa-trash"></i></button>
-                        </td>
-                    </tr>
-                    <tr>
-                        <td>2991685</td>
-                        <td>Петров Петр</td>
-                        <td>hjkgghujgh@mf1.ru</td>
-                        <td>+7 (926) 123-45-67</td>
-                        <td>Терапевт, Хирург, Стоматолог</td>
-                        <td class="action-buttons">
-                            <button class="btn btn-sm btn-info" title="Просмотр"><i class="fas fa-eye"></i></button>
-                            <button class="btn btn-sm btn-warning" title="Редактировать"><i class="fas fa-edit"></i></button>
-                            <button class="btn btn-sm btn-danger" title="Удалить"><i class="fas fa-trash"></i></button>
-                        </td>
-                    </tr>
-                    <tr>
-                        <td>232073</td>
-                        <td>Стоянов Дмитрий Алексеевич</td>
-                        <td>rimma@fkids.kz</td>
-                        <td>+7 (926) 123-45-67</td>
-                        <td>Ортодонт</td>
-                        <td class="action-buttons">
-                            <button class="btn btn-sm btn-info" title="Просмотр"><i class="fas fa-eye"></i></button>
-                            <button class="btn btn-sm btn-warning" title="Редактировать"><i class="fas fa-edit"></i></button>
-                            <button class="btn btn-sm btn-danger" title="Удалить"><i class="fas fa-trash"></i></button>
-                        </td>
-                    </tr>
+                <tbody id="doctorTableBody">
+                    <!-- Данные докторов будут загружены динамически -->
                 </tbody>
             </table>
         </div>
@@ -159,25 +115,25 @@
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Закрыть"></button>
                 </div>
                 <div class="modal-body">
-                    <form>
+                    <form id="addDoctorForm">
                         <div class="row mb-3">
                             <div class="col-md-4">
-                                <label for="doctorFirstName" class="form-label">Имя *</label>
-                                <input type="text" class="form-control" id="doctorFirstName" placeholder="Введите имя">
+                                <label for="doctorFirstName" class="form-label">Имя:</label>
+                                <input type="text" class="form-control" id="doctorFirstName" placeholder="Введите имя" required>
                             </div>
                             <div class="col-md-4">
-                                <label for="doctorLastName" class="form-label">Фамилия *</label>
-                                <input type="text" class="form-control" id="doctorLastName" placeholder="Введите фамилию">
+                                <label for="doctorLastName" class="form-label">Фамилия:</label>
+                                <input type="text" class="form-control" id="doctorLastName" placeholder="Введите фамилию" required>
                             </div>
                             <div class="col-md-4">
-                                <label for="doctorPatronymic" class="form-label">Отчество</label>
+                                <label for="doctorPatronymic" class="form-label">Отчество:</label>
                                 <input type="text" class="form-control" id="doctorPatronymic" placeholder="Введите отчество">
                             </div>
                         </div>
 
                         <div class="row mb-3">
                             <div class="col-md-4">
-                                <label for="doctorGender" class="form-label">Пол</label>
+                                <label for="doctorGender" class="form-label">Пол:</label>
                                 <select class="form-select" id="doctorGender">
                                     <option value="" selected>Выберите пол</option>
                                     <option value="male">Мужской</option>
@@ -185,68 +141,74 @@
                                 </select>
                             </div>
                             <div class="col-md-4">
-                                <label for="doctorBirthDate" class="form-label">Дата рождения</label>
+                                <label for="doctorBirthDate" class="form-label">Дата рождения:</label>
                                 <input type="date" class="form-control" id="doctorBirthDate">
                             </div>
                             <div class="col-md-4">
-                                <label for="doctorEmail" class="form-label">Email *</label>
-                                <input type="email" class="form-control" id="doctorEmail" placeholder="Введите email">
+                                <label for="doctorEmail" class="form-label">Email:</label>
+                                <input type="email" class="form-control" id="doctorEmail" placeholder="Введите email" required>
                             </div>
                         </div>
 
                         <div class="row mb-3">
                             <div class="col-md-6">
-                                <label for="doctorPhone" class="form-label">Телефон *</label>
-                                <input type="tel" class="form-control" id="doctorPhone" placeholder="Введите телефон">
+                                <label for="doctorPhone" class="form-label">Телефон:</label>
+                                <input type="tel" class="form-control" id="doctorPhone" placeholder="Введите телефон" required>
                             </div>
                             <div class="col-md-6">
                                 <label for="doctorPhoto" class="form-label">Фото</label>
                                 <input type="file" class="form-control" id="doctorPhoto" accept="image/jpeg,image/png">
                             </div>
                         </div>
-
-                        <div class="row mb-3">
-                            <div class="col-md-6">
-                                <label for="doctorSpecialties" class="form-label">Специальности</label>
-                                <div class="row">
-                                    <div class="col-md-4">
-                                        <select class="form-select mb-2">
-                                            <option value="" selected>-</option>
-                                            <option value="therapist">Терапевт</option>
-                                            <option value="surgeon">Хирург</option>
-                                            <option value="orthodontist">Ортодонт</option>
-                                        </select>
-                                    </div>
-                                    <div class="col-md-4">
-                                        <select class="form-select mb-2">
-                                            <option value="" selected>-</option>
-                                            <option value="therapist">Терапевт</option>
-                                            <option value="surgeon">Хирург</option>
-                                            <option value="orthodontist">Ортодонт</option>
-                                        </select>
-                                    </div>
-                                    <div class="col-md-4">
-                                        <select class="form-select">
-                                            <option value="" selected>-</option>
-                                            <option value="therapist">Терапевт</option>
-                                            <option value="surgeon">Хирург</option>
-                                            <option value="orthodontist">Ортодонт</option>
-                                        </select>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
                     </form>
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
-                    <button type="submit" class="btn btn-primary">Сохранить</button>
+                    <button type="submit" form="addDoctorForm" class="btn btn-primary">Сохранить</button>
                 </div>
             </div>
         </div>
     </div>
 
+    <script>
+        async function loadDoctors() {
+            try {
+                const response = await fetch('http://localhost:3003/api/doctors/get/all');
+                if (!response.ok) throw new Error('Ошибка загрузки докторов');
+                const doctors = await response.json();
+                populateDoctorTable(doctors);
+            } catch (error) {
+                console.error(error);
+                alert('Не удалось загрузить данные докторов');
+            }
+        }
+
+        function populateDoctorTable(doctors) {
+            const tableBody = document.getElementById('doctorTableBody');
+            tableBody.innerHTML = '';
+            doctors.forEach(doctor => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${doctor.id}</td>
+                    <td>${doctor.fullName}</td>
+                    <td>${doctor.email}</td>
+                    <td>${doctor.mobilePhone}</td>
+                    <td>${doctor.specialty}</td>
+                    <td class="action-buttons">
+                        <a href="/personal/profiledoctorbyid.php?doctorId=${doctor.id}" class="btn btn-sm btn-info" title="Просмотреть">
+                            <i class="fas fa-eye"></i>
+                        </a>
+                        <button class="btn btn-sm btn-warning" title="Редактировать"><i class="fas fa-edit"></i></button>
+                        <button class="btn btn-sm btn-danger" title="Удалить"><i class="fas fa-trash"></i></button>
+                    </td>
+                `;
+                tableBody.appendChild(row);
+            });
+        }
+
+        document.addEventListener('DOMContentLoaded', loadDoctors);
+    </script>
+
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha3/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/js/all.min.js"></script>
 </body>
 </html>

@@ -5,13 +5,13 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Профиль пациента | DentalBook</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0-beta3/css/all.min.css" rel="stylesheet">
 </head>
 <body>
     <?php include 'profile.php'; ?>
     <?php include 'navbar.php'; ?>
-    <div class="container mt-5">
 
+    <div class="container mt-5">
         <!-- Таблица визитов -->
         <div class="table-container">
             <button class="btn btn-primary btn-add" data-bs-toggle="modal" data-bs-target="#addVisitModal">Добавить визит</button>
@@ -127,12 +127,6 @@
 
                 // Устанавливаем ФИО пациента
                 document.getElementById('patientFullName').value = data.profile.fullName;
-
-                // Устанавливаем ссылку на примечания
-                const notesLink = document.getElementById('notesLink');
-                if (notesLink && patientCardId) {
-                    notesLink.href = `/users/notes.php?patientCardId=${patientCardId}`;
-                }
             }
 
             async function loadVisits() {
@@ -140,8 +134,16 @@
                     headers: { Authorization: `Bearer ${token}` }
                 });
                 const data = await response.json();
+
+                // Сортировка визитов по дате и времени
+                const sortedVisits = data.visits.sort((a, b) => {
+                    const dateA = new Date(`${a.visitDate}T${a.visitTime}`);
+                    const dateB = new Date(`${b.visitDate}T${b.visitTime}`);
+                    return dateA - dateB;
+                });
+
                 const tableBody = document.getElementById('visitsTableBody');
-                tableBody.innerHTML = data.visits.map(visit => `
+                tableBody.innerHTML = sortedVisits.map(visit => `
                     <tr>
                         <td>${visit.id}</td>
                         <td>${visit.visitDate}</td>
@@ -154,9 +156,10 @@
                             <button class="btn btn-sm btn-warning"><i class="fas fa-edit"></i></button>
                             <button class="btn btn-sm btn-danger"><i class="fas fa-trash"></i></button>
                         </td>
-                    </tr>`).join('');
+                    </tr>
+                `).join('');
             }
-
+        
             async function saveVisit() {
                 const visitData = {
                     patientFullName: document.getElementById('patientFullName').value,
@@ -178,7 +181,7 @@
                 if (response.ok) {
                     alert('Визит успешно добавлен!');
                     document.getElementById('visitForm').reset();
-                    loadVisits();
+                    await loadVisits();
                 } else {
                     alert('Ошибка при добавлении визита');
                 }

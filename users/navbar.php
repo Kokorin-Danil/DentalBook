@@ -57,10 +57,12 @@
     <nav id="sidebar">
         <h4>DentalBook</h4>
         <ul class="list-unstyled">
+            <li><a href="/index.php"><i class="fas fa-home"></i> Главная</a></li>
             <li><a href="#"><i class="fas fa-tachometer-alt"></i> Панель управления</a></li>
+            <li><a href="/personal/profiledoctor.php"><i class="fas fa-user"></i> Мой профиль</a></li>
             <li><a href="/users/createcardpatient.php"><i class="fas fa-address-card"></i> Создать карту</a></li>
             <li><a href="/users/patients.php"><i class="fas fa-users"></i> Пациенты</a></li>
-            <li><a href="/personal/personal.php"><i class="fas fa-users"></i> Персонал</a></li>
+            <li><a href="/personal/doctors.php"><i class="fas fa-users"></i> Персонал</a></li>
             <li><a href="/kalendar/kalendar.php"><i class="fas fa-calendar-alt"></i> Записи</a></li>
             <li><a href="#"><i class="fas fa-folder-open"></i> Карты пациентов</a></li>
             <li><a href="#"><i class="fas fa-chart-bar"></i> Статистика</a></li>

@@ -6,79 +6,31 @@
     <title>Примечания | DentalBook</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
-    <style>
-        body {
-            background-color: #f4f6f9;
-        }
-
-        .table-container {
-            background-color: #ffffff;
-            border: 1px solid #ddd;
-            border-radius: 8px;
-            padding: 20px;
-            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
-        }
-
-        .btn-primary {
-            background: linear-gradient(45deg, #007bff, #0056b3);
-            border: none;
-        }
-
-        .btn-primary:hover {
-            background: linear-gradient(45deg, #0056b3, #003f88);
-        }
-    </style>
 </head>
 <body>
     <?php include 'profile.php'; ?>
     <?php include 'navbar.php'; ?>
 
     <div class="container mt-5">
+        <!-- Таблица примечаний -->
         <div class="table-container">
-            <div class="d-flex justify-content-between align-items-center mb-3">
-                <h4>Примечания</h4>
-                <button type="button" class="btn btn-success btn-add" data-bs-toggle="modal" data-bs-target="#addNoteModal">
-                    <i class="fas fa-plus"></i> Добавить
-                </button>
-            </div>
-            <div class="table-responsive">
-                <table class="table">
-                    <thead>
-                        <tr>
-                            <th scope="col">Id</th>
-                            <th scope="col">Имя</th>
-                            <th scope="col">Описание</th>
-                            <th scope="col">Важность</th>
-                            <th scope="col">Создан</th>
-                            <th scope="col">Действия</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr>
-                            <td>1</td>
-                            <td>Примечание 1</td>
-                            <td>Пациенту следует соблюдать диету</td>
-                            <td class="text-danger">Высокая</td>
-                            <td>24.12.2024</td>
-                            <td>
-                                <button class="btn btn-sm btn-warning"><i class="fas fa-edit"></i></button>
-                                <button class="btn btn-sm btn-danger"><i class="fas fa-trash"></i></button>
-                            </td>
-                        </tr>
-                        <tr>
-                            <td>2</td>
-                            <td>Примечание 2</td>
-                            <td>Назначено повторное посещение</td>
-                            <td class="text-secondary">Средняя</td>
-                            <td>22.12.2024</td>
-                            <td>
-                                <button class="btn btn-sm btn-warning"><i class="fas fa-edit"></i></button>
-                                <button class="btn btn-sm btn-danger"><i class="fas fa-trash"></i></button>
-                            </td>
-                        </tr>
-                    </tbody>
-                </table>
-            </div>
+            <button class="btn btn-primary btn-add" data-bs-toggle="modal" data-bs-target="#addNoteModal">Добавить примечание</button>
+            <table class="table table-bordered">
+                <thead>
+                    <tr>
+                        <th>Id</th>
+                        <th>Имя</th>
+                        <th>Описание</th>
+                        <th>Важность</th>
+                        <th>Врач</th>
+                        <th>Дата создания</th>
+                        <th>Действия</th>
+                    </tr>
+                </thead>
+                <tbody id="notesTableBody">
+                    <!-- Данные примечаний будут загружены динамически -->
+                </tbody>
+            </table>
         </div>
     </div>
 
@@ -86,49 +38,152 @@
     <div class="modal fade" id="addNoteModal" tabindex="-1" aria-labelledby="addNoteModalLabel" aria-hidden="true">
         <div class="modal-dialog">
             <div class="modal-content">
+                <!-- Заголовок модального окна -->
                 <div class="modal-header">
-                    <h5 class="modal-title" id="addNoteModalLabel">Добавить примечание</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    <h5 class="modal-title" id="addNoteModalLabel">Новое примечание</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Закрыть"></button>
                 </div>
-                <form>
-                    <div class="modal-body">
-                        <!-- ФИО пациента -->
-                        <div class="mb-3">
-                            <label for="patientName" class="form-label">ФИО пациента</label>
-                            <input type="text" class="form-control" id="patientName" placeholder="Введите ФИО пациента">
+
+                <!-- Тело модального окна -->
+                <div class="modal-body">
+                    <form id="noteForm">
+                        <div class="row mb-3">
+                            <div class="col-md-12">
+                                <label for="noteName" class="form-label">Имя примечания</label>
+                                <input type="text" id="noteName" class="form-control" placeholder="Введите имя примечания" required>
+                            </div>
                         </div>
 
-                        <!-- Имя примечания -->
-                        <div class="mb-3">
-                            <label for="noteName" class="form-label">Имя</label>
-                            <input type="text" class="form-control" id="noteName" placeholder="Введите имя примечания">
+                        <div class="row mb-3">
+                            <div class="col-md-12">
+                                <label for="noteDescription" class="form-label">Описание</label>
+                                <textarea id="noteDescription" class="form-control" placeholder="Введите описание" required></textarea>
+                            </div>
                         </div>
 
-                        <!-- Описание примечания -->
-                        <div class="mb-3">
-                            <label for="noteDescription" class="form-label">Описание</label>
-                            <textarea class="form-control" id="noteDescription" placeholder="Введите описание"></textarea>
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="notePriority" class="form-label">Важность</label>
+                                <select id="notePriority" class="form-select" required>
+                                    <option value="Высокая">Высокая</option>
+                                    <option value="Средняя">Средняя</option>
+                                    <option value="Низкая">Низкая</option>
+                                </select>
+                            </div>
                         </div>
+                    </form>
+                </div>
 
-                        <!-- Важность -->
-                        <div class="mb-3">
-                            <label for="notePriority" class="form-label">Важность</label>
-                            <select class="form-select" id="notePriority">
-                                <option value="high">Высокая</option>
-                                <option value="medium">Средняя</option>
-                                <option value="low">Низкая</option>
-                            </select>
-                        </div>
-                    </div>
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
-                        <button type="submit" class="btn btn-primary">Добавить</button>
-                    </div>
-                </form>
+                <!-- Подвал модального окна -->
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+                    <button type="button" id="saveNoteButton" class="btn btn-primary">Сохранить</button>
+                </div>
             </div>
         </div>
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Получение ID карты пациента из URL
+        function getPatientCardId() {
+            const params = new URLSearchParams(window.location.search);
+            return params.get('patientCardId');
+        }
+
+        // Получение токена из cookies
+        function getCookie(name) {
+            const value = `; ${document.cookie}`;
+            const parts = value.split(`; ${name}=`);
+            if (parts.length === 2) return parts.pop().split(';').shift();
+        }
+
+        // Загрузка примечаний
+        async function loadNotes() {
+            const patientCardId = getPatientCardId();
+            const token = getCookie('token');
+
+            if (!patientCardId || !token) {
+                alert('ID пациента или токен отсутствуют.');
+                return;
+            }
+
+            try {
+                const response = await fetch(`http://localhost:3003/api/patient-cards/notes/getall/${patientCardId}`, {
+                    headers: { Authorization: `Bearer ${token}` },
+                });
+
+                if (!response.ok) {
+                    throw new Error('Ошибка загрузки примечаний');
+                }
+
+                const data = await response.json();
+                const notesTableBody = document.getElementById('notesTableBody');
+                notesTableBody.innerHTML = data.notes.map(note => `
+                    <tr>
+                        <td>${note.id}</td>
+                        <td>${note.name}</td>
+                        <td>${note.description}</td>
+                        <td class="${note.importance === 'Высокая' ? 'text-danger' : note.importance === 'Средняя' ? 'text-warning' : 'text-success'}">${note.importance}</td>
+                        <td>${note.doctor.firstName} ${note.doctor.lastName}</td>
+                        <td>${new Date(note.createdAt).toLocaleDateString()}</td>
+                        <td>
+                            <button class="btn btn-sm btn-info"><i class="fas fa-eye"></i></button>
+                            <button class="btn btn-sm btn-warning"><i class="fas fa-edit"></i></button>
+                            <button class="btn btn-sm btn-danger"><i class="fas fa-trash"></i></button>
+                        </td>
+                    </tr>
+                `).join('');
+            } catch (error) {
+                console.error('Ошибка загрузки примечаний:', error);
+                alert('Не удалось загрузить примечания.');
+            }
+        }
+
+        // Обработчик для сохранения нового примечания
+        document.getElementById('saveNoteButton').addEventListener('click', async () => {
+            const patientCardId = getPatientCardId();
+            const token = getCookie('token');
+
+            if (!patientCardId || !token) {
+                alert('ID пациента или токен отсутствуют.');
+                return;
+            }
+
+            const noteData = {
+                name: document.getElementById('noteName').value,
+                description: document.getElementById('noteDescription').value,
+                importance: document.getElementById('notePriority').value,
+            };
+
+            try {
+                const response = await fetch(`http://localhost:3003/api/patient-cards/notes/create/${patientCardId}`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        Authorization: `Bearer ${token}`,
+                    },
+                    body: JSON.stringify(noteData),
+                });
+
+                if (!response.ok) {
+                    const error = await response.json();
+                    throw new Error(error.message || 'Ошибка создания примечания');
+                }
+
+                alert('Примечание успешно добавлено!');
+                document.getElementById('noteForm').reset();
+
+                // Перезагрузка списка примечаний
+                await loadNotes();
+            } catch (error) {
+                console.error('Ошибка сохранения примечания:', error);
+                alert(`Не удалось сохранить примечание: ${error.message}`);
+            }
+        });
+
+        // Инициализация страницы
+        document.addEventListener('DOMContentLoaded', loadNotes);
+    </script>
 </body>
 </html>
