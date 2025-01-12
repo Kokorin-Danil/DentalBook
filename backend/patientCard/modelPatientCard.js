@@ -337,6 +337,147 @@ ToothStatus.init(
   }
 );
 
+class ExaminationSheet extends Model {}
+
+ExaminationSheet.init(
+  {
+    id: {
+      type: DataTypes.INTEGER,
+      autoIncrement: true,
+      primaryKey: true,
+    },
+    patientCardId: {
+      type: DataTypes.INTEGER,
+      allowNull: false,
+      references: {
+        model: "patient_cards", // Название таблицы карт пациентов
+        key: "id",
+      },
+    },
+    type: {
+      type: DataTypes.ENUM(
+        "Первичный осмотр",
+        "Повторный визит",
+        "Профилактическая чистка",
+        "Экстренный случай"
+      ),
+      allowNull: false,
+    },
+    complaints: {
+      // Жалобы пациента для первичного осмотра
+      type: DataTypes.TEXT,
+      allowNull: true,
+    },
+    preliminaryDiagnosis: {
+      // Предварительный диагноз (для первичного осмотра)
+      type: DataTypes.ENUM(
+        "Кариес",
+        "Пародонтит",
+        "Гингивит",
+        "Абсцесс",
+        "Гиперчувствительность зубов",
+        "Дисфункция ВНЧС",
+        "Кандидоз",
+        "Лейкоплакия",
+        "Ретинированные зубы мудрости",
+        "Гипоплазия эмали"
+      ),
+      allowNull: true,
+    },
+    doctorRecommendations: {
+      // Рекомендации врача (для первичного осмотра и экстренных случаев)
+      type: DataTypes.TEXT,
+      allowNull: true,
+    },
+    conditionDynamics: {
+      // Динамика состояния (для повторного визита)
+      type: DataTypes.TEXT,
+      allowNull: true,
+    },
+    treatmentResults: {
+      // Результаты лечения (для повторного визита)
+      type: DataTypes.TEXT,
+      allowNull: true,
+    },
+    cleaningGoal: {
+      // Цель чистки (для профилактической чистки)
+      type: DataTypes.TEXT,
+      allowNull: true,
+    },
+    cleaningProcedure: {
+      // Процедура чистки (для профилактической чистки)
+      type: DataTypes.ENUM(
+        "Скалинг",
+        "Полировка зубов",
+        "Фторирование зубов",
+        "Лазерная чистка",
+        "Пескоструйная обработка",
+        "Ручная чистка",
+        "Ультразвуковая чистка",
+        "Глубокая чистка",
+        "Антибактериальная обработка",
+        "Локальная реминерализация",
+        "Отбеливающая чистка",
+        "Чистка дентальных имплантатов",
+        "Чистка ортодонтических конструкций"
+      ),
+      allowNull: true,
+    },
+    additionalCleaningProcedures: {
+      // Дополнительные процедуры (для профилактической чистки)
+      type: DataTypes.TEXT,
+      allowNull: true,
+    },
+    postCleaningCondition: {
+      // Состояние после чистки (для профилактической чистки)
+      type: DataTypes.TEXT,
+      allowNull: true,
+    },
+    problemDescription: {
+      // Описание проблемы (для экстренного случая)
+      type: DataTypes.TEXT,
+      allowNull: true,
+    },
+    conditionAssessment: {
+      // Оценка состояния (для экстренного случая)
+      type: DataTypes.ENUM(
+        "Сильная зубная боль",
+        "Опухоль/воспаление",
+        "Кровотечение",
+        "Травма зуба/челюсти",
+        "Онемение в области лица или челюсти",
+        "Резкий запах изо рта"
+      ),
+      allowNull: true,
+    },
+    additionalDetails: {
+      // Дополнительные детали (для экстренного случая)
+      type: DataTypes.TEXT,
+      allowNull: true,
+    },
+    measuresTaken: {
+      // Принятые меры (для экстренного случая)
+      type: DataTypes.TEXT,
+      allowNull: true,
+    },
+  },
+  {
+    sequelize: dbST,
+    modelName: "ExaminationSheet",
+    tableName: "examination_sheets",
+    timestamps: true,
+  }
+);
+
+PatientCard.hasMany(ExaminationSheet, {
+  foreignKey: "patientCardId",
+  as: "examinations",
+});
+ExaminationSheet.belongsTo(PatientCard, {
+  foreignKey: "patientCardId",
+  as: "SheetpatientCard",
+});
+
 // Ассоциации
 Visit.hasMany(Snapshot, { foreignKey: "visitId", as: "snapshots" });
 Snapshot.belongsTo(Visit, { foreignKey: "visitId", as: "visit" });
@@ -427,4 +568,12 @@ Tooth.belongsTo(PatientCard, {
 Tooth.hasMany(ToothStatus, { foreignKey: "toothId", as: "statuses" });
 ToothStatus.belongsTo(Tooth, { foreignKey: "toothId", as: "tooth" });
 
-export { PatientCard, Visit, PatientNote, Snapshot, Tooth, ToothStatus };
+export {
+  PatientCard,
+  Visit,
+  PatientNote,
+  Snapshot,
+  Tooth,
+  ToothStatus,
+  ExaminationSheet,
+};

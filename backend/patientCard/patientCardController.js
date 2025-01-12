@@ -5,6 +5,7 @@ import {
   Snapshot,
   Tooth,
   ToothStatus,
+  ExaminationSheet,
 } from "./modelPatientCard.js";
 import User from "../users/modelUser.js";
 import jwt from "jsonwebtoken";
@@ -1028,5 +1029,112 @@ export const getTeethWithStatuses = async (req, res) => {
   } catch (error) {
     console.error("Ошибка при получении зубов:", error);
     res.status(500).json({ message: "Ошибка сервера", error: error.message });
+  }
+};
+
+export const addExaminationSheet = async (req, res) => {
+  const { patientCardId } = req.params;
+  const {
+    type,
+    complaints,
+    preliminaryDiagnosis,
+    doctorRecommendations,
+    conditionDynamics,
+    treatmentResults,
+    cleaningGoal,
+    cleaningProcedure,
+    additionalCleaningProcedures,
+    postCleaningCondition,
+    problemDescription,
+    conditionAssessment,
+    additionalDetails,
+    measuresTaken,
+  } = req.body;
+
+  try {
+    // Проверка обязательных полей
+    if (!patientCardId || !type) {
+      return res.status(400).json({
+        message: "Необходимо указать patientCardId и type",
+      });
+    }
+
+    // Валидация типа осмотра
+    const validTypes = [
+      "Первичный осмотр",
+      "Повторный визит",
+      "Профилактическая чистка",
+      "Экстренный случай",
+    ];
+    if (!validTypes.includes(type)) {
+      return res.status(400).json({
+        message: `Недопустимый тип осмотра. Допустимые значения: ${validTypes.join(
+          ", "
+        )}`,
+      });
+    }
+
+    // Проверка обязательных полей для каждого типа
+    const requiredFieldsByType = {
+      "Первичный осмотр": [
+        "complaints",
+        "preliminaryDiagnosis",
+        "doctorRecommendations",
+      ],
+      "Повторный визит": ["conditionDynamics", "treatmentResults"],
+      "Профилактическая чистка": [
+        "cleaningGoal",
+        "cleaningProcedure",
+        "postCleaningCondition",
+      ],
+      "Экстренный случай": [
+        "problemDescription",
+        "conditionAssessment",
+        "measuresTaken",
+        "doctorRecommendations",
+      ],
+    };
+
+    const missingFields = requiredFieldsByType[type].filter(
+      (field) => !req.body[field]
+    );
+
+    if (missingFields.length > 0) {
+      return res.status(400).json({
+        message: `Для типа "${type}" необходимо указать следующие поля: ${missingFields.join(
+          ", "
+        )}`,
+      });
+    }
+
+    // Создание записи
+    const examinationSheet = await ExaminationSheet.create({
+      patientCardId,
+      type,
+      complaints,
+      preliminaryDiagnosis,
+      doctorRecommendations,
+      conditionDynamics,
+      treatmentResults,
+      cleaningGoal,
+      cleaningProcedure,
+      additionalCleaningProcedures,
+      postCleaningCondition,
+      problemDescription,
+      conditionAssessment,
+      additionalDetails,
+      measuresTaken,
+    });
+
+    res.status(201).json({
+      message: "Запись успешно добавлена",
+      examinationSheet,
+    });
+  } catch (error) {
+    console.error("Ошибка при добавлении записи в лист осмотра:", error);
+    res.status(500).json({
+      message: "Ошибка сервера",
+      error: error.message,
+    });
   }
 };
