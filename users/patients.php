@@ -78,7 +78,7 @@
                         <th>Номер карты</th>
                         <th>ФИО</th>
                         <th>Телефон</th>
-                        <th>Следующий визит</th>
+                        <th>Последний визит</th>
                         <th>Действия</th>
                     </tr>
                 </thead>
@@ -130,25 +130,21 @@
         // Заполняем таблицу данными пациентов
         function populatePatientTable(patients) {
             const tableBody = document.getElementById('patientTableBody');
-            const today = new Date();
-            today.setHours(0, 0, 0, 0); // Устанавливаем начало текущего дня
-            const tomorrow = new Date(today);
-            tomorrow.setDate(today.getDate() + 1); // Завтрашний день
 
             tableBody.innerHTML = ''; // Очищаем таблицу
 
             patients.forEach((patient) => {
                 const lastVisitDate = patient.lastVisit ? new Date(patient.lastVisit) : null;
 
-                // Проверяем, если дата визита больше или равна завтрашнему дню
-                const nextVisitDisplay = lastVisitDate && lastVisitDate >= tomorrow ? lastVisitDate.toLocaleDateString() : 'Нет записей';
+                // Форматируем дату последнего визита
+                const lastVisitDisplay = lastVisitDate ? lastVisitDate.toLocaleDateString() + ' ' + lastVisitDate.toLocaleTimeString() : 'Нет записей';
 
                 const row = document.createElement('tr');
                 row.innerHTML = `
                     <td>${patient.id}</td>
                     <td>${patient.fullName}</td>
                     <td>${patient.phoneNumber}</td>
-                    <td>${nextVisitDisplay}</td>
+                    <td>${lastVisitDisplay}</td>
                     <td class="table-actions">
                         <a href="/users/view.php?id=${patient.id}" class="btn btn-sm btn-info view-patient" data-id="${patient.id}">
                             <i class="fas fa-eye"></i> Просмотреть
