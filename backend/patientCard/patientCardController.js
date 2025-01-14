@@ -423,7 +423,7 @@ const generateSchedule = async (date) => {
 
     // Если время визита найдено в расписании
     if (visitStartIndex !== -1) {
-      const visitDuration = visit.visitType === "лечение" ? 2 : 1; // Определение продолжительности визита
+      const visitDuration = visit.visitType === "Лечение" ? 2 : 1; // Определение продолжительности визита
       for (let i = 0; i < visitDuration; i++) {
         const slotIndex = visitStartIndex + i;
         if (slotIndex < schedule.length && schedule[slotIndex]) {
@@ -1132,6 +1132,74 @@ export const addExaminationSheet = async (req, res) => {
     });
   } catch (error) {
     console.error("Ошибка при добавлении записи в лист осмотра:", error);
+    res.status(500).json({
+      message: "Ошибка сервера",
+      error: error.message,
+    });
+  }
+};
+
+export const getExaminationSheets = async (req, res) => {
+  const { patientCardId } = req.params;
+
+  try {
+    if (!patientCardId) {
+      return res
+        .status(400)
+        .json({ message: "Необходимо указать patientCardId" });
+    }
+
+    // Получение всех записей для указанной карты пациента
+    const sheets = await ExaminationSheet.findAll({
+      where: { patientCardId },
+      attributes: [
+        "id",
+        "type",
+        "createdAt",
+        "complaints",
+        "preliminaryDiagnosis",
+        "doctorRecommendations",
+        "conditionDynamics",
+        "treatmentResults",
+        "cleaningGoal",
+        "cleaningProcedure",
+        "additionalCleaningProcedures",
+        "postCleaningCondition",
+        "problemDescription",
+        "conditionAssessment",
+        "additionalDetails",
+        "measuresTaken",
+      ],
+    });
+
+    // Группировка записей по типу
+    const groupedSheets = {
+      "Первичный осмотр": [],
+      "Повторный визит": [],
+      "Профилактическая чистка": [],
+      "Экстренный случай": [],
+    };
+
+    sheets.forEach((sheet) => {
+      groupedSheets[sheet.type].push(sheet);
+    });
+
+    // Формирование упрощенного списка с сортировкой по дате
+    const simplifiedSheets = await ExaminationSheet.findAll({
+      where: { patientCardId },
+      attributes: ["id", "type", "createdAt"],
+      order: [["createdAt", "ASC"]], // Сортировка по дате создания
+    });
+
+    res.status(200).json({
+      message: "Записи успешно получены",
+      data: {
+        grouped: groupedSheets,
+        simplified: simplifiedSheets,
+      },
+    });
+  } catch (error) {
+    console.error("Ошибка при получении записей листа осмотра:", error);
     res.status(500).json({
       message: "Ошибка сервера",
       error: error.message,

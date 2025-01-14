@@ -16,6 +16,7 @@ import {
   updateTeethStatuses,
   getTeethWithStatuses,
   addExaminationSheet,
+  getExaminationSheets,
 } from "./patientCardController.js";
 import { uploadSnapshot } from "../utils/middleware.js";
 import { authenticateToken } from "../utils/authMiddleware.js";
@@ -52,6 +53,10 @@ PatientCardRouter.get("/teeth/get/:patientCardId", getTeethWithStatuses);
 PatientCardRouter.post(
   "/examinationsheet/create/:patientCardId",
   addExaminationSheet
+);
+PatientCardRouter.get(
+  "/examinationsheet/get/:patientCardId",
+  getExaminationSheets
 );
 
 export default PatientCardRouter;
