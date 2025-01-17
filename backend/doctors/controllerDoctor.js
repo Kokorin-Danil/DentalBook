@@ -7,6 +7,8 @@ import { Op } from "sequelize";
 import { PatientCard, Visit } from "../patientCard/modelPatientCard.js";
 
 const createDoctor = async (req, res) => {
+  const transaction = await sequelize.transaction(); // Создаем транзакцию
+
   try {
     // Валидация данных
     const errors = validationResult(req);
@@ -35,26 +37,35 @@ const createDoctor = async (req, res) => {
     }
 
     // Создание нового пользователя с ролью doctor
-    const newUser = await User.create({
-      firstName,
-      lastName,
-      email,
-      password, // Предполагается, что пароль уже захеширован в модели User
-      gender,
-      role: "doctor", // Устанавливаем роль как doctor
-    });
+    const newUser = await User.create(
+      {
+        firstName,
+        lastName,
+        email,
+        password, // Предполагается, что пароль уже захеширован в модели User
+        gender,
+        role: "doctor", // Устанавливаем роль как doctor
+      },
+      { transaction } // Передаем транзакцию
+    );
 
     // Создание нового врача, связываем его с только что созданным пользователем
-    const newDoctor = await Doctor.create({
-      firstName,
-      lastName,
-      patronymic,
-      dateOfBirth,
-      email,
-      specialty,
-      mobilePhone, // Добавляем мобильный телефон
-      userId: newUser.id, // Связываем врача с пользователем через userId
-    });
+    const newDoctor = await Doctor.create(
+      {
+        firstName,
+        lastName,
+        patronymic,
+        dateOfBirth,
+        email,
+        specialty,
+        mobilePhone, // Добавляем мобильный телефон
+        userId: newUser.id, // Связываем врача с пользователем через userId
+      },
+      { transaction } // Передаем транзакцию
+    );
+
+    // Подтверждаем транзакцию
+    await transaction.commit();
 
     return res.status(201).json({
       message: "Доктор успешно создан",
@@ -62,6 +73,8 @@ const createDoctor = async (req, res) => {
       user: newUser,
     });
   } catch (error) {
+    // Откат транзакции в случае ошибки
+    await transaction.rollback();
     console.error(error);
     return res.status(500).json({ message: "Server error" });
   }

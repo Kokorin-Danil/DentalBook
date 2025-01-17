@@ -564,7 +564,6 @@ export const getPatientProfile = async (req, res) => {
         "patronymic",
         "phoneNumber",
         "address",
-        "policyNumber",
         "dateOfBirth",
       ],
       include: [
@@ -598,7 +597,6 @@ export const getPatientProfile = async (req, res) => {
         patientCard.patronymic || ""
       }`.trim(),
       dateOfBirth: dateOfBirthFormatted,
-      policy: patientCard.policyNumber || "Не указан",
       phoneNumber: patientCard.phoneNumber || "Не указан",
       address: patientCard.address || "Не указан",
       email: patientCard.user.email || "Не указан",
@@ -1204,5 +1202,69 @@ export const getExaminationSheets = async (req, res) => {
       message: "Ошибка сервера",
       error: error.message,
     });
+  }
+};
+
+export const getPatientCardDetails = async (req, res) => {
+  const { patientCardId } = req.params;
+
+  try {
+    if (!patientCardId) {
+      return res
+        .status(400)
+        .json({ message: "Необходимо указать patientCardId" });
+    }
+
+    // Получение данных карты пациента
+    const patientCard = await PatientCard.findOne({
+      where: { id: patientCardId },
+      attributes: ["policyNumber", "snils", "passport"], // Выбор только нужных полей
+    });
+
+    if (!patientCard) {
+      return res.status(404).json({ message: "Карта пациента не найдена" });
+    }
+
+    res.status(200).json(patientCard);
+  } catch (error) {
+    console.error("Ошибка при получении данных карты пациента:", error);
+    res.status(500).json({ message: "Ошибка сервера", error: error.message });
+  }
+};
+
+export const deletePatientCard = async (req, res) => {
+  const { patientCardId } = req.params;
+
+  try {
+    if (!patientCardId) {
+      return res
+        .status(400)
+        .json({ message: "Необходимо указать patientCardId" });
+    }
+
+    // Поиск карты пациента с данными пользователя
+    const patientCard = await PatientCard.findOne({
+      where: { id: patientCardId },
+      include: [{ model: User, as: "user" }],
+    });
+
+    if (!patientCard) {
+      return res.status(404).json({ message: "Карта пациента не найдена" });
+    }
+
+    const userId = patientCard.user.id; // ID связанного пользователя
+
+    // Удаление карты пациента
+    await patientCard.destroy();
+
+    // Удаление пользователя
+    await User.destroy({ where: { id: userId } });
+
+    res.status(200).json({
+      message: "Карта пациента и связанный пользователь успешно удалены",
+    });
+  } catch (error) {
+    console.error("Ошибка при удалении карты пациента и пользователя:", error);
+    res.status(500).json({ message: "Ошибка сервера", error: error.message });
   }
 };

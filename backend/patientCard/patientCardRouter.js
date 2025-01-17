@@ -17,6 +17,8 @@ import {
   getTeethWithStatuses,
   addExaminationSheet,
   getExaminationSheets,
+  getPatientCardDetails,
+  deletePatientCard,
 } from "./patientCardController.js";
 import { uploadSnapshot } from "../utils/middleware.js";
 import { authenticateToken } from "../utils/authMiddleware.js";
@@ -58,5 +60,7 @@ PatientCardRouter.get(
   "/examinationsheet/get/:patientCardId",
   getExaminationSheets
 );
+PatientCardRouter.get("/document/get/:patientCardId", getPatientCardDetails);
+PatientCardRouter.delete("/card/:patientCardId", deletePatientCard);
 
 export default PatientCardRouter;
