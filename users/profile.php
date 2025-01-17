@@ -67,6 +67,9 @@
             <li class="nav-item">
                 <a class="nav-link" href="#personal-data" data-bs-toggle="tab"><i class="fas fa-id-card"></i> Персональные данные</a>
             </li>
+            <li class="nav-item">
+                <a id="medicalRecordsTab" class="nav-link" href="#"><i class="fas fa-file-medical-alt"></i> История медицинских записей</a>
+            </li>
         </ul>
     </div>
 
@@ -124,6 +127,10 @@
                 // Устанавливаем ссылку для вкладки "Формула"
                 const formulaTab = document.getElementById('formulaTab');
                 formulaTab.href = `/users/formula.php?patientCardId=${patientCardId}`;
+
+                // Устанавливаем ссылку для "История медицинских записей"
+                const medicalRecordsTab = document.getElementById('medicalRecordsTab');
+                medicalRecordsTab.href = `/users/listosmotra.php?patientCardId=${patientCardId}`;
 
                 // Устанавливаем ссылки для других вкладок
                 const picturesLink = document.getElementById('picturesLink');
