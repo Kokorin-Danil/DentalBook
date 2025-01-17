@@ -4,10 +4,11 @@ import { validationResult } from "express-validator";
 import jwt from "jsonwebtoken";
 import dayjs from "dayjs";
 import { Op } from "sequelize";
+import dbST from "../utils/database.js";
 import { PatientCard, Visit } from "../patientCard/modelPatientCard.js";
 
 const createDoctor = async (req, res) => {
-  const transaction = await sequelize.transaction(); // Создаем транзакцию
+  const transaction = await dbST.transaction(); // Создаем транзакцию
 
   try {
     // Валидация данных
