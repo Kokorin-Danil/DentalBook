@@ -6,6 +6,8 @@ import dayjs from "dayjs";
 import { Op } from "sequelize";
 import dbST from "../utils/database.js";
 import { PatientCard, Visit } from "../patientCard/modelPatientCard.js";
+import fs from "fs";
+import { uploadAvatar } from "../utils/middleware.js";
 
 const createDoctor = async (req, res) => {
   const transaction = await dbST.transaction(); // Создаем транзакцию
@@ -320,6 +322,85 @@ const getDoctorVisitsById = async (req, res) => {
   }
 };
 
+const uploadDoctorAvatar = async (req, res) => {
+  try {
+    // Получение токена из заголовка Authorization
+    const token = req.headers.authorization?.split(" ")[1];
+    if (!token) {
+      return res.status(401).json({ message: "Токен не предоставлен" });
+    }
+
+    // Расшифровка токена
+    let decoded;
+    try {
+      decoded = jwt.verify(token, process.env.JWT_SECRET);
+    } catch (err) {
+      return res.status(401).json({ message: "Неверный или истёкший токен" });
+    }
+
+    // Извлекаем ID пользователя из токена
+    const userId = decoded.id;
+
+    // Ищем пользователя с ролью врача
+    const user = await User.findOne({
+      where: { id: userId, role: "doctor" },
+      include: [
+        {
+          model: Doctor,
+          as: "doctorProfile", // Убедитесь, что связь настроена корректно
+        },
+      ],
+    });
+
+    if (!user) {
+      return res.status(404).json({ message: "Врач не найден" });
+    }
+
+    // Загрузка файла
+    uploadAvatar.single("avatar")(req, res, async (err) => {
+      if (err) {
+        console.error("Ошибка multer:", err.message);
+        return res.status(400).json({ message: err.message });
+      }
+
+      if (!req.file) {
+        return res.status(400).json({ message: "Файл не был загружен" });
+      }
+
+      // Новый путь для аватарки
+      const newAvatarPath = `/backend/uploads/avatars/${req.file.filename}`;
+
+      // Удаление старой аватарки, если она не является стандартной
+      if (
+        user.avatar &&
+        user.avatar !== "/backend/uploads/avatars/default_avatar.png"
+      ) {
+        fs.unlink(user.avatar, (err) => {
+          if (err)
+            console.error("Ошибка удаления старой аватарки:", err.message);
+        });
+      }
+
+      // Обновление аватарки
+      user.avatar = newAvatarPath;
+      await user.save();
+
+      return res.status(200).json({
+        message: "Аватарка успешно обновлена",
+        user: {
+          id: user.id,
+          firstName: user.firstName,
+          lastName: user.lastName,
+          avatar: user.avatar,
+        },
+      });
+    });
+  } catch (error) {
+    console.error("Ошибка загрузки аватарки врача:", error);
+    return res.status(500).json({ message: "Ошибка сервера" });
+  }
+};
+
 export default {
   createDoctor,
   getDoctorInfo,
@@ -327,4 +408,5 @@ export default {
   getAllDoctors,
   getDoctorInfoById,
   getDoctorVisitsById,
+  uploadDoctorAvatar,
 };

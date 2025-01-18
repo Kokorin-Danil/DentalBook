@@ -10,5 +10,6 @@ doctorRouter.get("/shudle", controllerDoctor.getDoctorVisits);
 doctorRouter.get("/get/all", controllerDoctor.getAllDoctors);
 doctorRouter.get("/profile/:doctorId", controllerDoctor.getDoctorInfoById);
 doctorRouter.get("/shudle/:doctorId", controllerDoctor.getDoctorVisitsById);
+doctorRouter.post("/avatar/upload", controllerDoctor.uploadDoctorAvatar);
 
 export default doctorRouter;
