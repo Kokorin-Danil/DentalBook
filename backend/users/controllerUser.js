@@ -7,6 +7,7 @@ import { format } from "date-fns";
 import { ru } from "date-fns/locale";
 import fs from "fs";
 import path from "path";
+import { uploadAvatar } from "../utils/middleware.js";
 
 dotenv.config();
 
@@ -59,7 +60,7 @@ export const getClientProfile = async (req, res) => {
     // Расшифровываем токен
     let decoded;
     try {
-      decoded = jwt.verify(token, JWT_SECRET);
+      decoded = jwt.verify(token, process.env.JWT_SECRET);
     } catch (err) {
       return res.status(401).json({ message: "Неверный или истёкший токен" });
     }
@@ -99,11 +100,11 @@ export const getClientProfile = async (req, res) => {
         patientCard?.patronymic || ""
       }`.trim(),
       dateOfBirth: dateOfBirthFormatted,
-      policy: patientCard?.policyNumber || "Не указан",
       phoneNumber: patientCard?.phoneNumber || "Не указан",
       email: user.email,
       address: patientCard?.address || "Не указан",
       lastLogin: lastLoginFormatted,
+      avatar: user.avatar, // Добавляем путь к аватарке
     };
 
     return res.status(200).json({ profile });
@@ -233,6 +234,42 @@ export const updateUser = async (req, res) => {
       }
     }
 
+    return res.status(500).json({ message: "Ошибка сервера" });
+  }
+};
+
+export const uploadUserAvatar = async (req, res) => {
+  try {
+    const userId = req.user.id;
+
+    uploadAvatar.single("avatar")(req, res, async (err) => {
+      if (err) {
+        console.error("Ошибка multer:", err.message);
+        return res.status(400).json({ message: err.message });
+      }
+
+      if (!req.file) {
+        return res.status(400).json({ message: "Файл не был загружен" });
+      }
+
+      const newAvatarPath = `/backend/uploads/avatars/${req.file.filename}`;
+
+      const user = await User.findByPk(userId);
+      if (!user) {
+        fs.unlinkSync(req.file.path);
+        return res.status(404).json({ message: "Пользователь не найден" });
+      }
+
+      user.avatar = newAvatarPath;
+      await user.save();
+
+      return res.status(200).json({
+        message: "Аватарка успешно обновлена",
+        user: user,
+      });
+    });
+  } catch (error) {
+    console.error("Ошибка загрузки аватарки:", error);
     return res.status(500).json({ message: "Ошибка сервера" });
   }
 };
