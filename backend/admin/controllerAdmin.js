@@ -1,6 +1,10 @@
 import User from "../users/modelUser.js";
 import Doctor from "../doctors/modelDoctor.js";
 import { PatientCard } from "../patientCard/modelPatientCard.js";
+import fs from "fs";
+import path from "path";
+import { validationResult } from "express-validator";
+import { uploadAvatar } from "../utils/middleware.js";
 
 export const createAdminUser = async (req, res) => {
   try {
@@ -142,5 +146,155 @@ export const getAllPatients = async (req, res) => {
   } catch (error) {
     console.error("Ошибка при получении списка пациентов:", error);
     return res.status(500).json({ message: "Ошибка сервера" });
+  }
+};
+
+const deleteFileIfExists = (relativeFilePath) => {
+  const filePath = relativeFilePath.startsWith("/backend")
+    ? path.join(process.cwd(), relativeFilePath.slice(8)) // Убираем "/backend"
+    : path.join(process.cwd(), relativeFilePath);
+
+  fs.access(filePath, fs.constants.F_OK, (err) => {
+    if (err) {
+      console.log(`Файл не найден: ${filePath}`);
+    } else {
+      fs.unlink(filePath, (unlinkErr) => {
+        if (unlinkErr) {
+          console.error(
+            `Ошибка удаления файла ${filePath}:`,
+            unlinkErr.message
+          );
+        } else {
+          console.log(`Файл ${filePath} успешно удалён`);
+        }
+      });
+    }
+  });
+};
+
+export const updatePatientAvatar = async (req, res) => {
+  try {
+    const { patientCardId } = req.params;
+
+    // Проверяем наличие файла
+    if (!req.file) {
+      return res.status(400).json({ message: "Файл аватарки не передан" });
+    }
+
+    const patient = await PatientCard.findByPk(patientCardId, {
+      include: [{ model: User, as: "user" }],
+    });
+
+    if (!patient) {
+      return res.status(404).json({ message: "Пациент не найден" });
+    }
+
+    const user = patient.user;
+
+    // Удаляем старую аватарку, если она есть
+    if (
+      user.avatar &&
+      user.avatar !== "/backend/uploads/avatars/default_avatar.png"
+    ) {
+      deleteFileIfExists(user.avatar);
+    }
+
+    // Обновляем путь к новой аватарке
+    const avatarPath = `/backend/uploads/avatars/${req.file.filename}`;
+    user.avatar = avatarPath;
+
+    await user.save();
+
+    return res.status(200).json({
+      message: "Аватарка обновлена",
+      avatar: user.avatar,
+    });
+  } catch (error) {
+    console.error("Ошибка при обновлении аватарки:", error);
+    return res
+      .status(500)
+      .json({ message: "Ошибка сервера при обновлении аватарки" });
+  }
+};
+
+export const updatePatientData = async (req, res) => {
+  try {
+    const { patientCardId } = req.params;
+
+    // Находим пациента по id
+    const patient = await PatientCard.findByPk(patientCardId, {
+      include: [{ model: User, as: "user" }],
+    });
+
+    if (!patient) {
+      return res.status(404).json({ message: "Пациент не найден" });
+    }
+
+    // Получаем данные из body
+    const {
+      firstName,
+      lastName,
+      patronymic,
+      dateOfBirth,
+      address,
+      phoneNumber,
+      email,
+      gender,
+      policyNumber,
+      snils,
+      passport,
+    } = req.body;
+
+    // Обновляем данные пациента
+    const updatedPatientData = {
+      firstName,
+      lastName,
+      patronymic,
+      dateOfBirth,
+      address,
+      phoneNumber,
+      email,
+      gender,
+      policyNumber,
+      snils,
+      passport,
+    };
+
+    await patient.update(updatedPatientData);
+
+    // Обновляем данные пользователя
+    const user = patient.user;
+    const updatedUserData = {
+      email,
+      firstName,
+      lastName,
+      patronymic,
+      phoneNumber,
+    };
+
+    await user.update(updatedUserData);
+
+    return res.status(200).json({
+      message: "Информация о пациенте успешно обновлена",
+      patient: {
+        patientId: patient.id,
+        firstName: patient.firstName,
+        lastName: patient.lastName,
+        patronymic: patient.patronymic,
+        dateOfBirth: patient.dateOfBirth,
+        address: patient.address,
+        phoneNumber: patient.phoneNumber,
+        email: patient.email,
+        gender: patient.gender,
+        policyNumber: patient.policyNumber,
+        snils: patient.snils,
+        passport: patient.passport,
+      },
+    });
+  } catch (error) {
+    console.error("Ошибка при обновлении данных пациента:", error);
+    return res
+      .status(500)
+      .json({ message: "Ошибка сервера при обновлении данных пациента" });
   }
 };

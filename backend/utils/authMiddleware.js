@@ -2,6 +2,7 @@ import jwt from "jsonwebtoken";
 import User from "../users/modelUser.js";
 
 export const authenticateToken = async (req, res, next) => {
+  console.log("Тело запроса (body):", req.body);
   const authHeader = req.headers["authorization"];
   const token = authHeader && authHeader.split(" ")[1];
 

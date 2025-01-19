@@ -15,6 +15,7 @@ const PORT = 3003;
 
 // Маршрут для теста сервера
 app.use(bodyParser.json()); // Для обработки JSON-запросов
+app.use(bodyParser.urlencoded({ extended: true })); // Для обработки form-data
 
 // Подключение маршрутов
 app.use("/api/users", authRouter); // Все маршруты авторизации будут начинаться с /api/auth
