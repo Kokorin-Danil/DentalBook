@@ -7,6 +7,7 @@ import Doctor from "./doctors/modelDoctor.js";
 import PatientCardRouter from "./patientCard/patientCardRouter.js";
 import doctorRouter from "./doctors/routerDoctor.js";
 import cors from "cors";
+import adminRouter from "./admin/routerAdmin.js";
 
 const app = express();
 app.use(cors());
@@ -19,6 +20,7 @@ app.use(bodyParser.json()); // Для обработки JSON-запросов
 app.use("/api/users", authRouter); // Все маршруты авторизации будут начинаться с /api/auth
 app.use("/api/patient-cards", PatientCardRouter);
 app.use("/api/doctors", doctorRouter);
+app.use("/api/admin", adminRouter);
 app.use("/uploads", express.static("uploads"));
 
 // async function createUser() {
