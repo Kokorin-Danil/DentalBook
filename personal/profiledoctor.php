@@ -18,15 +18,6 @@
             min-height: 100vh;
         }
 
-        .header h2 {
-            margin: 0;
-            font-size: 1.8rem;
-            color: #343a40;
-            border-bottom: 2px solid #ddd;
-            padding-bottom: 10px;
-            margin-bottom: 20px;
-        }
-
         .profile-card {
             background-color: #ffffff;
             border: 1px solid #ddd;
@@ -106,7 +97,7 @@
                             <i class="fas fa-phone"></i>
                         </div>
                         <div class="col-11">
-                            <strong>Контактный телефон:</strong> <span id="doctorPhone" href="#">Загрузка...</span>
+                            <strong>Контактный телефон:</strong> <span id="doctorPhone">Загрузка...</span>
                         </div>
                     </div>
                     <div class="row mb-3">
@@ -114,7 +105,7 @@
                             <i class="fas fa-envelope"></i>
                         </div>
                         <div class="col-11">
-                            <strong>Email:</strong> <span id="doctorEmail" href="#">Загрузка...</span>
+                            <strong>Email:</strong> <span id="doctorEmail">Загрузка...</span>
                         </div>
                     </div>
                 </div>
@@ -122,6 +113,7 @@
                     <div class="profile-icon">
                         <img id="doctorAvatar" src="placeholder.jpg" alt="Аватар доктора">
                     </div>
+                    <button class="btn btn-primary mt-3" data-bs-toggle="modal" data-bs-target="#avatarModal">Обновить аватар</button>
                 </div>
             </div>
         </div>
@@ -134,7 +126,6 @@
                 </li>
             </ul>
             <div class="tab-content mt-3">
-                <!-- Schedule Tab -->
                 <div class="tab-pane fade show active" id="schedule">
                     <h4 class="mb-4">Ваши записи на сегодня:</h4>
                     <div class="table-container">
@@ -148,9 +139,7 @@
                                     <th>Действия</th>
                                 </tr>
                             </thead>
-                            <tbody id="scheduleTableBody">
-                                <!-- Данные расписания будут загружены динамически -->
-                            </tbody>
+                            <tbody id="scheduleTableBody"></tbody>
                         </table>
                     </div>
                 </div>
@@ -158,64 +147,125 @@
         </div>
     </div>
 
+    <!-- Модальное окно для обновления аватара -->
+    <div class="modal fade" id="avatarModal" tabindex="-1" aria-labelledby="avatarModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="avatarModalLabel">Обновить аватар</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Закрыть"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="avatarForm">
+                        <div class="mb-3">
+                            <label for="avatarInput" class="form-label">Выберите изображение</label>
+                            <input type="file" class="form-control" id="avatarInput" accept="image/*" required>
+                        </div>
+                        <button type="button" class="btn btn-primary" onclick="uploadAvatar()">Загрузить</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <script>
-        document.addEventListener('DOMContentLoaded', async () => {
+        async function loadDoctorProfile() {
             const token = getCookie('token');
             if (!token) {
-                alert('Необходима авторизация');
+                alert('Необходима авторизация.');
                 return;
             }
 
             try {
-                // Загрузка профиля доктора
                 const profileResponse = await fetch('http://localhost:3003/api/doctors/profile', {
-                    headers: { Authorization: `Bearer ${token}` }
+                    headers: { Authorization: `Bearer ${token}` },
                 });
+
+                if (!profileResponse.ok) throw new Error('Ошибка загрузки профиля.');
+
                 const profileData = await profileResponse.json();
                 document.getElementById('doctorFullName').textContent = profileData.fullName;
                 document.getElementById('doctorBirthDate').textContent = profileData.dateOfBirth;
                 document.getElementById('doctorSpecialty').textContent = profileData.specialty;
-                document.getElementById('doctorPhone').href = `tel:${profileData.mobilePhone}`;
                 document.getElementById('doctorPhone').textContent = profileData.mobilePhone;
-                document.getElementById('doctorEmail').href = `mailto:${profileData.email}`;
                 document.getElementById('doctorEmail').textContent = profileData.email;
-                document.getElementById('doctorAvatar').src = profileData.avatar;
+                updateAvatar(profileData.avatar);
 
                 // Загрузка расписания
                 const scheduleResponse = await fetch('http://localhost:3003/api/doctors/shudle', {
-                    headers: { Authorization: `Bearer ${token}` }
+                    headers: { Authorization: `Bearer ${token}` },
                 });
+
+                if (!scheduleResponse.ok) throw new Error('Ошибка загрузки расписания.');
+
                 const scheduleData = await scheduleResponse.json();
-
-                // Сортировка расписания по времени
-                const sortedSchedule = scheduleData.sort((a, b) => new Date(`1970-01-01T${a.visitTime}`) - new Date(`1970-01-01T${b.visitTime}`));
-
                 const scheduleTableBody = document.getElementById('scheduleTableBody');
-                scheduleTableBody.innerHTML = sortedSchedule.map(visit => `
-                    <tr>
-                        <td>${visit.visitTime}</td>
-                        <td>${visit.patient.fullName}</td>
-                        <td>${visit.visitType}</td>
-                        <td>${visit.visitStatus}</td>
-                        <td>
-                            <a href="/users/view.php?patientCardId=${visit.patient.id}" class="btn btn-sm btn-info" title="Просмотреть">
-                                <i class="fas fa-eye"></i> Просмотреть
-                            </a>
-                        </td>
-                    </tr>
-                `).join('');
+                scheduleTableBody.innerHTML = scheduleData
+                    .sort((a, b) => new Date(`1970-01-01T${a.visitTime}`) - new Date(`1970-01-01T${b.visitTime}`))
+                    .map(visit => `
+                        <tr>
+                            <td>${visit.visitTime}</td>
+                            <td>${visit.patient.fullName}</td>
+                            <td>${visit.visitType}</td>
+                            <td>${visit.visitStatus}</td>
+                            <td>
+                                <a href="/users/view.php?patientCardId=${visit.patient.id}" class="btn btn-sm btn-info" title="Просмотреть">
+                                    <i class="fas fa-eye"></i> Просмотреть
+                                </a>
+                            </td>
+                        </tr>
+                    `).join('');
             } catch (error) {
-                console.error(error);
-                alert('Ошибка загрузки данных');
+                console.error('Ошибка:', error);
+                alert('Не удалось загрузить данные профиля.');
             }
-        });
+        }
+
+        function updateAvatar(avatarUrl) {
+            const avatarElement = document.getElementById('doctorAvatar');
+            avatarElement.src = `${avatarUrl}?t=${new Date().getTime()}`;
+        }
+
+        async function uploadAvatar() {
+            const token = getCookie('token');
+            const avatarInput = document.getElementById('avatarInput');
+            const file = avatarInput.files[0];
+
+            if (!file) {
+                alert('Выберите файл для загрузки.');
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append('avatar', file);
+
+            try {
+                const response = await fetch('http://localhost:3003/api/doctors/avatar/upload', {
+                    method: 'POST',
+                    headers: { Authorization: `Bearer ${token}` },
+                    body: formData,
+                });
+
+                if (!response.ok) throw new Error('Ошибка загрузки аватара.');
+
+                const result = await response.json();
+                alert(result.message);
+                document.querySelector('#avatarModal .btn-close').click();
+                updateAvatar(result.user.avatar);
+            } catch (error) {
+                console.error('Ошибка загрузки аватара:', error);
+                alert('Не удалось обновить аватар.');
+            }
+        }
 
         function getCookie(name) {
             const value = `; ${document.cookie}`;
             const parts = value.split(`; ${name}=`);
             if (parts.length === 2) return parts.pop().split(';').shift();
         }
+
+        document.addEventListener('DOMContentLoaded', loadDoctorProfile);
     </script>
 </body>
 </html>

@@ -48,7 +48,6 @@
         table {
             margin-bottom: 0;
         }
-        /* Убираем серое выделение на строках */
         table tr:hover {
             background-color: transparent !important;
         }
@@ -95,7 +94,7 @@
                         <th>ФИО</th>
                         <th>Email</th>
                         <th>Телефон</th>
-                        <th>Специальность</th>
+                        <th>Специальности</th>
                         <th>Действия</th>
                     </tr>
                 </thead>
@@ -134,7 +133,7 @@
                         <div class="row mb-3">
                             <div class="col-md-4">
                                 <label for="doctorGender" class="form-label">Пол:</label>
-                                <select class="form-select" id="doctorGender">
+                                <select class="form-select" id="doctorGender" required>
                                     <option value="" selected>Выберите пол</option>
                                     <option value="male">Мужской</option>
                                     <option value="female">Женский</option>
@@ -142,7 +141,7 @@
                             </div>
                             <div class="col-md-4">
                                 <label for="doctorBirthDate" class="form-label">Дата рождения:</label>
-                                <input type="date" class="form-control" id="doctorBirthDate">
+                                <input type="date" class="form-control" id="doctorBirthDate" required>
                             </div>
                             <div class="col-md-4">
                                 <label for="doctorEmail" class="form-label">Email:</label>
@@ -153,58 +152,110 @@
                         <div class="row mb-3">
                             <div class="col-md-6">
                                 <label for="doctorPhone" class="form-label">Телефон:</label>
-                                <input type="tel" class="form-control" id="doctorPhone" placeholder="Введите телефон" required>
+                                <input type="text" class="form-control" id="doctorPhone" placeholder="Введите телефон" required>
                             </div>
                             <div class="col-md-6">
-                                <label for="doctorPhoto" class="form-label">Фото</label>
-                                <input type="file" class="form-control" id="doctorPhoto" accept="image/jpeg,image/png">
+                                <label for="doctorSpecialties" class="form-label">Специальности:</label>
+                                <select id="doctorSpecialties" class="form-select" multiple>
+                                    <option value="Стоматолог">Стоматолог</option>
+                                    <option value="Терапевт">Терапевт</option>
+                                    <option value="Ортодонт">Ортодонт</option>
+                                </select>
                             </div>
                         </div>
+
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="doctorPassword" class="form-label">Пароль:</label>
+                                <input type="password" class="form-control" id="doctorPassword" placeholder="Введите пароль" required>
+                            </div>
+                        </div>
+                        <button type="submit" class="btn btn-primary w-100">Сохранить</button>
                     </form>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
-                    <button type="submit" form="addDoctorForm" class="btn btn-primary">Сохранить</button>
                 </div>
             </div>
         </div>
     </div>
 
     <script>
-        async function loadDoctors() {
+        async function createDoctor() {
+            const specialties = Array.from(document.getElementById('doctorSpecialties').selectedOptions).map(opt => opt.value);
+            const formData = {
+                firstName: document.getElementById('doctorFirstName').value,
+                lastName: document.getElementById('doctorLastName').value,
+                patronymic: document.getElementById('doctorPatronymic').value,
+                dateOfBirth: document.getElementById('doctorBirthDate').value,
+                email: document.getElementById('doctorEmail').value,
+                mobilePhone: document.getElementById('doctorPhone').value.replace(/\D/g, ''), // Only digits
+                specialty: specialties.join(', '), // Join multiple specialties
+                password: document.getElementById('doctorPassword').value,
+                gender: document.getElementById('doctorGender').value,
+            };
+
+            const token = document.cookie.split('; ').find(row => row.startsWith('token'))?.split('=')[1];
+            
+            if (!token) {
+                alert('Токен не найден. Пожалуйста, выполните вход.');
+                return;
+            }
+
             try {
-                const response = await fetch('http://localhost:3003/api/doctors/get/all');
-                if (!response.ok) throw new Error('Ошибка загрузки докторов');
-                const doctors = await response.json();
-                populateDoctorTable(doctors);
+                const response = await fetch('http://localhost:3003/api/doctors/create', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        Authorization: `Bearer ${token}`,
+                    },
+                    body: JSON.stringify(formData),
+                });
+
+                if (response.ok) {
+                    alert('Доктор успешно создан');
+                    const modal = bootstrap.Modal.getInstance(document.getElementById('addDoctorModal'));
+                    modal.hide();
+                    loadDoctors();
+                } else {
+                    const errorData = await response.json();
+                    alert('Ошибка: ' + errorData.message || 'Неизвестная ошибка');
+                }
             } catch (error) {
                 console.error(error);
-                alert('Не удалось загрузить данные докторов');
+                alert('Ошибка при сохранении доктора.');
             }
         }
 
-        function populateDoctorTable(doctors) {
-            const tableBody = document.getElementById('doctorTableBody');
-            tableBody.innerHTML = '';
-            doctors.forEach(doctor => {
-                const row = document.createElement('tr');
-                row.innerHTML = `
-                    <td>${doctor.id}</td>
-                    <td>${doctor.fullName}</td>
-                    <td>${doctor.email}</td>
-                    <td>${doctor.mobilePhone}</td>
-                    <td>${doctor.specialty}</td>
-                    <td class="action-buttons">
-                        <a href="/personal/profiledoctorbyid.php?doctorId=${doctor.id}" class="btn btn-sm btn-info" title="Просмотреть">
-                            <i class="fas fa-eye"></i>
-                        </a>
-                        <button class="btn btn-sm btn-warning" title="Редактировать"><i class="fas fa-edit"></i></button>
-                        <button class="btn btn-sm btn-danger" title="Удалить"><i class="fas fa-trash"></i></button>
-                    </td>
-                `;
-                tableBody.appendChild(row);
-            });
+        async function loadDoctors() {
+            try {
+                const response = await fetch('http://localhost:3003/api/doctors/get/all');
+                if (!response.ok) throw new Error('Ошибка загрузки данных');
+
+                const data = await response.json();
+                const tableBody = document.getElementById('doctorTableBody');
+                tableBody.innerHTML = data
+                    .map(doctor => `
+                        <tr>
+                            <td>${doctor.id}</td>
+                            <td>${doctor.fullName}</td>
+                            <td>${doctor.email}</td>
+                            <td>${doctor.mobilePhone}</td>
+                            <td>${doctor.specialty}</td>
+                            <td class="action-buttons">
+                                <a href="/personal/profiledoctorbyid.php?doctorId=${doctor.id}" class="btn btn-sm btn-info"><i class="fas fa-eye"></i></a>
+                                <button class="btn btn-sm btn-warning"><i class="fas fa-edit"></i></button>
+                                <button class="btn btn-sm btn-danger"><i class="fas fa-trash"></i></button>
+                            </td>
+                        </tr>
+                    `)
+                    .join('');
+            } catch (error) {
+                console.error('Ошибка:', error);
+            }
         }
+
+        document.getElementById('addDoctorForm').addEventListener('submit', function (e) {
+            e.preventDefault();
+            createDoctor();
+        });
 
         document.addEventListener('DOMContentLoaded', loadDoctors);
     </script>

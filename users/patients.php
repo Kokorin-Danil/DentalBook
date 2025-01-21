@@ -48,7 +48,6 @@
             color: #6c757d;
         }
 
-        /* Убираем серое выделение на строках */
         table tr:hover {
             background-color: transparent !important;
         }
@@ -89,7 +88,28 @@
         </div>
     </div>
 
+    <!-- Модальное окно для подтверждения удаления -->
+    <div class="modal fade" id="deletePatientModal" tabindex="-1" aria-labelledby="deletePatientModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="deletePatientModalLabel">Подтверждение удаления</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    Вы уверены, что хотите удалить эту карту пациента?
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+                    <button type="button" class="btn btn-danger" id="confirmDeleteButton">Удалить</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <script>
+        let patientIdToDelete = null;
+
         // Функция для получения токена из cookies
         function getCookie(name) {
             const value = `; ${document.cookie}`;
@@ -135,8 +155,6 @@
 
             patients.forEach((patient) => {
                 const lastVisitDate = patient.lastVisit ? new Date(patient.lastVisit) : null;
-
-                // Форматируем дату последнего визита
                 const lastVisitDisplay = lastVisitDate ? lastVisitDate.toLocaleDateString() + ' ' + lastVisitDate.toLocaleTimeString() : 'Нет записей';
 
                 const row = document.createElement('tr');
@@ -146,26 +164,64 @@
                     <td>${patient.phoneNumber}</td>
                     <td>${lastVisitDisplay}</td>
                     <td class="table-actions">
-                        <a href="/users/view.php?id=${patient.id}" class="btn btn-sm btn-info view-patient" data-id="${patient.id}">
+                        <a href="/users/view.php?patientCardId=${patient.id}" class="btn btn-sm btn-info view-patient">
                             <i class="fas fa-eye"></i> Просмотреть
                         </a>
                         <button class="btn btn-sm btn-warning"><i class="fas fa-edit"></i> Редактировать</button>
-                        <button class="btn btn-sm btn-danger"><i class="fas fa-trash"></i> Удалить</button>
+                        <button class="btn btn-sm btn-danger delete-patient" data-id="${patient.id}">
+                            <i class="fas fa-trash"></i> Удалить
+                        </button>
                     </td>
                 `;
 
                 tableBody.appendChild(row);
             });
 
-            // Добавляем обработчик клика для кнопок "Просмотреть"
-            document.querySelectorAll('.view-patient').forEach(button => {
+            // Добавляем обработчик клика для кнопок удаления
+            document.querySelectorAll('.delete-patient').forEach(button => {
                 button.addEventListener('click', (event) => {
-                    event.preventDefault();
-                    const patientId = button.getAttribute('data-id');
-                    window.location.href = `/users/view.php?patientCardId=${patientId}`;
+                    patientIdToDelete = button.getAttribute('data-id');
+                    const deleteModal = new bootstrap.Modal(document.getElementById('deletePatientModal'));
+                    deleteModal.show();
                 });
             });
         }
+
+        // Удаление пациента
+        async function deletePatient() {
+            const token = getCookie('token'); // Получаем токен из cookies
+
+            if (!token) {
+                alert('Токен не найден. Выполните вход заново.');
+                return;
+            }
+
+            try {
+                const response = await fetch(`http://localhost:3003/api/patient-cards/card/${patientIdToDelete}`, {
+                    method: 'DELETE',
+                    headers: {
+                        Authorization: `Bearer ${token}`
+                    }
+                });
+
+                if (!response.ok) {
+                    throw new Error('Ошибка удаления карты пациента');
+                }
+
+                alert('Карта пациента успешно удалена.');
+                loadPatients(); // Обновляем таблицу после удаления
+            } catch (error) {
+                console.error('Ошибка:', error);
+                alert('Не удалось удалить карту пациента.');
+            }
+        }
+
+        // Обработчик подтверждения удаления
+        document.getElementById('confirmDeleteButton').addEventListener('click', () => {
+            deletePatient();
+            const deleteModal = bootstrap.Modal.getInstance(document.getElementById('deletePatientModal'));
+            deleteModal.hide();
+        });
 
         // Загружаем данные пациентов при загрузке страницы
         document.addEventListener('DOMContentLoaded', loadPatients);

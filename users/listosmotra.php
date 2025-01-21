@@ -47,7 +47,6 @@
     <?php include '../users/profile.php'; ?>
     <?php include '../users/navbar.php'; ?>
     <div class="container">
-        <h1 class="text-center">История медицинских записей</h1>
 
         <!-- Таблица медицинских записей -->
         <table class="table table-bordered">

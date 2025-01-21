@@ -14,7 +14,7 @@
     <div class="container mt-5">
         <!-- Таблица снимков -->
         <div class="table-container">
-            <button class="btn btn-primary btn-add" data-bs-toggle="modal" data-bs-target="#addSnapshotModal">Добавить снимок</button>
+            <button class="btn btn-primary btn-add" id="addSnapshotButton" data-bs-toggle="modal" data-bs-target="#addSnapshotModal">Добавить снимок</button>
             <table class="table table-bordered">
                 <thead>
                     <tr>
@@ -105,10 +105,16 @@
         document.addEventListener('DOMContentLoaded', async () => {
             const patientCardId = new URLSearchParams(window.location.search).get('patientCardId');
             const token = getCookie('token');
-
+            
             if (!patientCardId || !token) {
                 alert('ID пациента или токен отсутствуют.');
                 return;
+            }
+
+            // Проверка роли администратора в токене и скрытие кнопки "Добавить снимок"
+            const role = getRoleFromToken(token);
+            if (role === 'admin') {
+                document.getElementById('addSnapshotButton').style.display = 'none';
             }
 
             // Загрузка снимков
@@ -125,7 +131,7 @@
                     const data = await response.json();
                     const snapshotsTableBody = document.getElementById('snapshotsTableBody');
                     snapshotsTableBody.innerHTML = data.snapshots.map(snapshot => `
-                        <tr>
+                        <tr id="snapshot-${snapshot.id}">
                             <td>${snapshot.id}</td>
                             <td>${new Date(snapshot.createdAt).toLocaleDateString()}</td>
                             <td>${snapshot.toothNumbers}</td>
@@ -137,7 +143,7 @@
                             </td>
                             <td>
                                 <button class="btn btn-sm btn-warning"><i class="fas fa-edit"></i></button>
-                                <button class="btn btn-sm btn-danger"><i class="fas fa-trash"></i></button>
+                                <button class="btn btn-sm btn-danger" onclick="deleteSnapshot(${snapshot.id})"><i class="fas fa-trash"></i></button>
                             </td>
                         </tr>
                     `).join('');
@@ -201,10 +207,48 @@
             await loadSnapshots();
         });
 
+        // Получение токена из cookies
         function getCookie(name) {
             const value = `; ${document.cookie}`;
             const parts = value.split(`; ${name}=`);
             if (parts.length === 2) return parts.pop().split(';').shift();
+        }
+
+        // Функция для извлечения роли из токена
+        function getRoleFromToken(token) {
+            const payload = atob(token.split('.')[1]);
+            const parsedPayload = JSON.parse(payload);
+            return parsedPayload.role; // Предполагаем, что роль хранится в поле "role"
+        }
+        
+        // Удаление снимка
+        async function deleteSnapshot(snapshotId) {
+            const token = getCookie('token');
+            if (!token) {
+                alert('Необходима авторизация администратора.');
+                return;
+            }
+
+            if (!confirm('Вы уверены, что хотите удалить этот снимок?')) return;
+
+            try {
+                const response = await fetch(`http://localhost:3003/api/admin/snapshot/${snapshotId}`, {
+                    method: 'DELETE',
+                    headers: { Authorization: `Bearer ${token}` }
+                });
+
+                if (!response.ok) {
+                    throw new Error(`Ошибка HTTP: ${response.status}`);
+                }
+
+                // Убираем строку снимка из таблицы после удаления
+                document.getElementById(`snapshot-${snapshotId}`).remove();
+
+                alert('Снимок успешно удален.');
+            } catch (error) {
+                console.error('Ошибка удаления снимка:', error);
+                alert('Не удалось удалить снимок.');
+            }
         }
     </script>
 </body>

@@ -18,7 +18,6 @@
                     <div class="card-body">
                         <p><strong>ФИО:</strong> Загрузка...</p>
                         <p><strong>Дата рождения:</strong> Загрузка...</p>
-                        <p><strong>Полис:</strong> Загрузка...</p>
                         <p><strong>Телефон:</strong> Загрузка...</p>
                         <p><strong>Адрес:</strong> Загрузка...</p>
                         <p><strong>Email:</strong> Загрузка...</p>
@@ -65,7 +64,7 @@
                 <a class="nav-link" href="#documents" data-bs-toggle="tab"><i class="fas fa-folder"></i> Документы</a>
             </li>
             <li class="nav-item">
-                <a class="nav-link" href="#personal-data" data-bs-toggle="tab"><i class="fas fa-id-card"></i> Персональные данные</a>
+                <a id="personalDataTab" class="nav-link" href="#"><i class="fas fa-id-card"></i> Персональные данные</a>
             </li>
             <li class="nav-item">
                 <a id="medicalRecordsTab" class="nav-link" href="#"><i class="fas fa-file-medical-alt"></i> История медицинских записей</a>
@@ -132,6 +131,10 @@
                 const medicalRecordsTab = document.getElementById('medicalRecordsTab');
                 medicalRecordsTab.href = `/users/listosmotra.php?patientCardId=${patientCardId}`;
 
+                // Устанавливаем ссылку для "Персональные данные"
+                const personalDataTab = document.getElementById('personalDataTab');
+                personalDataTab.href = `/users/personaldata.php?patientCardId=${patientCardId}`;
+
                 // Устанавливаем ссылки для других вкладок
                 const picturesLink = document.getElementById('picturesLink');
                 const notesLink = document.getElementById('notesLink');
@@ -153,11 +156,10 @@
             profileContainer.innerHTML = `
                 <p><strong>ФИО:</strong> ${profile.fullName}</p>
                 <p><strong>Дата рождения:</strong> ${profile.dateOfBirth}</p>
-                <p><strong>Полис:</strong> ${profile.policy}</p>
                 <p><strong>Телефон:</strong> ${profile.phoneNumber}</p>
                 <p><strong>Адрес:</strong> ${profile.address}</p>
                 <p><strong>Email:</strong> ${profile.email}</p>
-                <p><strong>Последний вход:</strong> ${profile.lastLogin || 'Неизвестно'}</p>
+                <p><strong>Последний вход:</strong> ${profile.lastLogin}</p>
             `;
 
             const avatarElement = document.getElementById('avatar');

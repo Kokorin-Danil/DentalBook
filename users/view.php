@@ -6,6 +6,7 @@
     <title>Профиль пациента | DentalBook</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0-beta3/css/all.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/jwt-decode@3.1.2/build/jwt-decode.min.js"></script>
 </head>
 <body>
     <?php include 'profile.php'; ?>
@@ -14,7 +15,8 @@
     <div class="container mt-5">
         <!-- Таблица визитов -->
         <div class="table-container">
-            <button class="btn btn-primary btn-add" data-bs-toggle="modal" data-bs-target="#addVisitModal">Добавить визит</button>
+            <!-- Кнопка добавления визита только для не-администратора -->
+            <button class="btn btn-primary btn-add" id="addVisitButton" data-bs-toggle="modal" data-bs-target="#addVisitModal">Добавить визит</button>
             <table class="table table-bordered">
                 <thead>
                     <tr>
@@ -98,6 +100,16 @@
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <script>
+        // Функция для декодирования токена и получения роли
+        function getRoleFromToken() {
+            const token = getCookie('token');
+            if (token) {
+                const decoded = jwt_decode(token);
+                return decoded.role;  // Предполагаем, что роль хранится в поле 'role'
+            }
+            return null;
+        }
+
         // Заполняем временные интервалы
         document.addEventListener('DOMContentLoaded', () => {
             const visitTimeSelect = document.getElementById('visitTime');
@@ -118,6 +130,12 @@
         document.addEventListener('DOMContentLoaded', async () => {
             const patientCardId = new URLSearchParams(window.location.search).get('patientCardId');
             const token = getCookie('token');
+            const role = getRoleFromToken();  // Получаем роль из токена
+
+            // Если роль администратора, скрываем кнопку добавления визита
+            if (role === 'admin') {
+                document.getElementById('addVisitButton').style.display = 'none';
+            }
 
             async function loadPatientProfile() {
                 const response = await fetch(`http://localhost:3003/api/patient-cards/get/patient_profile/${patientCardId}`, {
@@ -135,16 +153,9 @@
                 });
                 const data = await response.json();
 
-                // Сортировка визитов по дате и времени
-                const sortedVisits = data.visits.sort((a, b) => {
-                    const dateA = new Date(`${a.visitDate}T${a.visitTime}`);
-                    const dateB = new Date(`${b.visitDate}T${b.visitTime}`);
-                    return dateA - dateB;
-                });
-
                 const tableBody = document.getElementById('visitsTableBody');
-                tableBody.innerHTML = sortedVisits.map(visit => `
-                    <tr>
+                tableBody.innerHTML = data.visits.map(visit => `
+                    <tr id="visit-${visit.id}">
                         <td>${visit.id}</td>
                         <td>${visit.visitDate}</td>
                         <td>${visit.visitTime}</td>
@@ -154,12 +165,14 @@
                         <td>
                             <button class="btn btn-sm btn-info"><i class="fas fa-eye"></i></button>
                             <button class="btn btn-sm btn-warning"><i class="fas fa-edit"></i></button>
-                            <button class="btn btn-sm btn-danger"><i class="fas fa-trash"></i></button>
+                            <button class="btn btn-sm btn-danger" onclick="deleteVisit(${visit.id})">
+                                <i class="fas fa-trash"></i>
+                            </button>
                         </td>
                     </tr>
                 `).join('');
             }
-        
+
             async function saveVisit() {
                 const visitData = {
                     patientFullName: document.getElementById('patientFullName').value,
@@ -191,6 +204,36 @@
             await loadPatientProfile();
             await loadVisits();
         });
+
+        // Удаление визита
+        async function deleteVisit(visitId) {
+            const token = getCookie('token');
+            if (!token) {
+                alert('Необходима авторизация администратора.');
+                return;
+            }
+
+            if (!confirm('Вы уверены, что хотите удалить этот визит?')) return;
+
+            try {
+                const response = await fetch(`http://localhost:3003/api/admin/visit/${visitId}`, {
+                    method: 'DELETE',
+                    headers: { Authorization: `Bearer ${token}` }
+                });
+
+                if (!response.ok) {
+                    throw new Error(`Ошибка HTTP: ${response.status}`);
+                }
+
+                // Убираем строку визита из таблицы после удаления
+                document.getElementById(`visit-${visitId}`).remove();
+
+                alert('Визит успешно удален.');
+            } catch (error) {
+                console.error('Ошибка удаления визита:', error);
+                alert('Не удалось удалить визит.');
+            }
+        }
 
         // Получение токена из cookies
         function getCookie(name) {

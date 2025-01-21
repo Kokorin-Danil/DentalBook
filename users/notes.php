@@ -14,7 +14,7 @@
     <div class="container mt-5">
         <!-- Таблица примечаний -->
         <div class="table-container">
-            <button class="btn btn-primary btn-add" data-bs-toggle="modal" data-bs-target="#addNoteModal">Добавить примечание</button>
+            <button class="btn btn-primary btn-add" id="addNoteButton" data-bs-toggle="modal" data-bs-target="#addNoteModal">Добавить примечание</button>
             <table class="table table-bordered">
                 <thead>
                     <tr>
@@ -98,6 +98,17 @@
             if (parts.length === 2) return parts.pop().split(';').shift();
         }
 
+        // Проверка роли из токена
+        function checkRoleAndHideButton() {
+            const token = getCookie('token');
+            if (token) {
+                const payload = JSON.parse(atob(token.split('.')[1])); // Расшифровка токена
+                if (payload.role === 'admin') {
+                    document.getElementById('addNoteButton').style.display = 'none'; // Скрываем кнопку для админов
+                }
+            }
+        }
+
         // Загрузка примечаний
         async function loadNotes() {
             const patientCardId = getPatientCardId();
@@ -120,7 +131,7 @@
                 const data = await response.json();
                 const notesTableBody = document.getElementById('notesTableBody');
                 notesTableBody.innerHTML = data.notes.map(note => `
-                    <tr>
+                    <tr id="note-${note.id}">
                         <td>${note.id}</td>
                         <td>${note.name}</td>
                         <td>${note.description}</td>
@@ -130,7 +141,7 @@
                         <td>
                             <button class="btn btn-sm btn-info"><i class="fas fa-eye"></i></button>
                             <button class="btn btn-sm btn-warning"><i class="fas fa-edit"></i></button>
-                            <button class="btn btn-sm btn-danger"><i class="fas fa-trash"></i></button>
+                            <button class="btn btn-sm btn-danger" onclick="deleteNote(${note.id})"><i class="fas fa-trash"></i></button>
                         </td>
                     </tr>
                 `).join('');
@@ -182,8 +193,41 @@
             }
         });
 
+        // Удаление примечания
+        async function deleteNote(noteId) {
+            const token = getCookie('token');
+            if (!token) {
+                alert('Необходима авторизация администратора.');
+                return;
+            }
+
+            if (!confirm('Вы уверены, что хотите удалить это примечание?')) return;
+
+            try {
+                const response = await fetch(`http://localhost:3003/api/admin/patientNote/${noteId}`, {
+                    method: 'DELETE',
+                    headers: { Authorization: `Bearer ${token}` },
+                });
+
+                if (!response.ok) {
+                    throw new Error(`Ошибка HTTP: ${response.status}`);
+                }
+
+                // Убираем строку примечания из таблицы после удаления
+                document.getElementById(`note-${noteId}`).remove();
+
+                alert('Примечание успешно удалено.');
+            } catch (error) {
+                console.error('Ошибка удаления примечания:', error);
+                alert('Не удалось удалить примечание.');
+            }
+        }
+
         // Инициализация страницы
-        document.addEventListener('DOMContentLoaded', loadNotes);
+        document.addEventListener('DOMContentLoaded', () => {
+            loadNotes();
+            checkRoleAndHideButton();
+        });
     </script>
 </body>
 </html>

@@ -108,6 +108,8 @@
                 window.location.href = '/personal/profiledoctor.php';
             } else if (role === 'client') {
                 window.location.href = '/profile/profilepatient.php';
+            } else if (role === 'admin') {
+                window.location.href = '/adminpanel/doctors.php';
             } else {
                 throw new Error('Неизвестная роль');
             }

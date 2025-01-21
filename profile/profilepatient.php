@@ -7,203 +7,183 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
     <style>
-        /* Стили навигационного меню */
-        #sidebar {
-            width: 250px;
-            background-color: #ffffff;
-            padding: 20px;
-            height: 100vh;
-            position: fixed;
-            top: 0;
-            left: 0;
-            overflow-y: auto;
-            border-right: 1px solid #ddd;
-            box-shadow: 2px 0 8px rgba(0, 0, 0, 0.05);
-        }
-
-        #sidebar h4 {
-            font-weight: bold;
-            color: #007bff;
-            text-align: center;
-            margin-bottom: 1.5rem;
-        }
-
-        #sidebar a {
-            font-size: 1rem;
-            color: #495057;
-            display: flex;
-            align-items: center;
-            text-decoration: none;
-            margin-bottom: 15px;
-            padding: 10px 15px;
-            border-radius: 5px;
-            transition: background-color 0.3s, color 0.3s;
-        }
-
-        #sidebar a:hover {
-            background-color: #e9ecef;
-            color: #007bff;
-        }
-
-        #sidebar a i {
-            font-size: 1.2rem;
-            margin-right: 10px;
-        }
-
         #content {
-            margin-left: 270px;
-            padding: 20px;
-            background-color: #f8f9fa;
-            min-height: 100vh;
+            margin-top: 50px;
         }
-
-        .profile-card {
-            background-color: #ffffff;
-            border: 1px solid #ddd;
-            border-radius: 10px;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-            padding: 20px;
+        .card {
+            margin-bottom: 20px;
         }
-
-        .profile-icon {
+        .rounded-circle {
+            overflow: hidden;
             width: 150px;
             height: 150px;
-            background-color: #e9ecef;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            border-radius: 50%;
-            margin: 0 auto;
-            overflow: hidden;
-        }
-
-        .profile-icon img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
         }
     </style>
 </head>
 <body>
-    <!-- Навигационное меню слева -->
-    <nav id="sidebar">
-        <h4>DentalBook</h4>
-        <ul class="list-unstyled">
-            <li><a href="profilepatient.php"><i class="fas fa-user"></i> Мой профиль</a></li>
-            <li><a href="/appointments.php"><i class="fas fa-calendar-alt"></i> Мои записи</a></li>
-            <li><a href="/cardpatient/cardpatient.php"><i class="fas fa-folder-open"></i> Моя карта</a></li>
-            <li><a href="/history.php"><i class="fas fa-history"></i> История посещений</a></li>
-            <li><a href="#" onclick="logout()"><i class="fas fa-sign-out-alt"></i> Выйти</a></li>
+    <div id="content" class="container mt-5">
+        <h2 class="mb-4">Профиль пациента | DentalBook</h2>
+
+        <!-- Карточка профиля -->
+        <div id="patientProfile" class="card shadow-sm mb-4">
+            <div class="row g-0">
+                <div class="col-md-8">
+                    <div class="card-body">
+                        <p><strong>ФИО:</strong> Загрузка...</p>
+                        <p><strong>Дата рождения:</strong> Загрузка...</p>
+                        <p><strong>Телефон:</strong> Загрузка...</p>
+                        <p><strong>Адрес:</strong> Загрузка...</p>
+                        <p><strong>Email:</strong> Загрузка...</p>
+                        <p><strong>Последний вход:</strong> Загрузка...</p>
+                    </div>
+                </div>
+                <div class="col-md-4 d-flex flex-column justify-content-center align-items-center">
+                    <div class="rounded-circle">
+                        <img id="avatar" src="" alt="Аватар" class="img-fluid">
+                    </div>
+                    <button class="btn btn-primary mt-3" data-bs-toggle="modal" data-bs-target="#avatarModal">Обновить аватар</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Действия -->
+        <div class="mb-4">
+            <button class="btn btn-primary"><i class="fas fa-file-alt"></i> Анкета</button>
+            <button class="btn btn-secondary"><i class="fas fa-file-contract"></i> Договор</button>
+            <button class="btn btn-info"><i class="fas fa-star"></i> Оценка</button>
+            <button class="btn btn-danger"><i class="fas fa-print"></i> Печать</button>
+        </div>
+
+        <!-- Tabs -->
+        <ul class="nav nav-tabs">
+            <li class="nav-item">
+                <a id="visitsTab" class="nav-link" href="/users/view.php"><i class="fas fa-calendar-check"></i> Визиты</a>
+            </li>
+            <li class="nav-item">
+                <a id="formulaTab" class="nav-link" href="/users/formula.php"><i class="fas fa-tooth"></i> Формула</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="#payments" data-bs-toggle="tab"><i class="fas fa-dollar-sign"></i> Оплаты</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="/users/treatmentplan.php"><i class="fas fa-notes-medical"></i> План лечения</a>
+            </li>
+            <li class="nav-item">
+                <a id="picturesLink" class="nav-link" href="#"><i class="fas fa-image"></i> Снимки</a>
+            </li>
+            <li class="nav-item">
+                <a id="notesLink" class="nav-link" href="#"><i class="fas fa-sticky-note"></i> Примечания</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="#documents" data-bs-toggle="tab"><i class="fas fa-folder"></i> Документы</a>
+            </li>
+            <li class="nav-item">
+                <a id="personalDataTab" class="nav-link" href="#"><i class="fas fa-id-card"></i> Персональные данные</a>
+            </li>
+            <li class="nav-item">
+                <a id="medicalRecordsTab" class="nav-link" href="#"><i class="fas fa-file-medical-alt"></i> История медицинских записей</a>
+            </li>
         </ul>
-    </nav>
+    </div>
 
-    <!-- Основной контент -->
-    <div id="content">
-        <div class="container mt-5">
-            <h2 class="mb-4">Профиль пациента | DentalBook</h2>
-            
-            <!-- Карточка профиля -->
-            <div class="profile-card">
-                <div class="row align-items-center">
-                    <!-- Левая колонка: информация о пациенте -->
-                    <div class="col-md-8" id="profileInfo">
-                        <div>Загрузка данных...</div>
-                    </div>
-
-                    <!-- Правая колонка: иконка профиля -->
-                    <div class="col-md-4 text-center">
-                        <div class="profile-icon">
-                            <i class="fas fa-user fa-5x"></i>
+    <!-- Модальное окно для обновления аватара -->
+    <div class="modal fade" id="avatarModal" tabindex="-1" aria-labelledby="avatarModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="avatarModalLabel">Обновить аватар</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Закрыть"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="avatarForm">
+                        <div class="mb-3">
+                            <label for="avatarInput" class="form-label">Выберите изображение</label>
+                            <input type="file" class="form-control" id="avatarInput" accept="image/*" required>
                         </div>
-                    </div>
+                        <button type="button" class="btn btn-primary" onclick="uploadAvatar()">Загрузить</button>
+                    </form>
                 </div>
             </div>
         </div>
     </div>
 
+    <!-- Скрипты -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <script>
-        // Функция для получения токена из cookies
         function getCookie(name) {
             const value = `; ${document.cookie}`;
             const parts = value.split(`; ${name}=`);
             if (parts.length === 2) return parts.pop().split(';').shift();
         }
 
-        const token = getCookie('token');
-
-        if (!token) {
-            alert('Вы не авторизованы. Пожалуйста, выполните вход.');
-            window.location.href = '/auth.php';
-        }
-
-        // Функция для загрузки данных профиля
         async function loadUserProfile() {
+            const token = getCookie('token');
+            if (!token) {
+                alert('Вы не авторизованы. Пожалуйста, выполните вход.');
+                window.location.href = '/auth.php';
+                return;
+            }
+
             try {
                 const response = await fetch('http://localhost:3003/api/users/profile', {
-                    method: 'GET',
-                    headers: {
-                        'Authorization': `Bearer ${token}`
-                    }
+                    headers: { Authorization: `Bearer ${token}` }
                 });
 
-                if (!response.ok) {
-                    throw new Error('Не удалось загрузить профиль');
-                }
+                if (!response.ok) throw new Error('Ошибка загрузки профиля');
 
                 const data = await response.json();
                 const profile = data.profile;
 
-                // Обновление информации на странице
-                const profileInfo = `
-                    <div class="row mb-3">
-                        <div class="col-1 text-center"><i class="fas fa-user"></i></div>
-                        <div class="col-11"><strong>ФИО:</strong> ${profile.fullName}</div>
-                    </div>
-                    <div class="row mb-3">
-                        <div class="col-1 text-center"><i class="fas fa-calendar"></i></div>
-                        <div class="col-11"><strong>Дата рождения:</strong> ${profile.dateOfBirth}</div>
-                    </div>
-                    <div class="row mb-3">
-                        <div class="col-1 text-center"><i class="fas fa-file-alt"></i></div>
-                        <div class="col-11"><strong>Полис:</strong> ${profile.policy}</div>
-                    </div>
-                    <div class="row mb-3">
-                        <div class="col-1 text-center"><i class="fas fa-phone"></i></div>
-                        <div class="col-11"><strong>Контактный телефон:</strong> ${profile.phoneNumber}</div>
-                    </div>
-                    <div class="row mb-3">
-                        <div class="col-1 text-center"><i class="fas fa-envelope"></i></div>
-                        <div class="col-11"><strong>Email:</strong> ${profile.email}</div>
-                    </div>
-                    <div class="row mb-3">
-                        <div class="col-1 text-center"><i class="fas fa-map-marker-alt"></i></div>
-                        <div class="col-11"><strong>Адрес:</strong> ${profile.address}</div>
-                    </div>
-                    <div class="row mb-3">
-                        <div class="col-1 text-center"><i class="fas fa-sign-in-alt"></i></div>
-                        <div class="col-11"><strong>Последний вход:</strong> ${profile.lastLogin}</div>
-                    </div>
+                document.querySelector('.card-body').innerHTML = `
+                    <p><strong>ФИО:</strong> ${profile.fullName}</p>
+                    <p><strong>Дата рождения:</strong> ${profile.dateOfBirth}</p>
+                    <p><strong>Телефон:</strong> ${profile.phoneNumber}</p>
+                    <p><strong>Адрес:</strong> ${profile.address}</p>
+                    <p><strong>Email:</strong> ${profile.email}</p>
+                    <p><strong>Последний вход:</strong> ${profile.lastLogin || 'Неизвестно'}</p>
                 `;
 
-                document.getElementById('profileInfo').innerHTML = profileInfo;
+                const avatarElement = document.getElementById('avatar');
+                avatarElement.src = profile.avatar || 'default_avatar.png';
             } catch (error) {
                 console.error('Ошибка загрузки профиля:', error);
                 alert('Не удалось загрузить данные профиля.');
             }
         }
 
-        // Логика выхода из системы
-        function logout() {
-            if (confirm('Вы уверены, что хотите выйти из системы?')) {
-                document.cookie = 'token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
-                window.location.href = '/auth.php';
+        async function uploadAvatar() {
+            const avatarInput = document.getElementById('avatarInput');
+            const file = avatarInput.files[0];
+            const token = getCookie('token');
+
+            if (!file) {
+                alert('Выберите файл для загрузки.');
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append('avatar', file);
+
+            try {
+                const response = await fetch('http://localhost:3003/api/users/avatar/upload', {
+                    method: 'POST',
+                    headers: { Authorization: `Bearer ${token}` },
+                    body: formData
+                });
+
+                if (!response.ok) throw new Error('Ошибка загрузки аватара.');
+
+                const data = await response.json();
+                alert(data.message);
+                document.getElementById('avatarModal').querySelector('.btn-close').click();
+                loadUserProfile();
+            } catch (error) {
+                console.error('Ошибка загрузки аватара:', error);
+                alert('Не удалось обновить аватар.');
             }
         }
 
-        // Загрузка данных профиля при загрузке страницы
-        loadUserProfile();
+        document.addEventListener('DOMContentLoaded', loadUserProfile);
     </script>
-
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
