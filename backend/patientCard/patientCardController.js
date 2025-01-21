@@ -33,9 +33,10 @@ export const createPatientCard = async (req, res) => {
 
     const decoded = jwt.verify(token, JWT_SECRET);
 
-    if (decoded.role !== "doctor") {
+    if (decoded.role !== "doctor" || "manager") {
       return res.status(403).json({
-        message: "Доступ запрещен. Только врачи могут создавать карты.",
+        message:
+          "Доступ запрещен. Только врачи или менеджеры могут создавать карты.",
       });
     }
 
@@ -134,7 +135,7 @@ export const createVisit = async (req, res) => {
     }
 
     const user = await User.findByPk(decoded.id);
-    if (!user || !(user.role === "admin" || user.role === "doctor")) {
+    if (!user || !(user.role === "manager" || user.role === "doctor")) {
       return res.status(403).json({
         message: "Access denied, only admins or doctors can create visits",
       });
