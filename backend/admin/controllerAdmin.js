@@ -1,7 +1,12 @@
 import User from "../users/modelUser.js";
 import Doctor from "../doctors/modelDoctor.js";
-import { PatientCard } from "../patientCard/modelPatientCard.js";
-import fs from "fs";
+import {
+  PatientCard,
+  Visit,
+  PatientNote,
+  Snapshot,
+} from "../patientCard/modelPatientCard.js";
+import fs from "fs/promises";
 import path from "path";
 import { validationResult } from "express-validator";
 import { uploadAvatar } from "../utils/middleware.js";
@@ -149,60 +154,71 @@ export const getAllPatients = async (req, res) => {
   }
 };
 
-const deleteFileIfExists = (relativeFilePath) => {
-  const filePath = relativeFilePath.startsWith("/backend")
-    ? path.join(process.cwd(), relativeFilePath.slice(8)) // Убираем "/backend"
-    : path.join(process.cwd(), relativeFilePath);
+const deleteFileIfExists = async (filePath) => {
+  try {
+    const normalizedPath = filePath.startsWith("/backend/")
+      ? filePath.replace("/backend/", "")
+      : filePath; // Убираем `/backend/` из пути
 
-  fs.access(filePath, fs.constants.F_OK, (err) => {
-    if (err) {
-      console.log(`Файл не найден: ${filePath}`);
+    // Проверяем существование файла
+    await fs.access(normalizedPath);
+    // Удаляем файл
+    await fs.unlink(normalizedPath);
+    console.log(`Файл успешно удалён: ${normalizedPath}`);
+  } catch (error) {
+    if (error.code !== "ENOENT") {
+      console.error(`Ошибка при удалении файла: ${filePath}`, error);
     } else {
-      fs.unlink(filePath, (unlinkErr) => {
-        if (unlinkErr) {
-          console.error(
-            `Ошибка удаления файла ${filePath}:`,
-            unlinkErr.message
-          );
-        } else {
-          console.log(`Файл ${filePath} успешно удалён`);
-        }
-      });
+      console.warn(`Файл не существует: ${filePath}`);
     }
-  });
+  }
 };
 
 export const updatePatientAvatar = async (req, res) => {
+  let uploadedFilePath = null; // Для отслеживания созданного файла
+
   try {
     const { patientCardId } = req.params;
+    const { role } = req.user;
+
+    // Проверяем роль
+    if (role !== "admin") {
+      return res
+        .status(403)
+        .json({ message: "Доступ запрещен. Необходима роль admin" });
+    }
 
     // Проверяем наличие файла
     if (!req.file) {
       return res.status(400).json({ message: "Файл аватарки не передан" });
     }
 
+    // Сохраняем путь загруженного файла
+    uploadedFilePath = `/backend/uploads/avatars/${req.file.filename}`;
+
+    // Ищем пациента
     const patient = await PatientCard.findByPk(patientCardId, {
       include: [{ model: User, as: "user" }],
     });
 
     if (!patient) {
-      return res.status(404).json({ message: "Пациент не найден" });
+      throw new Error("Пациент не найден");
     }
 
     const user = patient.user;
 
-    // Удаляем старую аватарку, если она есть
+    // Удаляем старую аватарку, если она не является аватаркой по умолчанию
     if (
       user.avatar &&
       user.avatar !== "/backend/uploads/avatars/default_avatar.png"
     ) {
-      deleteFileIfExists(user.avatar);
+      await deleteFileIfExists(user.avatar);
     }
 
     // Обновляем путь к новой аватарке
-    const avatarPath = `/backend/uploads/avatars/${req.file.filename}`;
-    user.avatar = avatarPath;
+    user.avatar = uploadedFilePath;
 
+    // Сохраняем изменения
     await user.save();
 
     return res.status(200).json({
@@ -211,6 +227,12 @@ export const updatePatientAvatar = async (req, res) => {
     });
   } catch (error) {
     console.error("Ошибка при обновлении аватарки:", error);
+
+    // Удаляем загруженный файл при ошибке
+    if (uploadedFilePath) {
+      await deleteFileIfExists(uploadedFilePath);
+    }
+
     return res
       .status(500)
       .json({ message: "Ошибка сервера при обновлении аватарки" });
@@ -220,6 +242,13 @@ export const updatePatientAvatar = async (req, res) => {
 export const updatePatientData = async (req, res) => {
   try {
     const { patientCardId } = req.params;
+
+    const { role } = req.user;
+    if (role !== "admin") {
+      return res
+        .status(403)
+        .json({ message: "Доступ запрещен. Необходима роль admin" });
+    }
 
     // Находим пациента по id
     const patient = await PatientCard.findByPk(patientCardId, {
@@ -296,5 +325,256 @@ export const updatePatientData = async (req, res) => {
     return res
       .status(500)
       .json({ message: "Ошибка сервера при обновлении данных пациента" });
+  }
+};
+
+export const updateDoctorAvatar = async (req, res) => {
+  try {
+    const { doctorId } = req.params;
+    const { role } = req.user;
+
+    // Проверка роли пользователя
+    if (role !== "admin") {
+      if (req.file) {
+        // Удаляем загруженный файл, если произошла ошибка авторизации
+        deleteFileIfExists(`/backend/uploads/avatars/${req.file.filename}`);
+      }
+      return res
+        .status(403)
+        .json({ message: "Доступ запрещен. Необходима роль admin" });
+    }
+
+    // Проверяем наличие файла
+    if (!req.file) {
+      return res.status(400).json({ message: "Файл аватарки не передан" });
+    }
+
+    // Находим врача по его ID с привязкой к пользователю
+    const doctor = await Doctor.findByPk(doctorId, {
+      include: [{ model: User, as: "userAccount" }], // Используем правильный alias
+    });
+
+    if (!doctor) {
+      // Удаляем загруженный файл, если врач не найден
+      deleteFileIfExists(`/backend/uploads/avatars/${req.file.filename}`);
+      return res.status(404).json({ message: "Врач не найден" });
+    }
+
+    const user = doctor.userAccount;
+
+    // Удаляем старую аватарку, если она не дефолтная
+    if (
+      user.avatar &&
+      user.avatar !== "/backend/uploads/avatars/default_avatar.png"
+    ) {
+      deleteFileIfExists(user.avatar);
+    }
+
+    // Сохраняем новую аватарку
+    const avatarPath = `/backend/uploads/avatars/${req.file.filename}`;
+    user.avatar = avatarPath;
+
+    await user.save();
+
+    return res.status(200).json({
+      message: "Аватарка врача обновлена",
+      avatar: user.avatar,
+    });
+  } catch (error) {
+    console.error("Ошибка при обновлении аватарки врача:", error);
+
+    // Удаляем файл, если произошла ошибка
+    if (req.file) {
+      deleteFileIfExists(`/backend/uploads/avatars/${req.file.filename}`);
+    }
+
+    return res
+      .status(500)
+      .json({ message: "Ошибка сервера при обновлении аватарки врача" });
+  }
+};
+
+export const updateDoctorData = async (req, res) => {
+  try {
+    const { doctorId } = req.params;
+    const { role } = req.user;
+
+    // Проверка роли
+    if (role !== "admin") {
+      return res
+        .status(403)
+        .json({ message: "Доступ запрещен. Необходима роль admin" });
+    }
+
+    // Находим врача с корректным алиасом
+    const doctor = await Doctor.findByPk(doctorId, {
+      include: [{ model: User, as: "userAccount" }], // Исправлено на "userAccount"
+    });
+
+    if (!doctor) {
+      return res.status(404).json({ message: "Врач не найден" });
+    }
+
+    const user = doctor.userAccount;
+
+    // Получаем данные из тела запроса
+    const {
+      firstName,
+      lastName,
+      patronymic,
+      dateOfBirth,
+      email,
+      mobilePhone,
+      specialty,
+    } = req.body;
+
+    // Обновляем данные врача
+    const updatedDoctorData = {
+      firstName,
+      lastName,
+      patronymic,
+      dateOfBirth,
+      email,
+      mobilePhone,
+      specialty,
+    };
+    await doctor.update(updatedDoctorData);
+
+    // Обновляем данные пользователя
+    const updatedUserData = {
+      firstName,
+      lastName,
+      patronymic,
+      email,
+    };
+    await user.update(updatedUserData);
+
+    return res.status(200).json({
+      message: "Информация о враче успешно обновлена",
+      doctor: {
+        doctorId: doctor.id,
+        firstName: doctor.firstName,
+        lastName: doctor.lastName,
+        patronymic: doctor.patronymic,
+        dateOfBirth: doctor.dateOfBirth,
+        email: doctor.email,
+        mobilePhone: doctor.mobilePhone,
+        specialty: doctor.specialty,
+      },
+    });
+  } catch (error) {
+    console.error("Ошибка при обновлении данных врача:", error);
+    return res
+      .status(500)
+      .json({ message: "Ошибка сервера при обновлении данных врача" });
+  }
+};
+
+export const deleteVisit = async (req, res) => {
+  try {
+    const { visitId } = req.params;
+    const { role } = req.user;
+
+    // Проверка роли
+    if (role !== "admin") {
+      return res
+        .status(403)
+        .json({ message: "Доступ запрещен. Необходима роль admin" });
+    }
+
+    // Находим визит по ID
+    const visit = await Visit.findByPk(visitId);
+
+    if (!visit) {
+      return res.status(404).json({ message: "Визит не найден" });
+    }
+
+    // Удаляем визит
+    await visit.destroy();
+
+    return res.status(200).json({
+      message: "Визит успешно удален",
+    });
+  } catch (error) {
+    console.error("Ошибка при удалении визита:", error);
+    return res
+      .status(500)
+      .json({ message: "Ошибка сервера при удалении визита" });
+  }
+};
+
+export const deletePatientNote = async (req, res) => {
+  try {
+    const { patientNoteId } = req.params;
+    const { role } = req.user;
+
+    // Проверка роли
+    if (role !== "admin") {
+      return res
+        .status(403)
+        .json({ message: "Доступ запрещен. Необходима роль admin" });
+    }
+
+    // Поиск примечания по ID
+    const note = await PatientNote.findByPk(patientNoteId);
+
+    if (!note) {
+      return res.status(404).json({ message: "Примечание не найдено" });
+    }
+
+    // Удаляем примечание
+    await note.destroy();
+
+    return res.status(200).json({
+      message: "Примечание успешно удалено",
+    });
+  } catch (error) {
+    console.error("Ошибка при удалении примечания:", error);
+    return res
+      .status(500)
+      .json({ message: "Ошибка сервера при удалении примечания" });
+  }
+};
+
+export const deleteSnapshot = async (req, res) => {
+  try {
+    const { snapshotId } = req.params;
+    const { role } = req.user;
+
+    // Проверка роли пользователя
+    if (role !== "admin") {
+      return res
+        .status(403)
+        .json({ message: "Доступ запрещен. Необходима роль admin" });
+    }
+
+    // Поиск снимка в базе данных
+    const snapshot = await Snapshot.findByPk(snapshotId);
+    if (!snapshot) {
+      return res.status(404).json({ message: "Снимок не найден" });
+    }
+
+    // Удаление файла снимка с сервера
+    try {
+      await fs.unlink(snapshot.snapshotFile.replace("/backend/", ""));
+    } catch (fileError) {
+      console.error("Ошибка при удалении файла снимка:", fileError);
+      return res
+        .status(500)
+        .json({ message: "Ошибка при удалении файла снимка" });
+    }
+
+    // Удаление записи снимка из базы данных
+    await snapshot.destroy();
+
+    return res
+      .status(200)
+      .json({ message: "Снимок успешно удален", snapshotId: snapshotId });
+  } catch (error) {
+    console.error("Ошибка при удалении снимка:", error);
+    return res.status(500).json({
+      message: "Ошибка сервера при удалении снимка",
+      error: error.message,
+    });
   }
 };

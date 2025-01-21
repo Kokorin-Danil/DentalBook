@@ -15,6 +15,7 @@ import Doctor from "../doctors/modelDoctor.js";
 import { Op } from "sequelize";
 import dayjs from "dayjs";
 import path from "path";
+import fs from "fs/promises";
 dotenv.config();
 
 const JWT_SECRET = process.env.JWT_SECRET;
@@ -867,12 +868,16 @@ export const createSnapshot = async (req, res) => {
     // Проверка существования визита
     const visit = await Visit.findByPk(visitId);
     if (!visit) {
+      // Удаление загруженного файла при ошибке
+      await fs.unlink(req.file.path);
       return res.status(404).json({ message: "Указанный визит не найден" });
     }
 
     // Проверка существования карты пациента
     const patientCard = await PatientCard.findByPk(patientCardId);
     if (!patientCard) {
+      // Удаление загруженного файла при ошибке
+      await fs.unlink(req.file.path);
       return res
         .status(404)
         .json({ message: "Указанная карта пациента не найдена" });
@@ -893,6 +898,12 @@ export const createSnapshot = async (req, res) => {
     return res.status(201).json({ message: "Снимок успешно создан", snapshot });
   } catch (error) {
     console.error("Ошибка при создании снимка:", error);
+
+    // Удаление загруженного файла при ошибке
+    if (req.file) {
+      await fs.unlink(req.file.path);
+    }
+
     return res
       .status(500)
       .json({ message: "Ошибка сервера", error: error.message });

@@ -5,6 +5,11 @@ import {
   getAllPatients,
   updatePatientAvatar,
   updatePatientData,
+  updateDoctorAvatar,
+  updateDoctorData,
+  deleteVisit,
+  deletePatientNote,
+  deleteSnapshot,
 } from "./controllerAdmin.js";
 import { authenticateToken } from "../utils/authMiddleware.js";
 import { uploadAvatar } from "../utils/middleware.js";
@@ -25,5 +30,23 @@ adminRouter.put(
   authenticateToken,
   updatePatientData
 );
+adminRouter.put(
+  "/doctors/avatar/update/:doctorId",
+  authenticateToken,
+  uploadAvatar.single("avatar"),
+  updateDoctorAvatar
+);
+adminRouter.put(
+  "/doctors/data/update/:doctorId",
+  authenticateToken,
+  updateDoctorData
+);
+adminRouter.delete("/visit/:visitId", authenticateToken, deleteVisit);
+adminRouter.delete(
+  "/patientNote/:patientNoteId",
+  authenticateToken,
+  deletePatientNote
+);
+adminRouter.delete("/snapshot/:snapshotId", authenticateToken, deleteSnapshot);
 
 export default adminRouter;
