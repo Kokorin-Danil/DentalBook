@@ -61,6 +61,10 @@ PatientCardRouter.get(
   getExaminationSheets
 );
 PatientCardRouter.get("/document/get/:patientCardId", getPatientCardDetails);
-PatientCardRouter.delete("/card/:patientCardId", deletePatientCard);
+PatientCardRouter.delete(
+  "/card/:patientCardId",
+  authenticateToken,
+  deletePatientCard
+);
 
 export default PatientCardRouter;

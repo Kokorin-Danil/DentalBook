@@ -1245,8 +1245,15 @@ export const getPatientCardDetails = async (req, res) => {
 
 export const deletePatientCard = async (req, res) => {
   const { patientCardId } = req.params;
+  const { role } = req.user;
 
   try {
+    if (role !== "admin") {
+      return res
+        .status(403)
+        .json({ message: "Доступ запрещен. Необходима роль admin" });
+    }
+
     if (!patientCardId) {
       return res
         .status(400)
