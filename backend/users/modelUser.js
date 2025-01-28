@@ -35,7 +35,7 @@ User.init(
       allowNull: false, // Пол обязателен
     },
     role: {
-      type: DataTypes.ENUM("client", "admin", "doctor"),
+      type: DataTypes.ENUM("client", "admin", "doctor", "manager"),
       defaultValue: "client",
     },
     avatar: {

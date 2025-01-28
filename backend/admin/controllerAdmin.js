@@ -578,3 +578,61 @@ export const deleteSnapshot = async (req, res) => {
     });
   }
 };
+
+export const createManager = async (req, res) => {
+  try {
+    // Получаем данные из тела запроса
+    const { firstName, lastName, email, password, gender } = req.body;
+
+    // Проверяем, что токен отправлен и валиден
+    const { user } = req;
+    if (!user || user.role !== "admin") {
+      return res
+        .status(403)
+        .json({
+          message:
+            "Доступ запрещен. Только администратор может создавать менеджеров.",
+        });
+    }
+
+    // Проверяем обязательные поля
+    if (!firstName || !lastName || !email || !password || !gender) {
+      return res
+        .status(400)
+        .json({ message: "Все поля обязательны для заполнения." });
+    }
+
+    // Проверяем, существует ли пользователь с таким email
+    const existingUser = await User.findOne({ where: { email } });
+    if (existingUser) {
+      return res
+        .status(409)
+        .json({ message: "Пользователь с таким email уже существует." });
+    }
+
+    // Создаем нового пользователя
+    const newManager = await User.create({
+      firstName,
+      lastName,
+      email,
+      password: password,
+      gender,
+      role: "manager", // Назначаем роль менеджера
+    });
+
+    res.status(201).json({
+      message: "Менеджер успешно создан.",
+      user: {
+        id: newManager.id,
+        firstName: newManager.firstName,
+        lastName: newManager.lastName,
+        email: newManager.email,
+        gender: newManager.gender,
+        role: newManager.role,
+      },
+    });
+  } catch (error) {
+    console.error("Ошибка при создании менеджера:", error);
+    res.status(500).json({ message: "Ошибка сервера." });
+  }
+};
