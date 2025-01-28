@@ -33,7 +33,7 @@ export const createPatientCard = async (req, res) => {
 
     const decoded = jwt.verify(token, JWT_SECRET);
 
-    if (decoded.role !== "doctor" || "manager") {
+    if (!["doctor", "manager"].includes(decoded.role)) {
       return res.status(403).json({
         message:
           "Доступ запрещен. Только врачи или менеджеры могут создавать карты.",
@@ -142,7 +142,7 @@ export const createVisit = async (req, res) => {
     }
 
     // Извлекаем данные из тела запроса
-    const { doctorFullName, patientFullName, visitType } = req.body;
+    const { doctorFullName, patientCardId, visitType } = req.body;
 
     // Поиск врача по полному ФИО
     const [doctorLastName, doctorFirstName, doctorPatronymic] =
@@ -159,17 +159,9 @@ export const createVisit = async (req, res) => {
     }
 
     // Поиск пациента по полному ФИО
-    const [patientLastName, patientFirstName, patientPatronymic] =
-      patientFullName.split(" ");
-    const patientCard = await PatientCard.findOne({
-      where: {
-        firstName: patientFirstName,
-        lastName: patientLastName,
-        patronymic: patientPatronymic || null, // Учет отчества
-      },
-    });
+    const patientCard = await PatientCard.findByPk(patientCardId);
     if (!patientCard) {
-      return res.status(404).json({ message: "Patient not found" });
+      return res.status(404).json({ message: "Patient card not found" });
     }
 
     // Определяем длительность визита
@@ -486,7 +478,14 @@ export const getPatientCards = async (req, res) => {
 
     // Загружаем данные о пациентах
     const patientCards = await PatientCard.findAll({
-      attributes: ["id", "firstName", "lastName", "patronymic", "phoneNumber"],
+      attributes: [
+        "id",
+        "firstName",
+        "lastName",
+        "patronymic",
+        "phoneNumber",
+        "dateOfBirth", // Добавляем дату рождения
+      ],
       include: [
         {
           model: Visit,
@@ -515,14 +514,14 @@ export const getPatientCards = async (req, res) => {
           card.patronymic || ""
         }`.trim(),
         phoneNumber: card.phoneNumber,
+        dateOfBirth: card.dateOfBirth, // Добавляем дату рождения в результат
         lastVisit: lastVisit
           ? `${lastVisit.visitDate} ${lastVisit.visitTime}`
           : null, // Если визита нет, возвращаем null
       };
     });
 
-    // Фильтруем пациентов без данных о последнем визите
-
+    // Отправляем результат клиенту
     res.status(200).json(result);
   } catch (error) {
     console.error(error);

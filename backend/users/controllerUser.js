@@ -273,3 +273,42 @@ export const uploadUserAvatar = async (req, res) => {
     return res.status(500).json({ message: "Ошибка сервера" });
   }
 };
+
+export const getPatientCardNumber = async (req, res) => {
+  try {
+    const { id } = req.user;
+    console.log(id);
+
+    // Проверяем, существует ли пользователь
+    const user = await User.findByPk(id, {
+      include: [
+        {
+          model: PatientCard,
+          as: "patientCard",
+          attributes: ["id"], // Получаем только номер карты (id)
+        },
+      ],
+    });
+
+    if (!user) {
+      return res.status(404).json({ message: "Пользователь не найден" });
+    }
+
+    // Проверяем, есть ли у пользователя карта пациента
+    if (!user.patientCard) {
+      return res.status(404).json({
+        message: "Карта пациента для данного пользователя не найдена",
+      });
+    }
+
+    return res.status(200).json({
+      message: "Номер карты пациента получен",
+      patientCardId: user.patientCard.id,
+    });
+  } catch (error) {
+    console.error("Ошибка при получении номера карты пациента:", error);
+    return res
+      .status(500)
+      .json({ message: "Ошибка сервера при получении карты пациента" });
+  }
+};
