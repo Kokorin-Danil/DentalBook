@@ -34,6 +34,8 @@
     </style>
 </head>
 <body>
+<?php include 'navbar.php'; ?>
+
     <div class="container mt-4">
         <!-- Tabs Navigation -->
         <ul class="nav nav-tabs">
@@ -43,7 +45,7 @@
                 </a>
             </li>
             <li class="nav-item">
-                <a class="nav-link active" id="patients-tab" href="patients.php">
+                <a class="nav-link" id="patients-tab" href="patients.php">
                     <i class="fas fa-users"></i> Пациенты
                 </a>
             </li>

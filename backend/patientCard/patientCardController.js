@@ -33,7 +33,7 @@ export const createPatientCard = async (req, res) => {
 
     const decoded = jwt.verify(token, JWT_SECRET);
 
-    if (decoded.role !== "doctor" || "manager") {
+    if (decoded.role !== "doctor") {
       return res.status(403).json({
         message:
           "Доступ запрещен. Только врачи или менеджеры могут создавать карты.",
