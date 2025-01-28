@@ -5,6 +5,7 @@ import {
   Visit,
   PatientNote,
   Snapshot,
+  ExaminationSheet,
 } from "../patientCard/modelPatientCard.js";
 import fs from "fs/promises";
 import path from "path";
@@ -587,12 +588,10 @@ export const createManager = async (req, res) => {
     // Проверяем, что токен отправлен и валиден
     const { user } = req;
     if (!user || user.role !== "admin") {
-      return res
-        .status(403)
-        .json({
-          message:
-            "Доступ запрещен. Только администратор может создавать менеджеров.",
-        });
+      return res.status(403).json({
+        message:
+          "Доступ запрещен. Только администратор может создавать менеджеров.",
+      });
     }
 
     // Проверяем обязательные поля
@@ -633,6 +632,37 @@ export const createManager = async (req, res) => {
     });
   } catch (error) {
     console.error("Ошибка при создании менеджера:", error);
+    res.status(500).json({ message: "Ошибка сервера." });
+  }
+};
+
+export const deleteExaminationSheet = async (req, res) => {
+  try {
+    // Извлекаем ID записи из параметров запроса
+    const { id } = req.params;
+
+    // Проверяем, что пользователь аутентифицирован и является администратором
+    const { user } = req;
+    if (!user || user.role !== "admin") {
+      return res.status(403).json({
+        message: "Доступ запрещен. Только администратор может удалять записи.",
+      });
+    }
+
+    // Проверяем, существует ли запись с указанным ID
+    const examinationSheet = await ExaminationSheet.findByPk(id);
+    if (!examinationSheet) {
+      return res
+        .status(404)
+        .json({ message: "Запись не найдена. Проверьте корректность ID." });
+    }
+
+    // Удаляем запись
+    await examinationSheet.destroy();
+
+    res.status(200).json({ message: "Запись успешно удалена." });
+  } catch (error) {
+    console.error("Ошибка при удалении записи:", error);
     res.status(500).json({ message: "Ошибка сервера." });
   }
 };

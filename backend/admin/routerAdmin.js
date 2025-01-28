@@ -11,6 +11,7 @@ import {
   deletePatientNote,
   deleteSnapshot,
   createManager,
+  deleteExaminationSheet,
 } from "./controllerAdmin.js";
 import { authenticateToken } from "../utils/authMiddleware.js";
 import { uploadAvatar } from "../utils/middleware.js";
@@ -50,5 +51,10 @@ adminRouter.delete(
 );
 adminRouter.delete("/snapshot/:snapshotId", authenticateToken, deleteSnapshot);
 adminRouter.post("/manager/create", authenticateToken, createManager);
+adminRouter.delete(
+  "/examination-sheet/:id",
+  authenticateToken,
+  deleteExaminationSheet
+);
 
 export default adminRouter;
