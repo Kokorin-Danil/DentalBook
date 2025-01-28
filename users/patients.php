@@ -7,53 +7,27 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
     <style>
-        #sidebar {
-            width: 250px;
-            background-color: #ffffff;
-            padding: 20px;
-            height: 100vh;
-            position: fixed;
-            top: 0;
-            left: 0;
-            overflow-y: auto;
-            border-right: 1px solid #ddd;
-            box-shadow: 2px 0 8px rgba(0, 0, 0, 0.05);
-        }
-
         #content {
-            margin-left: 270px;
-            padding: 20px;
+            margin: 20px;
             background-color: #f8f9fa;
             min-height: 100vh;
         }
-
         .table-actions button {
             margin-right: 5px;
         }
-
         .search-bar {
             display: flex;
             align-items: center;
             margin-bottom: 20px;
         }
-
         .search-bar input {
             flex: 1;
             margin-right: 10px;
         }
-
         .search-bar .fa-search {
             position: relative;
             left: -30px;
             color: #6c757d;
-        }
-
-        table tr:hover {
-            background-color: transparent !important;
-        }
-
-        table tr {
-            background-color: #fff;
         }
     </style>
 </head>
@@ -67,7 +41,6 @@
             <div class="search-bar">
                 <input type="text" id="searchInput" class="form-control" placeholder="Поиск по ФИО">
                 <i class="fas fa-search"></i>
-                <button class="btn btn-secondary ms-2"><i class="fas fa-filter"></i> Фильтр</button>
                 <a href="/users/createcardpatient.php" class="btn btn-success ms-2"><i class="fas fa-plus"></i> Добавить пациента</a>
             </div>
 
@@ -77,6 +50,7 @@
                         <th>Номер карты</th>
                         <th>ФИО</th>
                         <th>Телефон</th>
+                        <th>Дата рождения</th>
                         <th>Последний визит</th>
                         <th>Действия</th>
                     </tr>
@@ -110,17 +84,14 @@
     <script>
         let patientIdToDelete = null;
 
-        // Функция для получения токена из cookies
         function getCookie(name) {
             const value = `; ${document.cookie}`;
             const parts = value.split(`; ${name}=`);
             if (parts.length === 2) return parts.pop().split(';').shift();
         }
 
-        // Загружаем данные пациентов
         async function loadPatients() {
-            const token = getCookie('token'); // Получаем токен из cookies
-
+            const token = getCookie('token');
             if (!token) {
                 alert('Токен не найден. Выполните вход заново.');
                 window.location.href = '/auth.php';
@@ -147,27 +118,26 @@
             }
         }
 
-        // Заполняем таблицу данными пациентов
         function populatePatientTable(patients) {
             const tableBody = document.getElementById('patientTableBody');
-
-            tableBody.innerHTML = ''; // Очищаем таблицу
+            tableBody.innerHTML = '';
 
             patients.forEach((patient) => {
                 const lastVisitDate = patient.lastVisit ? new Date(patient.lastVisit) : null;
                 const lastVisitDisplay = lastVisitDate ? lastVisitDate.toLocaleDateString() + ' ' + lastVisitDate.toLocaleTimeString() : 'Нет записей';
+                const dateOfBirthDisplay = new Date(patient.dateOfBirth).toLocaleDateString();
 
                 const row = document.createElement('tr');
                 row.innerHTML = `
                     <td>${patient.id}</td>
                     <td>${patient.fullName}</td>
                     <td>${patient.phoneNumber}</td>
+                    <td>${dateOfBirthDisplay}</td>
                     <td>${lastVisitDisplay}</td>
                     <td class="table-actions">
-                        <a href="/users/view.php?patientCardId=${patient.id}" class="btn btn-sm btn-info view-patient">
+                        <a href="/users/view.php?patientCardId=${patient.id}" class="btn btn-sm btn-info">
                             <i class="fas fa-eye"></i> Просмотреть
                         </a>
-                        <button class="btn btn-sm btn-warning"><i class="fas fa-edit"></i> Редактировать</button>
                         <button class="btn btn-sm btn-danger delete-patient" data-id="${patient.id}">
                             <i class="fas fa-trash"></i> Удалить
                         </button>
@@ -177,7 +147,6 @@
                 tableBody.appendChild(row);
             });
 
-            // Добавляем обработчик клика для кнопок удаления
             document.querySelectorAll('.delete-patient').forEach(button => {
                 button.addEventListener('click', (event) => {
                     patientIdToDelete = button.getAttribute('data-id');
@@ -187,10 +156,8 @@
             });
         }
 
-        // Удаление пациента
         async function deletePatient() {
-            const token = getCookie('token'); // Получаем токен из cookies
-
+            const token = getCookie('token');
             if (!token) {
                 alert('Токен не найден. Выполните вход заново.');
                 return;
@@ -209,21 +176,19 @@
                 }
 
                 alert('Карта пациента успешно удалена.');
-                loadPatients(); // Обновляем таблицу после удаления
+                loadPatients();
             } catch (error) {
                 console.error('Ошибка:', error);
                 alert('Не удалось удалить карту пациента.');
             }
         }
 
-        // Обработчик подтверждения удаления
         document.getElementById('confirmDeleteButton').addEventListener('click', () => {
             deletePatient();
             const deleteModal = bootstrap.Modal.getInstance(document.getElementById('deletePatientModal'));
             deleteModal.hide();
         });
 
-        // Загружаем данные пациентов при загрузке страницы
         document.addEventListener('DOMContentLoaded', loadPatients);
     </script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
