@@ -16,6 +16,7 @@ import { Op } from "sequelize";
 import dayjs from "dayjs";
 import path from "path";
 import fs from "fs/promises";
+import MedicalSurvey from "./MedicalSurveyModel.js";
 dotenv.config();
 
 const JWT_SECRET = process.env.JWT_SECRET;
@@ -1284,5 +1285,47 @@ export const deletePatientCard = async (req, res) => {
   } catch (error) {
     console.error("Ошибка при удалении карты пациента и пользователя:", error);
     res.status(500).json({ message: "Ошибка сервера", error: error.message });
+  }
+};
+
+export const createOrUpdateSurvey = async (req, res) => {
+  try {
+    const { patientCardId, ...surveyData } = req.body;
+
+    if (!patientCardId) {
+      return res
+        .status(400)
+        .json({ message: "Отсутствует идентификатор пациента" });
+    }
+
+    let survey = await MedicalSurvey.findOne({ where: { patientCardId } });
+
+    if (survey) {
+      await survey.update(surveyData);
+      return res.status(200).json({ message: "Анкета обновлена", survey });
+    }
+
+    survey = await MedicalSurvey.create({ patientCardId, ...surveyData });
+    res.status(201).json({ message: "Анкета создана", survey });
+  } catch (error) {
+    console.error("Ошибка при сохранении анкеты:", error);
+    res.status(500).json({ message: "Ошибка сервера" });
+  }
+};
+
+export const getSurveyByPatient = async (req, res) => {
+  try {
+    const { patientCardId } = req.params;
+
+    const survey = await MedicalSurvey.findOne({ where: { patientCardId } });
+
+    if (!survey) {
+      return res.status(404).json({ message: "Анкета не найдена" });
+    }
+
+    res.status(200).json(survey);
+  } catch (error) {
+    console.error("Ошибка при получении анкеты:", error);
+    res.status(500).json({ message: "Ошибка сервера" });
   }
 };

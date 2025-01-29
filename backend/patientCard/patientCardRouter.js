@@ -19,6 +19,8 @@ import {
   getExaminationSheets,
   getPatientCardDetails,
   deletePatientCard,
+  createOrUpdateSurvey,
+  getSurveyByPatient,
 } from "./patientCardController.js";
 import { uploadSnapshot } from "../utils/middleware.js";
 import { authenticateToken } from "../utils/authMiddleware.js";
@@ -66,5 +68,7 @@ PatientCardRouter.delete(
   authenticateToken,
   deletePatientCard
 );
+PatientCardRouter.post("/survey", createOrUpdateSurvey);
+PatientCardRouter.get("/survey/:patientCardId", getSurveyByPatient);
 
 export default PatientCardRouter;
