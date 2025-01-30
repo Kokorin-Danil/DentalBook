@@ -12,7 +12,7 @@ import jwt from "jsonwebtoken";
 import dotenv from "dotenv";
 import crypto from "crypto";
 import Doctor from "../doctors/modelDoctor.js";
-import { Op } from "sequelize";
+import { Op, fn, col } from "sequelize";
 import dayjs from "dayjs";
 import path from "path";
 import fs from "fs/promises";
@@ -1327,5 +1327,31 @@ export const getSurveyByPatient = async (req, res) => {
   } catch (error) {
     console.error("Ошибка при получении анкеты:", error);
     res.status(500).json({ message: "Ошибка сервера" });
+  }
+};
+
+export const getAllDoctors = async (req, res) => {
+  try {
+    const doctors = await Doctor.findAll({
+      attributes: [
+        [
+          fn(
+            "concat",
+            col("lastName"),
+            " ",
+            col("firstName"),
+            " ",
+            col("patronymic")
+          ),
+          "fullName",
+        ],
+        "specialty",
+      ],
+    });
+
+    res.json(doctors);
+  } catch (error) {
+    console.error("Ошибка при получении списка врачей:", error);
+    res.status(500).json({ error: "Ошибка сервера" });
   }
 };
