@@ -44,14 +44,6 @@
         .answer {
             font-style: italic;
         }
-        .message {
-            color: #dc3545;
-            font-weight: bold;
-            margin-top: 20px;
-        }
-        #surveyContent.hidden {
-            display: none;
-        }
         #noSurveyMessage {
             color: #dc3545;
             font-size: 1.2rem;
@@ -61,6 +53,7 @@
             border-radius: 10px;
             background-color: #ffe6e6;
             margin-top: 20px;
+            display: none;
         }
     </style>
 </head>
@@ -72,7 +65,7 @@
             <button class="close-button" onclick="window.location.href='/users/patients.php';">&times;</button>
         </div>
 
-        <!-- Survey or No Data Message -->
+        <!-- Survey Content -->
         <div id="surveyContent">
             <div class="question-group">
                 <label>1. Испытывали ли вы боль или дискомфорт в зубах или деснах?</label>
@@ -135,8 +128,11 @@
                 <p class="answer" id="anesthesiaReaction">Загрузка...</p>
             </div>
         </div>
-        <div id="noSurveyMessage" class="hidden">Анкета еще не заполнена</div>
+
+        <!-- No Survey Message -->
+        <div id="noSurveyMessage">Анкета еще не заполнена</div>
     </div>
+
     <script>
         async function fetchSurvey(patientCardId) {
             try {
@@ -148,19 +144,24 @@
                     throw new Error();
                 }
 
-                // Заполняем ответы
+                let isSurveyFilled = false;
                 for (const [key, value] of Object.entries(survey)) {
                     const element = document.getElementById(key);
                     if (element) {
                         element.textContent = value || 'Не указано';
+                        if (value) isSurveyFilled = true; // Если есть хотя бы один ответ, анкета заполнена
                     }
                 }
 
-                document.getElementById('surveyContent').classList.remove('hidden');
-                document.getElementById('noSurveyMessage').classList.add('hidden');
+                if (isSurveyFilled) {
+                    document.getElementById('surveyContent').style.display = 'block';
+                    document.getElementById('noSurveyMessage').style.display = 'none';
+                } else {
+                    throw new Error(); // Если нет значимых данных, считаем анкету незаполненной
+                }
             } catch {
-                document.getElementById('surveyContent').classList.add('hidden');
-                document.getElementById('noSurveyMessage').classList.remove('hidden');
+                document.getElementById('surveyContent').style.display = 'none';
+                document.getElementById('noSurveyMessage').style.display = 'block';
             }
         }
 
