@@ -45,6 +45,11 @@
                 </a>
             </li>
             <li class="nav-item">
+                <a class="nav-link" id="patients-tab" href="manager.php">
+                    <i class="fas fa-user-tie"></i> Администраторы приема
+                </a>
+            </li>
+            <li class="nav-item">
                 <a class="nav-link" id="patients-tab" href="patients.php">
                     <i class="fas fa-users"></i> Пациенты
                 </a>

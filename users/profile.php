@@ -34,7 +34,9 @@
 
         <!-- Действия -->
         <div class="mb-4">
-            <button class="btn btn-primary"><i class="fas fa-file-alt"></i> Анкета</button>
+            <button class="btn btn-primary" id="anketaButton">
+                <i class="fas fa-file-alt"></i> Анкета
+            </button>
             <button class="btn btn-secondary"><i class="fas fa-file-contract"></i> Договор</button>
             <button class="btn btn-info"><i class="fas fa-star"></i> Оценка</button>
             <button class="btn btn-danger"><i class="fas fa-print"></i> Печать</button>
@@ -166,8 +168,22 @@
             avatarElement.src = profile.avatar || 'default_avatar.png';
         }
 
+
         // Инициализация загрузки данных
-        document.addEventListener('DOMContentLoaded', loadPatientProfile);
+        document.addEventListener('DOMContentLoaded', () => {
+            const patientCardId = getPatientCardId();
+            const anketaButton = document.getElementById('anketaButton');
+
+            if (anketaButton && patientCardId) {
+                anketaButton.addEventListener('click', () => {
+                    window.location.href = `/users/anketa.php?patientCardId=${patientCardId}`;
+                });
+            }
+
+            // Загрузка данных профиля
+            loadPatientProfile();
+        });
+
     </script>
 </body>
 </html>

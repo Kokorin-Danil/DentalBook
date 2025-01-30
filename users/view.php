@@ -33,60 +33,44 @@
         </div>
     </div>
 
-    <!-- Модальное окно -->
+    <!-- Модальное окно добавления визита -->
     <div class="modal fade" id="addVisitModal" tabindex="-1" aria-labelledby="addVisitModalLabel" aria-hidden="true">
         <div class="modal-dialog">
             <div class="modal-content">
-                <!-- Заголовок модального окна -->
                 <div class="modal-header">
                     <h5 class="modal-title" id="addVisitModalLabel">Новый визит</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Закрыть"></button>
                 </div>
-
-                <!-- Тело модального окна -->
                 <div class="modal-body">
                     <form id="visitForm">
-                        <div class="row mb-3">
-                            <div class="col-md-12">
-                                <label for="patientFullName" class="form-label">ФИО пациента</label>
-                                <input type="text" id="patientFullName" class="form-control" placeholder="Введите ФИО пациента">
-                            </div>
+                        <div class="mb-3">
+                            <label for="patientSelect" class="form-label">Пациент</label>
+                            <select id="patientSelect" class="form-select" required></select>
                         </div>
-
-                        <div class="row mb-3">
-                            <div class="col-md-12">
-                                <label for="doctorFullName" class="form-label">ФИО врача</label>
-                                <input type="text" id="doctorFullName" class="form-control" placeholder="Введите ФИО врача" required>
-                            </div>
+                        <div class="mb-3">
+                            <label for="doctorFullName" class="form-label">ФИО врача</label>
+                            <input type="text" id="doctorFullName" class="form-control" placeholder="Введите ФИО врача" required>
                         </div>
-
-                        <div class="row mb-3">
-                            <div class="col-md-6">
-                                <label for="visitType" class="form-label">Тип визита</label>
-                                <select id="visitType" class="form-select" required>
-                                    <option value="осмотр" selected>Осмотр</option>
-                                    <option value="лечение">Лечение</option>
-                                    <option value="консультация">Консультация</option>
-                                </select>
-                            </div>
+                        <div class="mb-3">
+                            <label for="visitType" class="form-label">Тип визита</label>
+                            <select id="visitType" class="form-select" required>
+                                <option value="осмотр" selected>Осмотр</option>
+                                <option value="лечение">Лечение</option>
+                                <option value="консультация">Консультация</option>
+                            </select>
                         </div>
-
-                        <div class="row mb-3">
-                            <div class="col-md-6">
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
                                 <label for="visitDate" class="form-label">Дата визита</label>
                                 <input type="date" id="visitDate" class="form-control" required>
                             </div>
-                            <div class="col-md-6">
+                            <div class="col-md-6 mb-3">
                                 <label for="visitTime" class="form-label">Время визита</label>
-                                <select id="visitTime" class="form-select" required>
-                                    <!-- Временные интервалы заполняются автоматически -->
-                                </select>
+                                <select id="visitTime" class="form-select" required></select>
                             </div>
                         </div>
                     </form>
                 </div>
-
-                <!-- Подвал модального окна -->
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
                     <button type="button" id="saveVisitButton" class="btn btn-primary">Сохранить</button>
@@ -126,10 +110,11 @@
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <script>
-        document.addEventListener('DOMContentLoaded', async () => {
-            const patientCardId = new URLSearchParams(window.location.search).get('patientCardId');
-            const token = getCookie('token');
+    document.addEventListener('DOMContentLoaded', async () => {
+        const token = getCookie('token');
+        const patientCardId = new URLSearchParams(window.location.search).get('patientCardId');
 
+        function populateTimeIntervals() {
             const visitTimeSelect = document.getElementById('visitTime');
             const startTime = new Date('1970-01-01T09:00:00');
             const endTime = new Date('1970-01-01T17:30:00');
@@ -140,65 +125,59 @@
                 visitTimeSelect.appendChild(option);
                 startTime.setMinutes(startTime.getMinutes() + 30);
             }
+        }
 
-            const response = await fetch(`http://localhost:3003/api/patient-cards/get/patient_profile/${patientCardId}`, {
+        async function populatePatients() {
+            const response = await fetch('http://localhost:3003/api/patient-cards/get/all', {
                 headers: { Authorization: `Bearer ${token}` }
             });
-            const patient = await response.json();
-            document.getElementById('patientFullName').value = patient.profile.fullName;
-
-            async function loadVisits() {
-                const response = await fetch(`http://localhost:3003/api/patient-cards/visit/all/${patientCardId}`, {
-                    headers: { Authorization: `Bearer ${token}` }
-                });
-                const data = await response.json();
-                const tableBody = document.getElementById('visitsTableBody');
-                tableBody.innerHTML = data.visits.map(visit => `
-                    <tr id="visit-${visit.id}">
-                        <td>${visit.id}</td>
-                        <td>${visit.visitDate}</td>
-                        <td>${visit.visitTime}</td>
-                        <td>${visit.visitType}</td>
-                        <td>${visit.doctor.firstName} ${visit.doctor.lastName}</td>
-                        <td id="status-${visit.id}">${visit.visitStatus}</td>
-                        <td>
-                            <button class="btn btn-sm btn-warning" onclick="openChangeStatusModal(${visit.id}, '${visit.visitStatus}')">
-                                <i class="fas fa-edit"></i>
-                            </button>
-                        </td>
-                    </tr>
-                `).join('');
-            }
-
-            document.getElementById('updateStatusButton').addEventListener('click', async () => {
-                const visitId = document.getElementById('visitIdToUpdate').value;
-                const newStatus = document.getElementById('visitStatus').value;
-                const response = await fetch(`http://localhost:3003/api/patient-cards/visit/change/${visitId}`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        Authorization: `Bearer ${token}`
-                    },
-                    body: JSON.stringify({ newStatus })
-                });
-
-                if (response.ok) {
-                    document.getElementById(`status-${visitId}`).textContent = newStatus;
-                    bootstrap.Modal.getInstance(document.getElementById('changeStatusModal')).hide();
-                    alert('Статус успешно обновлен!');
-                } else {
-                    alert('Ошибка обновления статуса.');
-                }
+            const patients = await response.json();
+            const patientSelect = document.getElementById('patientSelect');
+            patients.forEach(patient => {
+                const option = document.createElement('option');
+                option.value = patient.id;
+                option.textContent = `${patient.fullName} (Дата рождения: ${new Date(patient.dateOfBirth).toLocaleDateString()})`;
+                patientSelect.appendChild(option);
             });
+        }
 
-            document.getElementById('saveVisitButton').addEventListener('click', async () => {
-                const visitData = {
-                    patientFullName: document.getElementById('patientFullName').value,
-                    doctorFullName: document.getElementById('doctorFullName').value,
-                    visitType: document.getElementById('visitType').value,
-                    visitDate: document.getElementById('visitDate').value,
-                    visitTime: document.getElementById('visitTime').value
-                };
+        async function loadVisits() {
+            const response = await fetch(`http://localhost:3003/api/patient-cards/visit/all/${patientCardId}`, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            const data = await response.json();
+            const tableBody = document.getElementById('visitsTableBody');
+            tableBody.innerHTML = data.visits.map(visitToHTML).join('');
+        }
+
+        function visitToHTML(visit) {
+            return `
+                <tr id="visit-${visit.id}">
+                    <td>${visit.id}</td>
+                    <td>${visit.visitDate}</td>
+                    <td>${visit.visitTime}</td>
+                    <td>${visit.visitType}</td>
+                    <td>${visit.doctor?.lastName ?? ''} ${visit.doctor?.firstName ?? ''} ${visit.doctor?.patronymic ?? ''}</td>
+                    <td id="status-${visit.id}">${visit.visitStatus}</td>
+                    <td>
+                        <button class="btn btn-sm btn-warning" onclick="openChangeStatusModal(${visit.id}, '${visit.visitStatus}')">
+                            <i class="fas fa-edit"></i>
+                        </button>
+                    </td>
+                </tr>
+            `;
+        }
+
+        async function saveVisit() {
+            const visitData = {
+                patientCardId: document.getElementById('patientSelect').value,
+                doctorFullName: document.getElementById('doctorFullName').value,
+                visitType: document.getElementById('visitType').value,
+                visitDate: document.getElementById('visitDate').value,
+                visitTime: document.getElementById('visitTime').value
+            };
+
+            try {
                 const response = await fetch('http://localhost:3003/api/patient-cards/visit/create', {
                     method: 'POST',
                     headers: {
@@ -208,30 +187,61 @@
                     body: JSON.stringify(visitData)
                 });
 
-                if (response.ok) {
-                    alert('Визит успешно добавлен!');
-                    document.getElementById('visitForm').reset();
-                    await loadVisits();
-                } else {
-                    alert('Ошибка при добавлении визита.');
-                }
+                if (!response.ok) throw new Error('Ошибка при добавлении визита.');
+
+                const { visit: newVisit } = await response.json();
+                const tableBody = document.getElementById('visitsTableBody');
+                tableBody.insertAdjacentHTML('beforeend', visitToHTML(newVisit));
+
+                alert('Визит успешно добавлен!');
+                bootstrap.Modal.getInstance(document.getElementById('addVisitModal')).hide();
+                document.getElementById('visitForm').reset();
+            } catch (error) {
+                alert(error.message);
+            }
+        }
+
+        async function updateVisitStatus() {
+            const visitId = document.getElementById('visitIdToUpdate').value;
+            const newStatus = document.getElementById('visitStatus').value;
+            const response = await fetch(`http://localhost:3003/api/patient-cards/visit/change/${visitId}`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                    Authorization: `Bearer ${token}`
+                },
+                body: JSON.stringify({ newStatus })
             });
 
-            await loadVisits();
-        });
-
-        function openChangeStatusModal(visitId, currentStatus) {
-            document.getElementById('visitIdToUpdate').value = visitId;
-            document.getElementById('visitStatus').value = currentStatus;
-            const modal = new bootstrap.Modal(document.getElementById('changeStatusModal'));
-            modal.show();
+            if (response.ok) {
+                document.getElementById(`status-${visitId}`).textContent = newStatus;
+                bootstrap.Modal.getInstance(document.getElementById('changeStatusModal')).hide();
+                alert('Статус визита успешно обновлен!');
+            } else {
+                alert('Ошибка при обновлении статуса.');
+            }
         }
 
-        function getCookie(name) {
-            const value = `; ${document.cookie}`;
-            const parts = value.split(`; ${name}=`);
-            if (parts.length === 2) return parts.pop().split(';').shift();
-        }
+        document.getElementById('saveVisitButton').addEventListener('click', saveVisit);
+        document.getElementById('updateStatusButton').addEventListener('click', updateVisitStatus);
+        await loadVisits();
+        populateTimeIntervals();
+        await populatePatients();
+    });
+
+    function openChangeStatusModal(visitId, currentStatus) {
+        document.getElementById('visitIdToUpdate').value = visitId;
+        document.getElementById('visitStatus').value = currentStatus;
+        const modal = new bootstrap.Modal(document.getElementById('changeStatusModal'));
+        modal.show();
+    }
+
+    function getCookie(name) {
+        const value = `; ${document.cookie}`;
+        const parts = value.split(`; ${name}=`);
+        if (parts.length === 2) return parts.pop().split(';').shift();
+    }
     </script>
+
 </body>
 </html>

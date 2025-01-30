@@ -96,6 +96,7 @@
 
     <script>
         const API_URL = 'http://localhost:3003/api/patient-cards/examinationsheet/get';
+        const DELETE_URL = 'http://localhost:3003/api/admin/examination-sheet';
         const patientCardId = new URLSearchParams(window.location.search).get('patientCardId');
 
         // Функция для получения токена из cookies
@@ -137,6 +138,7 @@
                 const date = new Date(record.createdAt).toLocaleDateString();
 
                 const row = document.createElement('tr');
+                row.id = `record-${record.id}`;
                 row.innerHTML = `
                     <td>${record.id}</td>
                     <td>${date}</td>
@@ -145,7 +147,7 @@
                         <button class="btn btn-info btn-sm" onclick="viewRecordDetails(${record.id})">
                             <i class="fas fa-eye"></i> Просмотреть
                         </button>
-                        <button class="btn btn-danger btn-sm">
+                        <button class="btn btn-danger btn-sm" onclick="deleteRecord(${record.id})">
                             <i class="fas fa-trash"></i> Удалить
                         </button>
                     </td>
@@ -218,6 +220,35 @@
 
             const modal = new bootstrap.Modal(document.getElementById('viewRecordModal'));
             modal.show();
+        }
+
+        // Удаление записи
+        async function deleteRecord(id) {
+            const token = getCookie('token');
+
+            if (!confirm('Вы уверены, что хотите удалить запись?')) return;
+
+            try {
+                const response = await fetch(`${DELETE_URL}/${id}`, {
+                    method: 'DELETE',
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+
+                if (!response.ok) {
+                    throw new Error('Ошибка при удалении записи');
+                }
+
+                // Убираем строку из таблицы после удаления
+                const row = document.getElementById(`record-${id}`);
+                if (row) row.remove();
+
+                alert('Запись успешно удалена');
+            } catch (error) {
+                console.error('Ошибка при удалении:', error);
+                alert('Не удалось удалить запись.');
+            }
         }
 
         document.addEventListener('DOMContentLoaded', loadRecords);

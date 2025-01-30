@@ -62,6 +62,7 @@
             <li><a href="/personal/profiledoctor.php"><i class="fas fa-user"></i> Мой профиль</a></li>
             <li><a href="/users/createcardpatient.php"><i class="fas fa-address-card"></i> Создать карту</a></li>
             <li><a href="/inspection/initial.php"><i class="fas fa-clipboard-check"></i> Лист осмотра</a></li>
+            <li><a href="/users/createanketa.php"><i class="fas fa-clipboard"></i> Заполнить анкету</a></li>
             <li><a href="/users/patients.php"><i class="fas fa-users"></i> Пациенты</a></li>
             <li><a href="/personal/doctors.php"><i class="fas fa-users"></i> Персонал</a></li>
             <li><a href="/kalendar/kalendar.php"><i class="fas fa-calendar-alt"></i> Записи</a></li>

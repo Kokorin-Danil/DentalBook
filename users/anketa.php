@@ -3,25 +3,28 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Анкета пациента</title>
+    <title>Просмотр анкеты</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <style>
         body {
-            background-color: #f4f6f9;
+            background-color: #f8f9fa;
         }
-
         .container {
             margin-top: 30px;
+            background-color: #ffffff;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
         }
-
         .header {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 20px;
         }
-
-        .header .close-button {
+        .header h2 {
+            margin: 0;
+        }
+        .close-button {
             font-size: 1.5rem;
             background: none;
             border: none;
@@ -29,41 +32,35 @@
             cursor: pointer;
             transition: color 0.3s ease;
         }
-
-        .header .close-button:hover {
+        .close-button:hover {
             color: #000;
         }
-
-        .section-title {
-            font-weight: bold;
-            margin: 20px 0;
-        }
-
-        .question {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 10px;
-        }
-
-        .question label {
-            flex: 1;
-        }
-
-        .options {
-            display: flex;
-            justify-content: flex-end;
-            gap: 15px;
-        }
-
-        #newQuestionContainer {
-            display: flex;
-            gap: 10px;
+        .question-group {
             margin-bottom: 20px;
         }
-
-        #saveButton {
-            margin-left: auto;
+        .question-group label {
+            font-weight: 500;
+        }
+        .answer {
+            font-style: italic;
+        }
+        .message {
+            color: #dc3545;
+            font-weight: bold;
+            margin-top: 20px;
+        }
+        #surveyContent.hidden {
+            display: none;
+        }
+        #noSurveyMessage {
+            color: #dc3545;
+            font-size: 1.2rem;
+            text-align: center;
+            padding: 20px;
+            border: 1px solid #dc3545;
+            border-radius: 10px;
+            background-color: #ffe6e6;
+            margin-top: 20px;
         }
     </style>
 </head>
@@ -71,181 +68,109 @@
     <div class="container">
         <!-- Header -->
         <div class="header">
-            <h2>Анкета</h2>
-            <button id="closeButton" class="close-button" onclick="window.location.href='/users/profile.php';">&times;</button>
+            <h2>Просмотр анкеты</h2>
+            <button class="close-button" onclick="window.location.href='/users/patients.php';">&times;</button>
         </div>
 
-        <div>
-            <p><strong>Пациент:</strong> Анна Смирнова Валерьевна</p>
+        <!-- Survey or No Data Message -->
+        <div id="surveyContent">
+            <div class="question-group">
+                <label>1. Испытывали ли вы боль или дискомфорт в зубах или деснах?</label>
+                <p class="answer" id="toothPain">Загрузка...</p>
+            </div>
+            <div class="question-group">
+                <label>2. Есть ли повышенная чувствительность зубов к горячему, холодному или сладкому?</label>
+                <p class="answer" id="toothSensitivity">Загрузка...</p>
+            </div>
+            <div class="question-group">
+                <label>3. Замечали ли вы кровоточивость десен при чистке зубов?</label>
+                <p class="answer" id="gumBleeding">Загрузка...</p>
+            </div>
+            <div class="question-group">
+                <label>4. Устанавливали ли вам коронки, импланты или пломбы?</label>
+                <p class="answer" id="dentalWork">Загрузка...</p>
+            </div>
+            <div class="question-group">
+                <label>5. Носите ли вы съемные протезы или брекеты?</label>
+                <p class="answer" id="dentalDevices">Загрузка...</p>
+            </div>
+            <div class="question-group">
+                <label>6. Диагностировали ли вам воспаление десен (гингивит) или пародонтит?</label>
+                <p class="answer" id="gumInflammation">Загрузка...</p>
+            </div>
+            <div class="question-group">
+                <label>7. Есть ли изменения в форме или цвете десен?</label>
+                <p class="answer" id="gumChanges">Загрузка...</p>
+            </div>
+            <div class="question-group">
+                <label>8. Оголялись ли корни зубов?</label>
+                <p class="answer" id="exposedRoots">Загрузка...</p>
+            </div>
+            <div class="question-group">
+                <label>9. Замечаете ли вы боль или щелчки в челюсти?</label>
+                <p class="answer" id="jawPain">Загрузка...</p>
+            </div>
+            <div class="question-group">
+                <label>10. Сжимаете ли зубы или скрипите ими во сне?</label>
+                <p class="answer" id="teethGrinding">Загрузка...</p>
+            </div>
+            <div class="question-group">
+                <label>11. Чистите ли вы зубы дважды в день?</label>
+                <p class="answer" id="brushesTeethTwice">Загрузка...</p>
+            </div>
+            <div class="question-group">
+                <label>12. Используете ли зубную нить или ирригатор?</label>
+                <p class="answer" id="flossOrIrrigator">Загрузка...</p>
+            </div>
+            <div class="question-group">
+                <label>13. Курите ли вы?</label>
+                <p class="answer" id="smoking">Загрузка...</p>
+            </div>
+            <div class="question-group">
+                <label>14. Есть ли у вас аллергия на стоматологические материалы (например, пломбы)?</label>
+                <p class="answer" id="dentalAllergy">Загрузка...</p>
+            </div>
+            <div class="question-group">
+                <label>15. Были ли у вас побочные реакции на анестетики?</label>
+                <p class="answer" id="anesthesiaReaction">Загрузка...</p>
+            </div>
         </div>
-
-        <!-- Add new question -->
-        <div id="newQuestionContainer">
-            <input type="text" id="newQuestionInput" class="form-control" placeholder="Добавить вопрос">
-            <button id="addQuestionButton" class="btn btn-secondary">Добавить</button>
-        </div>
-
-        <!-- Section title -->
-        <h3 class="section-title">Перенесенные и сопутствующие заболевания</h3>
-
-        <!-- Questions container -->
-        <form id="questionsForm">
-            <div class="question">
-                <label>Бронхиальная астма</label>
-                <div class="options">
-                    <input type="radio" name="disease1" value="yes"> Да
-                    <input type="radio" name="disease1" value="no"> Нет
-                    <input type="radio" name="disease1" value="unknown" checked> Неизвестно
-                </div>
-            </div>
-            <div class="question">
-                <label>Были операции</label>
-                <div class="options">
-                    <input type="radio" name="disease2" value="yes"> Да
-                    <input type="radio" name="disease2" value="no"> Нет
-                    <input type="radio" name="disease2" value="unknown" checked> Неизвестно
-                </div>
-            </div>
-            <div class="question">
-                <label for="disease3">Работа связана с вредными факторами</label>
-                <div class="options">
-                    <input type="radio" name="disease3" value="yes"> Да
-                    <input type="radio" name="disease3" value="no"> Нет
-                    <input type="radio" name="disease3" value="unknown" checked> Неизвестно
-                </div>
-            </div>
-            <div class="question">
-                <label for="disease4">Глаукома (повышение внутриглазного давления)</label>
-                <div class="options">
-                    <input type="radio" name="disease4" value="yes"> Да
-                    <input type="radio" name="disease4" value="no"> Нет
-                    <input type="radio" name="disease4" value="unknown" checked> Неизвестно
-                </div>
-            </div>
-            <div class="question">
-                <label for="disease5">Головные боли (в т.ч. беспричинные)</label>
-                <div class="options">
-                    <input type="radio" name="disease5" value="yes"> Да
-                    <input type="radio" name="disease5" value="no"> Нет
-                    <input type="radio" name="disease5" value="unknown" checked> Неизвестно
-                </div>
-            </div>
-            <div class="question">
-                <label for="disease6">Грибковые заболевания</label>
-                <div class="options">
-                    <input type="radio" name="disease6" value="yes"> Да
-                    <input type="radio" name="disease6" value="no"> Нет
-                    <input type="radio" name="disease6" value="unknown" checked> Неизвестно
-                </div>
-            </div>
-            <div class="question">
-                <label for="disease7">Диарея (поносы)</label>
-                <div class="options">
-                    <input type="radio" name="disease7" value="yes"> Да
-                    <input type="radio" name="disease7" value="no"> Нет
-                    <input type="radio" name="disease7" value="unknown" checked> Неизвестно
-                </div>
-            </div>
-            <div class="question">
-                <label for="disease8">Длительная необъяснимая лихорадка</label>
-                <div class="options">
-                    <input type="radio" name="disease8" value="yes"> Да
-                    <input type="radio" name="disease8" value="no"> Нет
-                    <input type="radio" name="disease8" value="unknown" checked> Неизвестно
-                </div>
-            </div>
-            <div class="question">
-                <label for="disease9">Заболевание желудочно-кишечного тракта</label>
-                <div class="options">
-                    <input type="radio" name="disease9" value="yes"> Да
-                    <input type="radio" name="disease9" value="no"> Нет
-                    <input type="radio" name="disease9" value="unknown" checked> Неизвестно
-                </div>
-            </div>
-            <div class="question">
-                <label for="disease10">Заболевание кожи</label>
-                <div class="options">
-                    <input type="radio" name="disease10" value="yes"> Да
-                    <input type="radio" name="disease10" value="no"> Нет
-                    <input type="radio" name="disease10" value="unknown" checked> Неизвестно
-                </div>
-            </div>
-            <div class="question">
-                <label for="disease11">Заболевание крови</label>
-                <div class="options">
-                    <input type="radio" name="disease11" value="yes"> Да
-                    <input type="radio" name="disease11" value="no"> Нет
-                    <input type="radio" name="disease11" value="unknown" checked> Неизвестно
-                </div>
-            </div>
-            <div class="question">
-                <label for="disease12">Заболевание легких</label>
-                <div class="options">
-                    <input type="radio" name="disease12" value="yes"> Да
-                    <input type="radio" name="disease12" value="no"> Нет
-                    <input type="radio" name="disease12" value="unknown" checked> Неизвестно
-                </div>
-            </div>
-            <div class="question">
-                <label for="disease13">Заболевание печени</label>
-                <div class="options">
-                    <input type="radio" name="disease13" value="yes"> Да
-                    <input type="radio" name="disease13" value="no"> Нет
-                    <input type="radio" name="disease13" value="unknown" checked> Неизвестно
-                </div>
-            </div>
-            <div class="question">
-                <label for="disease14">Заболевание почек</label>
-                <div class="options">
-                    <input type="radio" name="disease14" value="yes"> Да
-                    <input type="radio" name="disease14" value="no"> Нет
-                    <input type="radio" name="disease14" value="unknown" checked> Неизвестно
-                </div>
-            </div>
-        </form>
-        <div class="d-flex justify-content-end mt-3">
-            <button id="saveButton" class="btn btn-primary">Сохранить</button>
-        </div>
+        <div id="noSurveyMessage" class="hidden">Анкета еще не заполнена</div>
     </div>
-
     <script>
-        // Add new question dynamically
-        document.getElementById('addQuestionButton').addEventListener('click', function () {
-            const questionText = document.getElementById('newQuestionInput').value.trim();
+        async function fetchSurvey(patientCardId) {
+            try {
+                const response = await fetch(`http://localhost:3003/api/patient-cards/survey/${patientCardId}`);
+                if (!response.ok) throw new Error();
 
-            if (questionText !== '') {
-                const questionContainer = document.createElement('div');
-                questionContainer.className = 'question';
-                questionContainer.innerHTML = `
-                    <label>${questionText}</label>
-                    <div class="options">
-                        <input type="radio" name="${questionText}" value="yes"> Да
-                        <input type="radio" name="${questionText}" value="no"> Нет
-                        <input type="radio" name="${questionText}" value="unknown" checked> Неизвестно
-                    </div>
-                `;
+                const survey = await response.json();
+                if (!survey || Object.keys(survey).length === 0) {
+                    throw new Error();
+                }
 
-                document.getElementById('questionsForm').appendChild(questionContainer);
-                document.getElementById('newQuestionInput').value = ''; // Clear input
-            } else {
-                alert('Введите текст вопроса');
+                // Заполняем ответы
+                for (const [key, value] of Object.entries(survey)) {
+                    const element = document.getElementById(key);
+                    if (element) {
+                        element.textContent = value || 'Не указано';
+                    }
+                }
+
+                document.getElementById('surveyContent').classList.remove('hidden');
+                document.getElementById('noSurveyMessage').classList.add('hidden');
+            } catch {
+                document.getElementById('surveyContent').classList.add('hidden');
+                document.getElementById('noSurveyMessage').classList.remove('hidden');
             }
-        });
+        }
 
-        // Handle save button
-        document.getElementById('saveButton').addEventListener('click', function () {
-            const formData = new FormData(document.getElementById('questionsForm'));
-            const savedData = {};
-
-            for (let [key, value] of formData.entries()) {
-                savedData[key] = value;
+        document.addEventListener('DOMContentLoaded', () => {
+            const urlParams = new URLSearchParams(window.location.search);
+            const patientCardId = urlParams.get('patientCardId');
+            if (patientCardId) {
+                fetchSurvey(patientCardId);
             }
-
-            console.log('Saved data:', savedData);
-            alert('Анкета сохранена!');
         });
     </script>
-
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
