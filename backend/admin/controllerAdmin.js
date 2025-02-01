@@ -76,6 +76,7 @@ export const getAllDoctors = async (req, res) => {
           attributes: ["firstName", "lastName", "email", "avatar"],
         },
       ],
+      where: { isDeleted: false },
     });
 
     if (doctors.length === 0) {
