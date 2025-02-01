@@ -379,6 +379,7 @@ const generateSchedule = async (date) => {
 
   const doctors = await Doctor.findAll({
     attributes: ["id", "firstName", "lastName", "patronymic"],
+    where: { isDeleted: false },
   });
 
   // Инициализация расписания для всех врачей
@@ -1347,6 +1348,7 @@ export const getAllDoctors = async (req, res) => {
         ],
         "specialty",
       ],
+      where: { isDeleted: false },
     });
 
     res.json(doctors);

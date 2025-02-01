@@ -53,6 +53,10 @@ Doctor.init(
         key: "id", // Поле, на которое ссылаемся
       },
     },
+    isDeleted: {
+      type: DataTypes.BOOLEAN,
+      defaultValue: false, // Врачи по умолчанию не удалены
+    },
   },
   {
     sequelize: dbST,

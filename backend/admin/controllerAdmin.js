@@ -666,3 +666,52 @@ export const deleteExaminationSheet = async (req, res) => {
     res.status(500).json({ message: "Ошибка сервера." });
   }
 };
+
+export const getAllManagers = async (req, res) => {
+  try {
+    const { user } = req;
+    if (!user || user.role !== "admin") {
+      return res.status(403).json({
+        message: "Доступ запрещен. Только администратор может удалять записи.",
+      });
+    }
+
+    const managers = await User.findAll({
+      attributes: ["firstName", "lastName", "email", "gender", "avatar"],
+      where: { role: "manager" },
+    });
+
+    res.json(managers);
+  } catch (error) {
+    console.error("Ошибка при получении списка менеджеров:", error);
+    res.status(500).json({ error: "Ошибка сервера" });
+  }
+};
+
+export const deleteDoctor = async (req, res) => {
+  try {
+    const { user } = req;
+    if (!user || user.role !== "admin") {
+      return res.status(403).json({
+        message: "Доступ запрещен. Только администратор может удалять записи.",
+      });
+    }
+
+    const { doctorId } = req.params;
+
+    const doctor = await Doctor.findByPk(doctorId);
+
+    if (!doctor) {
+      return res.status(404).json({ error: "Врач не найден" });
+    }
+
+    // Помечаем врача как удаленного
+    doctor.isDeleted = true;
+    await doctor.save();
+
+    res.json({ message: "Врач помечен как удаленный" });
+  } catch (error) {
+    console.error("Ошибка при удалении врача:", error);
+    res.status(500).json({ error: "Ошибка сервера" });
+  }
+};
