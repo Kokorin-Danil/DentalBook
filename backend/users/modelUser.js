@@ -19,6 +19,10 @@ User.init(
       type: DataTypes.STRING,
       allowNull: false, // Поле обязательно для заполнения
     },
+    patronymic: {
+      type: DataTypes.STRING,
+      allowNull: true,
+    },
     email: {
       type: DataTypes.STRING,
       allowNull: false,

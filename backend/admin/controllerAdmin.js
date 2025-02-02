@@ -584,7 +584,8 @@ export const deleteSnapshot = async (req, res) => {
 export const createManager = async (req, res) => {
   try {
     // Получаем данные из тела запроса
-    const { firstName, lastName, email, password, gender } = req.body;
+    const { firstName, lastName, patronymic, email, password, gender } =
+      req.body;
 
     // Проверяем, что токен отправлен и валиден
     const { user } = req;
@@ -596,7 +597,14 @@ export const createManager = async (req, res) => {
     }
 
     // Проверяем обязательные поля
-    if (!firstName || !lastName || !email || !password || !gender) {
+    if (
+      !firstName ||
+      !lastName ||
+      !patronymic ||
+      !email ||
+      !password ||
+      !gender
+    ) {
       return res
         .status(400)
         .json({ message: "Все поля обязательны для заполнения." });
@@ -614,6 +622,7 @@ export const createManager = async (req, res) => {
     const newManager = await User.create({
       firstName,
       lastName,
+      patronymic,
       email,
       password: password,
       gender,
@@ -626,6 +635,7 @@ export const createManager = async (req, res) => {
         id: newManager.id,
         firstName: newManager.firstName,
         lastName: newManager.lastName,
+        patronymic: newManager.patronymic,
         email: newManager.email,
         gender: newManager.gender,
         role: newManager.role,
@@ -678,7 +688,15 @@ export const getAllManagers = async (req, res) => {
     }
 
     const managers = await User.findAll({
-      attributes: ["firstName", "lastName", "email", "gender", "avatar"],
+      attributes: [
+        "id",
+        "firstName",
+        "lastName",
+        "patronymic",
+        "email",
+        "gender",
+        "avatar",
+      ],
       where: { role: "manager" },
     });
 
