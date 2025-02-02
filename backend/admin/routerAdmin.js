@@ -14,6 +14,7 @@ import {
   deleteExaminationSheet,
   getAllManagers,
   deleteDoctor,
+  deleteManager,
 } from "./controllerAdmin.js";
 import { authenticateToken } from "../utils/authMiddleware.js";
 import { uploadAvatar } from "../utils/middleware.js";
@@ -60,5 +61,6 @@ adminRouter.delete(
 );
 adminRouter.get("/manager/getall", authenticateToken, getAllManagers);
 adminRouter.delete("/doctors/:doctorId", authenticateToken, deleteDoctor);
+adminRouter.delete("/manager/:managerId", authenticateToken, deleteManager);
 
 export default adminRouter;

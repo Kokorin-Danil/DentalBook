@@ -734,3 +734,31 @@ export const deleteDoctor = async (req, res) => {
     res.status(500).json({ error: "Ошибка сервера" });
   }
 };
+
+export const deleteManager = async (req, res) => {
+  try {
+    const { user } = req;
+    if (!user || user.role !== "admin") {
+      return res.status(403).json({
+        message: "Доступ запрещен. Только администратор может удалять записи.",
+      });
+    }
+    const { managerId } = req.params;
+
+    const manager = await User.findOne({
+      where: { id: managerId, role: "manager" },
+    });
+
+    if (!manager) {
+      return res.status(404).json({ error: "Менеджер не найден" });
+    }
+
+    // Удаляем менеджера физически
+    await manager.destroy();
+
+    res.json({ message: "Менеджер успешно удален" });
+  } catch (error) {
+    console.error("Ошибка при удалении менеджера:", error);
+    res.status(500).json({ error: "Ошибка сервера" });
+  }
+};
