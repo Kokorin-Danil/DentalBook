@@ -34,12 +34,7 @@
 
         <!-- Действия -->
         <div class="mb-4">
-            <button class="btn btn-primary" id="anketaButton">
-                <i class="fas fa-file-alt"></i> Анкета
-            </button>
-            <button class="btn btn-secondary"><i class="fas fa-file-contract"></i> Договор</button>
-            <button class="btn btn-info"><i class="fas fa-star"></i> Оценка</button>
-            <button class="btn btn-danger"><i class="fas fa-print"></i> Печать</button>
+            <button class="btn btn-primary" id="anketaButton"><i class="fas fa-file-alt"></i> Анкета</button>
         </div>
 
         <!-- Tabs -->
@@ -51,19 +46,10 @@
                 <a id="formulaTab" class="nav-link" href="/users/formula.php"><i class="fas fa-tooth"></i> Формула</a>
             </li>
             <li class="nav-item">
-                <a class="nav-link" href="#payments" data-bs-toggle="tab"><i class="fas fa-dollar-sign"></i> Оплаты</a>
-            </li>
-            <li class="nav-item">
-                <a class="nav-link" href="/users/treatmentplan.php"><i class="fas fa-notes-medical"></i> План лечения</a>
-            </li>
-            <li class="nav-item">
                 <a id="picturesLink" class="nav-link" href="#"><i class="fas fa-image"></i> Снимки</a>
             </li>
             <li class="nav-item">
                 <a id="notesLink" class="nav-link" href="#"><i class="fas fa-sticky-note"></i> Примечания</a>
-            </li>
-            <li class="nav-item">
-                <a class="nav-link" href="#documents" data-bs-toggle="tab"><i class="fas fa-folder"></i> Документы</a>
             </li>
             <li class="nav-item">
                 <a id="personalDataTab" class="nav-link" href="#"><i class="fas fa-id-card"></i> Персональные данные</a>
