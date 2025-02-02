@@ -48,8 +48,10 @@
                             <select id="patientSelect" class="form-select" required></select>
                         </div>
                         <div class="mb-3">
-                            <label for="doctorFullName" class="form-label">ФИО врача</label>
-                            <input type="text" id="doctorFullName" class="form-control" placeholder="Введите ФИО врача" required>
+                            <label for="doctorSelect" class="form-label">Выберите врача</label>
+                            <select id="doctorSelect" class="form-select" required>
+                                <!-- Врачи будут загружены динамически -->
+                            </select>
                         </div>
                         <div class="mb-3">
                             <label for="visitType" class="form-label">Тип визита</label>
@@ -116,8 +118,11 @@
 
         function populateTimeIntervals() {
             const visitTimeSelect = document.getElementById('visitTime');
+            visitTimeSelect.innerHTML = '';
+
             const startTime = new Date('1970-01-01T09:00:00');
             const endTime = new Date('1970-01-01T17:30:00');
+
             while (startTime <= endTime) {
                 const option = document.createElement('option');
                 option.value = startTime.toTimeString().substring(0, 5);
@@ -133,6 +138,8 @@
             });
             const patients = await response.json();
             const patientSelect = document.getElementById('patientSelect');
+            patientSelect.innerHTML = '';
+
             patients.forEach(patient => {
                 const option = document.createElement('option');
                 option.value = patient.id;
@@ -141,27 +148,71 @@
             });
         }
 
+        async function populateDoctors() {
+            try {
+                const response = await fetch('http://localhost:3003/api/patient-cards/get/all/doctors', {
+                    headers: { Authorization: `Bearer ${token}` }
+                });
+
+                if (!response.ok) {
+                    throw new Error('Ошибка загрузки списка врачей');
+                }
+
+                const doctors = await response.json();
+                const doctorSelect = document.getElementById('doctorSelect');
+                doctorSelect.innerHTML = '';
+
+                doctors.forEach(doctor => {
+                    const option = document.createElement('option');
+                    option.value = doctor.fullName;
+                    option.textContent = `${doctor.fullName} (${doctor.specialty})`;
+                    doctorSelect.appendChild(option);
+                });
+            } catch (error) {
+                console.error('Ошибка загрузки врачей:', error);
+                alert('Не удалось загрузить список врачей.');
+            }
+        }
+
         async function loadVisits() {
             const response = await fetch(`http://localhost:3003/api/patient-cards/visit/all/${patientCardId}`, {
                 headers: { Authorization: `Bearer ${token}` }
             });
+
             const data = await response.json();
+
+            // Сортировка визитов по дате и времени
+            data.visits.sort((a, b) => {
+                const dateA = new Date(`${a.visitDate}T${a.visitTime}`);
+                const dateB = new Date(`${b.visitDate}T${b.visitTime}`);
+                return dateA - dateB;
+            });
+
             const tableBody = document.getElementById('visitsTableBody');
             tableBody.innerHTML = data.visits.map(visitToHTML).join('');
         }
 
         function visitToHTML(visit) {
+            const doctorName = visit.doctor
+                ? `${visit.doctor.lastName} ${visit.doctor.firstName} ${visit.doctor.patronymic}`
+                : 'Не указано';
+            const formattedVisitType = visit.visitType.charAt(0).toUpperCase() + visit.visitType.slice(1);
+            const formattedStatus = visit.visitStatus.charAt(0).toUpperCase() + visit.visitStatus.slice(1);
+
             return `
                 <tr id="visit-${visit.id}">
                     <td>${visit.id}</td>
                     <td>${visit.visitDate}</td>
                     <td>${visit.visitTime}</td>
-                    <td>${visit.visitType}</td>
-                    <td>${visit.doctor?.lastName ?? ''} ${visit.doctor?.firstName ?? ''} ${visit.doctor?.patronymic ?? ''}</td>
-                    <td id="status-${visit.id}">${visit.visitStatus}</td>
+                    <td>${formattedVisitType}</td>
+                    <td>${doctorName}</td>
+                    <td id="status-${visit.id}">${formattedStatus}</td>
                     <td>
                         <button class="btn btn-sm btn-warning" onclick="openChangeStatusModal(${visit.id}, '${visit.visitStatus}')">
                             <i class="fas fa-edit"></i>
+                        </button>
+                        <button class="btn btn-sm btn-danger delete-visit" data-visit-id="${visit.id}">
+                            <i class="fas fa-trash"></i>
                         </button>
                     </td>
                 </tr>
@@ -171,7 +222,7 @@
         async function saveVisit() {
             const visitData = {
                 patientCardId: document.getElementById('patientSelect').value,
-                doctorFullName: document.getElementById('doctorFullName').value,
+                doctorFullName: document.getElementById('doctorSelect').value,
                 visitType: document.getElementById('visitType').value,
                 visitDate: document.getElementById('visitDate').value,
                 visitTime: document.getElementById('visitTime').value
@@ -189,21 +240,45 @@
 
                 if (!response.ok) throw new Error('Ошибка при добавлении визита.');
 
-                const { visit: newVisit } = await response.json();
-                const tableBody = document.getElementById('visitsTableBody');
-                tableBody.insertAdjacentHTML('beforeend', visitToHTML(newVisit));
-
                 alert('Визит успешно добавлен!');
-                bootstrap.Modal.getInstance(document.getElementById('addVisitModal')).hide();
                 document.getElementById('visitForm').reset();
+
+                // Перезагрузка списка визитов после успешного добавления
+                await loadVisits();
             } catch (error) {
+                console.error('Ошибка сохранения визита:', error);
                 alert(error.message);
+            }
+        }
+
+        async function deleteVisit(visitId) {
+            if (!confirm('Вы уверены, что хотите удалить этот визит?')) return;
+
+            try {
+                const response = await fetch(`http://localhost:3003/api/admin/visit/${visitId}`, {
+                    method: 'DELETE',
+                    headers: {
+                        Authorization: `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                if (!response.ok) {
+                    throw new Error(`Ошибка удаления визита. Код ответа: ${response.status}`);
+                }
+
+                alert('Визит успешно удален!');
+                document.getElementById(`visit-${visitId}`).remove(); // Удаление строки из таблицы
+            } catch (error) {
+                console.error('Ошибка удаления визита:', error);
+                alert('Не удалось удалить визит.');
             }
         }
 
         async function updateVisitStatus() {
             const visitId = document.getElementById('visitIdToUpdate').value;
             const newStatus = document.getElementById('visitStatus').value;
+
             const response = await fetch(`http://localhost:3003/api/patient-cards/visit/change/${visitId}`, {
                 method: 'PUT',
                 headers: {
@@ -214,9 +289,11 @@
             });
 
             if (response.ok) {
-                document.getElementById(`status-${visitId}`).textContent = newStatus;
-                bootstrap.Modal.getInstance(document.getElementById('changeStatusModal')).hide();
                 alert('Статус визита успешно обновлен!');
+                bootstrap.Modal.getInstance(document.getElementById('changeStatusModal')).hide();
+
+                // Перезагрузка списка визитов после обновления статуса
+                await loadVisits();
             } else {
                 alert('Ошибка при обновлении статуса.');
             }
@@ -224,9 +301,19 @@
 
         document.getElementById('saveVisitButton').addEventListener('click', saveVisit);
         document.getElementById('updateStatusButton').addEventListener('click', updateVisitStatus);
+
+        // Добавление обработчика события на родительский элемент (делегирование)
+        document.getElementById('visitsTableBody').addEventListener('click', async (event) => {
+            if (event.target.closest('.delete-visit')) {
+                const visitId = event.target.closest('.delete-visit').getAttribute('data-visit-id');
+                await deleteVisit(visitId);
+            }
+        });
+
         await loadVisits();
         populateTimeIntervals();
         await populatePatients();
+        await populateDoctors();
     });
 
     function openChangeStatusModal(visitId, currentStatus) {
@@ -241,7 +328,10 @@
         const parts = value.split(`; ${name}=`);
         if (parts.length === 2) return parts.pop().split(';').shift();
     }
-    </script>
+</script>
+
+
+
 
 </body>
 </html>

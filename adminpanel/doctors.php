@@ -254,7 +254,7 @@
 
         const doctorTableBody = document.getElementById('doctorTableBody');
         doctorTableBody.innerHTML = data.doctors.map(doctor => `
-            <tr>
+            <tr id="doctor-${doctor.doctorId}">
                 <td>${doctor.doctorId}</td>
                 <td>
                     <img src="${doctor.avatar || '/backend/uploads/avatars/default_avatar.png'}" alt="Аватар" class="avatar-img">
@@ -279,56 +279,6 @@
         `).join('');
     }
 
-    function openEditModal(doctorId, doctor) {
-        document.getElementById('editDoctorId').value = doctorId;
-        document.getElementById('editFirstName').value = doctor.firstName || '';
-        document.getElementById('editLastName').value = doctor.lastName || '';
-        document.getElementById('editPatronymic').value = doctor.patronymic || '';
-        document.getElementById('editDateOfBirth').value = doctor.dateOfBirth || '';
-        document.getElementById('editEmail').value = doctor.email || '';
-        document.getElementById('editMobilePhone').value = doctor.mobilePhone || '';
-        document.getElementById('editSpecialty').value = doctor.specialty || '';
-
-        const modal = new bootstrap.Modal(document.getElementById('editDoctorModal'));
-        modal.show();
-    }
-
-    async function uploadAvatar(doctorId) {
-        const avatarInput = document.getElementById('editAvatar');
-        if (!avatarInput.files.length) return null;
-
-        const formData = new FormData();
-        formData.append('avatar', avatarInput.files[0]);
-
-        const token = getAdminToken();
-        if (!token) {
-            alert('Необходима авторизация администратора.');
-            return;
-        }
-
-        try {
-            const response = await fetch(`http://localhost:3003/api/admin/doctors/avatar/update/${doctorId}`, {
-                method: 'PUT',
-                headers: {
-                    'Authorization': `Bearer ${token}`
-                },
-                body: formData
-            });
-
-            if (!response.ok) {
-                throw new Error(`Ошибка HTTP: ${response.status}`);
-            }
-
-            const result = await response.json();
-            alert(result.message);
-            return result.avatar;
-        } catch (error) {
-            console.error('Ошибка обновления аватара:', error);
-            alert('Не удалось обновить аватар.');
-            return null;
-        }
-    }
-
     async function deleteDoctor(doctorId) {
         const token = getAdminToken();
         if (!token) {
@@ -339,7 +289,7 @@
         if (!confirm('Вы уверены, что хотите удалить этого доктора?')) return;
 
         try {
-            const response = await fetch(`http://localhost:3003/api/admin/doctors/delete/${doctorId}`, {
+            const response = await fetch(`http://localhost:3003/api/admin/doctors/${doctorId}`, {
                 method: 'DELETE',
                 headers: {
                     'Authorization': `Bearer ${token}`,
@@ -352,11 +302,27 @@
             }
 
             alert('Доктор успешно удален.');
-            loadDoctors();
+            
+            // Удаление строки из таблицы без перезагрузки
+            document.getElementById(`doctor-${doctorId}`).remove();
         } catch (error) {
             console.error('Ошибка удаления:', error);
             alert('Не удалось удалить доктора.');
         }
+    }
+
+    function openEditModal(doctorId, doctor) {
+        document.getElementById('editDoctorId').value = doctorId;
+        document.getElementById('editFirstName').value = doctor.firstName || '';
+        document.getElementById('editLastName').value = doctor.lastName || '';
+        document.getElementById('editPatronymic').value = doctor.patronymic || '';
+        document.getElementById('editDateOfBirth').value = doctor.dateOfBirth || '';
+        document.getElementById('editEmail').value = doctor.email || '';
+        document.getElementById('editMobilePhone').value = doctor.mobilePhone || '';
+        document.getElementById('editSpecialty').value = doctor.specialty || '';
+
+        const modal = new bootstrap.Modal(document.getElementById('editDoctorModal'));
+        modal.show();
     }
 
     async function addDoctor(event) {
@@ -425,8 +391,6 @@
             return;
         }
 
-        await uploadAvatar(doctorId);
-
         try {
             const response = await fetch(`http://localhost:3003/api/admin/doctors/data/update/${doctorId}`, {
                 method: 'PUT',
@@ -455,6 +419,7 @@
         loadDoctors();
     });
 </script>
+
 
 </body>
 </html>
