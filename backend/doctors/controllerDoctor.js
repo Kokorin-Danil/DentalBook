@@ -213,6 +213,7 @@ const getAllDoctors = async (req, res) => {
         "mobilePhone",
         "specialty",
       ],
+      where: { isDeleted: false },
     });
 
     // Форматируем результат
