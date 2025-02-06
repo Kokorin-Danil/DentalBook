@@ -48,7 +48,7 @@
     </style>
 </head>
 <body>
-    <?php include '../users/navbar.php'; ?>
+<?php include '../adminpanel/navbar.php'; ?>
 
     <div class="container mt-5">
         <div class="header">
@@ -85,8 +85,8 @@
         </div>
     </div>
 
-    <!-- Модальное окно для добавления визита -->
-    <div class="modal fade" id="addVisitModal" tabindex="-1" aria-labelledby="addVisitModalLabel" aria-hidden="true">
+     <!-- Модальное окно добавления визита -->
+     <div class="modal fade" id="addVisitModal" tabindex="-1" aria-labelledby="addVisitModalLabel" aria-hidden="true">
         <div class="modal-dialog">
             <div class="modal-content">
                 <div class="modal-header">
@@ -96,38 +96,38 @@
                 <div class="modal-body">
                     <form id="visitForm">
                         <div class="mb-3">
-                            <label for="visitPatient" class="form-label">ФИО пациента</label>
-                            <input type="text" id="visitPatient" class="form-control" placeholder="Введите ФИО пациента" required>
+                            <label for="patientSelect" class="form-label">Пациент</label>
+                            <select id="patientSelect" class="form-select" required></select>
                         </div>
                         <div class="mb-3">
-                            <label for="visitDoctor" class="form-label">ФИО врача</label>
-                            <input type="text" id="visitDoctor" class="form-control" placeholder="Введите ФИО врача" required>
+                            <label for="doctorSelect" class="form-label">Выберите врача</label>
+                            <select id="doctorSelect" class="form-select" required>
+                                <!-- Врачи будут загружены динамически -->
+                            </select>
                         </div>
                         <div class="mb-3">
                             <label for="visitType" class="form-label">Тип визита</label>
                             <select id="visitType" class="form-select" required>
-                                <option value="осмотр">Осмотр</option>
+                                <option value="осмотр" selected>Осмотр</option>
                                 <option value="лечение">Лечение</option>
                                 <option value="консультация">Консультация</option>
                             </select>
                         </div>
-                        <div class="row mb-3">
-                            <div class="col-md-6">
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
                                 <label for="visitDate" class="form-label">Дата визита</label>
                                 <input type="date" id="visitDate" class="form-control" required>
                             </div>
-                            <div class="col-md-6">
+                            <div class="col-md-6 mb-3">
                                 <label for="visitTime" class="form-label">Время визита</label>
-                                <select id="visitTime" class="form-select" required>
-                                    <!-- Временные интервалы будут заполняться динамически -->
-                                </select>
+                                <select id="visitTime" class="form-select" required></select>
                             </div>
                         </div>
                     </form>
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
-                    <button type="button" class="btn btn-primary" id="saveVisitButton">Сохранить</button>
+                    <button type="button" id="saveVisitButton" class="btn btn-primary">Сохранить</button>
                 </div>
             </div>
         </div>

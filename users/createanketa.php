@@ -52,7 +52,7 @@
     </style>
 </head>
 <body>
-<?php include 'navbar.php'; ?>
+<?php include '../adminpanel/navbar.php'; ?>
     <div class="container">
         <!-- Header -->
         <div class="header">

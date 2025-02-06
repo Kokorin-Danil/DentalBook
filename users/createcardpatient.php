@@ -40,7 +40,7 @@
 </head>
 
 <body>
-    <?php include 'navbar.php'; ?>
+    <?php include '../adminpanel/navbar.php'; ?>
     <div class="container">
         <h1 class="mb-4">Создание карты пациента</h1>
         <div id="responseMessage"></div> <!-- Для отображения ответа от сервера -->

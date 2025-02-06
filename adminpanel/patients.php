@@ -40,17 +40,7 @@
         <!-- Tabs Navigation -->
         <ul class="nav nav-tabs">
             <li class="nav-item">
-                <a class="nav-link" id="doctors-tab" href="doctors.php">
-                    <i class="fas fa-user-md"></i> Доктора
-                </a>
-            </li>
-            <li class="nav-item">
-                <a class="nav-link" id="patients-tab" href="manager.php">
-                    <i class="fas fa-user-tie"></i> Администраторы приема
-                </a>
-            </li>
-            <li class="nav-item">
-                <a class="nav-link" id="patients-tab" href="patients.php">
+                <a class="nav-link active" id="patients-tab" href="patients.php">
                     <i class="fas fa-users"></i> Пациенты
                 </a>
             </li>

@@ -32,7 +32,7 @@
     </style>
 </head>
 <body>
-    <?php include 'navbar.php'; ?>
+    <?php include '../adminpanel/navbar.php'; ?>
 
     <div id="content">
         <div class="container mt-5">
