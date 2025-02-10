@@ -202,7 +202,7 @@ const getDoctorVisits = async (req, res) => {
 
 const getAllDoctors = async (req, res) => {
   try {
-    // Получаем всех врачей из базы данных
+    // Получаем всех врачей, включая аватарку из User
     const doctors = await Doctor.findAll({
       attributes: [
         "id",
@@ -214,6 +214,13 @@ const getAllDoctors = async (req, res) => {
         "specialty",
       ],
       where: { isDeleted: false },
+      include: [
+        {
+          model: User,
+          as: "userAccount",
+          attributes: ["avatar"], // Берем только аватарку
+        },
+      ],
     });
 
     // Форматируем результат
@@ -225,6 +232,9 @@ const getAllDoctors = async (req, res) => {
       email: doctor.email,
       mobilePhone: doctor.mobilePhone,
       specialty: doctor.specialty,
+      avatar:
+        doctor.userAccount?.avatar ||
+        "/backend/uploads/avatars/default_avatar.png",
     }));
 
     res.status(200).json(result);
