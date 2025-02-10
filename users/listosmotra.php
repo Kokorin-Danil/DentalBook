@@ -45,7 +45,7 @@
 </head>
 <body>
     <?php include '../users/profile.php'; ?>
-    <?php include '../users/navbar.php'; ?>
+    <?php include '../adminpanel/navbar.php'; ?>
     <div class="container">
 
         <!-- Таблица медицинских записей -->

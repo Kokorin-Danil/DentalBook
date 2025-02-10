@@ -59,7 +59,7 @@
     </style>
 </head>
 <body>
-    <?php include '../users/navbar.php'; ?>
+    <?php include '../adminpanel/navbar.php'; ?>
 
     <div id="content" class="container mt-5">
         <h2 class="mb-4">Профиль доктора | DentalBook</h2>

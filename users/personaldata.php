@@ -9,7 +9,7 @@
 </head>
 <body>
     <?php include 'profile.php'; ?>
-    <?php include 'navbar.php'; ?>
+    <?php include '../adminpanel/navbar.php'; ?>
 
     <div class="container mt-5">
         <!-- Таблица персональных данных -->

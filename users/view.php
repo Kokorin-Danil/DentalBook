@@ -10,7 +10,7 @@
 </head>
 <body>
     <?php include 'profile.php'; ?>
-    <?php include 'navbar.php'; ?>
+    <?php include '../adminpanel/navbar.php'; ?>
 
     <div class="container mt-5">
         <!-- Таблица визитов -->
@@ -116,6 +116,31 @@
         const token = getCookie('token');
         const patientCardId = new URLSearchParams(window.location.search).get('patientCardId');
 
+        let userRole;
+        try {
+            const decoded = jwt_decode(token);
+            userRole = decoded.role;
+        } catch (error) {
+            console.error("Ошибка декодирования токена:", error);
+            alert("Ошибка доступа. Перенаправление на страницу входа.");
+            window.location.href = "/login.html";
+            return;
+        }
+
+        function hideRestrictedElements() {
+            if (userRole === "admin") {
+                document.getElementById('addVisitButton')?.remove(); // Убираем кнопку "Добавить визит" для админов
+            }
+
+            if (userRole !== "doctor") {
+                document.querySelectorAll('.edit-status-btn').forEach(btn => btn.remove()); // Убираем кнопку редактирования статуса для всех, кроме doctor
+            }
+
+            if (userRole !== "admin") {
+                document.querySelectorAll('.delete-visit').forEach(btn => btn.remove()); // Убираем кнопку удаления визита для всех, кроме admin
+            }
+        }
+
         function populateTimeIntervals() {
             const visitTimeSelect = document.getElementById('visitTime');
             visitTimeSelect.innerHTML = '';
@@ -180,16 +205,11 @@
             });
 
             const data = await response.json();
-
-            // Сортировка визитов по дате и времени
-            data.visits.sort((a, b) => {
-                const dateA = new Date(`${a.visitDate}T${a.visitTime}`);
-                const dateB = new Date(`${b.visitDate}T${b.visitTime}`);
-                return dateA - dateB;
-            });
+            data.visits.sort((a, b) => new Date(`${a.visitDate}T${a.visitTime}`) - new Date(`${b.visitDate}T${b.visitTime}`));
 
             const tableBody = document.getElementById('visitsTableBody');
             tableBody.innerHTML = data.visits.map(visitToHTML).join('');
+            hideRestrictedElements();
         }
 
         function visitToHTML(visit) {
@@ -208,18 +228,28 @@
                     <td>${doctorName}</td>
                     <td id="status-${visit.id}">${formattedStatus}</td>
                     <td>
-                        <button class="btn btn-sm btn-warning" onclick="openChangeStatusModal(${visit.id}, '${visit.visitStatus}')">
-                            <i class="fas fa-edit"></i>
-                        </button>
-                        <button class="btn btn-sm btn-danger delete-visit" data-visit-id="${visit.id}">
-                            <i class="fas fa-trash"></i>
-                        </button>
+                        ${userRole === "doctor" ? `
+                            <button class="btn btn-sm btn-warning edit-status-btn" onclick="openChangeStatusModal(${visit.id}, '${visit.visitStatus}')">
+                                <i class="fas fa-edit"></i>
+                            </button>
+                        ` : ''}
+
+                        ${userRole === "admin" ? `
+                            <button class="btn btn-sm btn-danger delete-visit" data-visit-id="${visit.id}">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        ` : ''}
                     </td>
                 </tr>
             `;
         }
 
         async function saveVisit() {
+            if (userRole !== "doctor") {
+                alert("У вас нет прав для добавления визита.");
+                return;
+            }
+
             const visitData = {
                 patientCardId: document.getElementById('patientSelect').value,
                 doctorFullName: document.getElementById('doctorSelect').value,
@@ -241,9 +271,10 @@
                 if (!response.ok) throw new Error('Ошибка при добавлении визита.');
 
                 alert('Визит успешно добавлен!');
+
+                // Очистка формы без закрытия модального окна
                 document.getElementById('visitForm').reset();
 
-                // Перезагрузка списка визитов после успешного добавления
                 await loadVisits();
             } catch (error) {
                 console.error('Ошибка сохранения визита:', error);
@@ -251,58 +282,8 @@
             }
         }
 
-        async function deleteVisit(visitId) {
-            if (!confirm('Вы уверены, что хотите удалить этот визит?')) return;
+        document.getElementById('saveVisitButton')?.addEventListener('click', saveVisit);
 
-            try {
-                const response = await fetch(`http://localhost:3003/api/admin/visit/${visitId}`, {
-                    method: 'DELETE',
-                    headers: {
-                        Authorization: `Bearer ${token}`,
-                        'Content-Type': 'application/json'
-                    }
-                });
-
-                if (!response.ok) {
-                    throw new Error(`Ошибка удаления визита. Код ответа: ${response.status}`);
-                }
-
-                alert('Визит успешно удален!');
-                document.getElementById(`visit-${visitId}`).remove(); // Удаление строки из таблицы
-            } catch (error) {
-                console.error('Ошибка удаления визита:', error);
-                alert('Не удалось удалить визит.');
-            }
-        }
-
-        async function updateVisitStatus() {
-            const visitId = document.getElementById('visitIdToUpdate').value;
-            const newStatus = document.getElementById('visitStatus').value;
-
-            const response = await fetch(`http://localhost:3003/api/patient-cards/visit/change/${visitId}`, {
-                method: 'PUT',
-                headers: {
-                    'Content-Type': 'application/json',
-                    Authorization: `Bearer ${token}`
-                },
-                body: JSON.stringify({ newStatus })
-            });
-
-            if (response.ok) {
-                alert('Статус визита успешно обновлен!');
-                bootstrap.Modal.getInstance(document.getElementById('changeStatusModal')).hide();
-
-                // Перезагрузка списка визитов после обновления статуса
-                await loadVisits();
-            } else {
-                alert('Ошибка при обновлении статуса.');
-            }
-        }
-
-        document.getElementById('saveVisitButton').addEventListener('click', saveVisit);
-        document.getElementById('updateStatusButton').addEventListener('click', updateVisitStatus);
-
-        // Добавление обработчика события на родительский элемент (делегирование)
         document.getElementById('visitsTableBody').addEventListener('click', async (event) => {
             if (event.target.closest('.delete-visit')) {
                 const visitId = event.target.closest('.delete-visit').getAttribute('data-visit-id');

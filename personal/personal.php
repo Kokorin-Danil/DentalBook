@@ -42,16 +42,13 @@
     </style>
 </head>
 <body>    
-    <?php include '../users/navbar.php'; ?>
+<?php include '../adminpanel/navbar.php'; ?>
     <div class="container mt-5">
         <h1 class="mb-4">Персонал</h1>
         <div class="tabs">
             <ul class="nav nav-tabs">
                 <li class="nav-item">
                     <a class="nav-link" href="/personal/doctors.php"><i class="fas fa-user-md"></i> Доктора</a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link" href="/personal/admins.php"><i class="fas fa-user-tie"></i> Администраторы</a>
                 </li>
             </ul>
         </div>
