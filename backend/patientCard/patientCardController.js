@@ -548,11 +548,11 @@ export const getPatientProfile = async (req, res) => {
       return res.status(401).json({ message: "Неверный или истёкший токен" });
     }
 
-    // Проверяем роль пользователя
-    const allowedRoles = ["admin", "doctor"];
-    if (!allowedRoles.includes(decoded.role)) {
-      return res.status(403).json({ message: "Доступ запрещен" });
-    }
+    // // Проверяем роль пользователя
+    // const allowedRoles = ["admin", "doctor", ];
+    // if (!allowedRoles.includes(decoded.role)) {
+    //   return res.status(403).json({ message: "Доступ запрещен" });
+    // }
 
     // Получение ID карты пациента из параметров запроса
     const { patientCardId } = req.params;
