@@ -120,6 +120,12 @@ export const createVisit = async (req, res) => {
   if (!visitStartTime.isValid()) {
     return res.status(400).json({ message: "Invalid visit time" });
   }
+  const today = dayjs().startOf("day");
+  if (visitStartTime.isBefore(today)) {
+    return res
+      .status(400)
+      .json({ message: "Visits cannot be scheduled for past dates" });
+  }
 
   try {
     // Проверка токена
