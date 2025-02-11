@@ -63,7 +63,7 @@ Doctor.init(
     modelName: "Doctor",
     tableName: "doctors",
     timestamps: true,
-    indexes: [{ fields: ["email"], unique: true }],
+    indexes: [{ fields: ["email", "mobilePhone"], unique: true }],
   }
 );
 
