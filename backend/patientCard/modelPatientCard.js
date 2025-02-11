@@ -34,7 +34,7 @@ PatientCard.init(
       allowNull: false,
     },
     phoneNumber: {
-      type: DataTypes.STRING(18), // Длина с учетом пробелов и символов
+      type: DataTypes.STRING(19), // Длина с учетом пробелов и символов
       allowNull: false,
       validate: {
         is: /^\+7\s\(\d{3}\)\s\d{3}-\d{2}-\d{2}$/, // Формат: +7 (999) 123-47-67
