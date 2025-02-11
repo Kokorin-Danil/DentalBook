@@ -35,10 +35,10 @@ Doctor.init(
       },
     },
     mobilePhone: {
-      type: DataTypes.STRING,
+      type: DataTypes.STRING(18), // 18 символов, чтобы влезал номер
       allowNull: false,
       validate: {
-        is: /^\+?[1-9]\d{1,14}$/, // Проверка на международный формат телефона
+        is: /^\+7\s\(\d{3}\)\s\d{3}-\d{2}-\d{2}$/, // Правильный формат
       },
     },
     specialty: {
