@@ -34,14 +34,14 @@ PatientCard.init(
       allowNull: false,
     },
     phoneNumber: {
-      type: DataTypes.STRING,
+      type: DataTypes.STRING(18), // Длина с учетом пробелов и символов
       allowNull: false,
       validate: {
-        is: /^[0-9+\-() ]+$/i, // Проверка на формат номера телефона
+        is: /^\+7\s\(\d{3}\)\s\d{3}-\d{2}-\d{2}$/, // Формат: +7 (999) 123-47-67
       },
     },
     email: {
-      type: DataTypes.STRING,
+      type: DataTypes.STRING(100),
       allowNull: false,
       validate: {
         isEmail: true,
@@ -56,21 +56,21 @@ PatientCard.init(
       allowNull: false,
     },
     policyNumber: {
-      type: DataTypes.STRING,
+      type: DataTypes.STRING(20),
       allowNull: false, // Поле обязательно
       validate: {
         is: /^\d{4}\s\d{4}\s\d{4}\s\d{4}$/, // Проверка формата: 1234 5678 9101 1121
       },
     },
     snils: {
-      type: DataTypes.STRING,
+      type: DataTypes.STRING(14),
       allowNull: false, // СНИЛС обязателен
       validate: {
         is: /^\d{3}-\d{3}-\d{3}\s\d{2}$/, // Формат: 123-456-789 00
       },
     },
     passport: {
-      type: DataTypes.STRING,
+      type: DataTypes.STRING(11),
       allowNull: false, // Паспорт обязателен
       validate: {
         is: /^\d{4}\s\d{6}$/, // Формат: 1234 567890
@@ -82,7 +82,13 @@ PatientCard.init(
     modelName: "PatientCard",
     tableName: "patient_cards",
     timestamps: true,
-    indexes: [{ fields: ["policyNumber"], unique: true }],
+    indexes: [
+      {
+        name: "unique_patient_data",
+        fields: ["policyNumber", "email", "snils", "passport", "phoneNumber"],
+        unique: true,
+      },
+    ],
   }
 );
 
