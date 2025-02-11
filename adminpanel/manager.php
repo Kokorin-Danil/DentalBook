@@ -120,95 +120,144 @@
     </div>
 </div>
 
+
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha3/dist/js/bootstrap.bundle.min.js"></script>
+<script type="module">
+    import { getToken, parseJwt } from "/js/auth.js";
+
+    function checkAccess() {
+        const token = getToken();
+
+        if (!token) {
+            alert('Вы не авторизованы!');
+            window.location.replace('/index.php');
+            return;
+        }
+
+        const decodedToken = parseJwt(token);
+        const userRole = decodedToken?.role;
+
+        if (userRole !== 'admin') {
+            alert('У вас нет доступа к этой странице!');
+            if (document.referrer) {
+                window.location.href = document.referrer; // Возвращаем на предыдущую страницу
+            } else {
+                window.location.replace('/index.php'); // Если истории нет, направляем на auth.php
+            }
+        }
+    }
+
+    checkAccess();
+</script>
 <script>
-    document.addEventListener('DOMContentLoaded', async () => {
-        const token = getCookie('token');
+document.addEventListener('DOMContentLoaded', async () => {
+    const token = getCookie('token');
+    if (!token) {
+        alert('Ошибка: отсутствует токен. Авторизуйтесь заново.');
+        return;
+    }
 
-        async function loadManagers() {
-            try {
-                const response = await fetch('http://localhost:3003/api/admin/manager/getall', {
-                    headers: { Authorization: `Bearer ${token}` }
-                });
+    const managerTableBody = document.getElementById('managerTableBody');
+    const addManagerForm = document.getElementById('addManagerForm');
 
-                if (!response.ok) {
-                    throw new Error('Ошибка загрузки списка администраторов');
-                }
+    async function loadManagers() {
+        try {
+            const response = await fetch('http://localhost:3003/api/admin/manager/getall', {
+                headers: { Authorization: `Bearer ${token}` }
+            });
 
-                const managers = await response.json();
-                const managerTableBody = document.getElementById('managerTableBody');
-                managerTableBody.innerHTML = managers.map(managerToHTML).join('');
-            } catch (error) {
-                alert('Не удалось загрузить список администраторов.');
+            if (!response.ok) {
+                throw new Error('Ошибка загрузки списка администраторов');
             }
+
+            const managers = await response.json();
+            managerTableBody.innerHTML = managers.map(managerToHTML).join('');
+        } catch (error) {
+            alert('Не удалось загрузить список администраторов.');
         }
+    }
 
-        function managerToHTML(manager) {
-            return `
-                <tr id="manager-${manager.id}">
-                    <td>${manager.id}</td>
-                    <td><img src="${manager.avatar || '/backend/uploads/avatars/default_avatar.png'}" class="avatar-img"></td>
-                    <td>${manager.lastName} ${manager.firstName} ${manager.patronymic || ''}</td>
-                    <td>${manager.email}</td>
-                    <td>${manager.gender === 'male' ? 'Мужской' : 'Женский'}</td>
-                    <td>
-                        <button class="btn btn-sm btn-danger delete-btn" data-manager-id="${manager.id}">
-                            <i class="fas fa-trash"></i>
-                        </button>
-                    </td>
-                </tr>
-            `;
+    function managerToHTML(manager) {
+        return `
+            <tr id="manager-${manager.id}">
+                <td>${manager.id}</td>
+                <td><img src="${manager.avatar || '/backend/uploads/avatars/default_avatar.png'}" class="avatar-img"></td>
+                <td>${manager.lastName} ${manager.firstName} ${manager.patronymic || ''}</td>
+                <td>${manager.email}</td>
+                <td>${manager.gender === 'male' ? 'Мужской' : 'Женский'}</td>
+                <td>
+                    <button class="btn btn-sm btn-danger delete-btn" data-manager-id="${manager.id}">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </td>
+            </tr>
+        `;
+    }
+
+    async function deleteManager(managerId) {
+        if (!confirm('Вы уверены, что хотите удалить этого администратора?')) return;
+
+        try {
+            const response = await fetch(`http://localhost:3003/api/admin/manager/${managerId}`, {
+                method: 'DELETE',
+                headers: { Authorization: `Bearer ${token}` }
+            });
+
+            if (!response.ok) throw new Error('Ошибка удаления администратора.');
+
+            document.getElementById(`manager-${managerId}`).remove();
+        } catch (error) {
+            alert('Не удалось удалить администратора.');
         }
+    }
 
-        async function deleteManager(managerId) {
-            if (!confirm('Вы уверены, что хотите удалить этого администратора?')) return;
-
-            try {
-                const response = await fetch(`http://localhost:3003/api/admin/manager/${managerId}`, {
-                    method: 'DELETE',
-                    headers: { Authorization: `Bearer ${token}` }
-                });
-
-                if (!response.ok) throw new Error('Ошибка удаления администратора.');
-
-                document.getElementById(`manager-${managerId}`).remove();
-            } catch (error) {
-                alert('Не удалось удалить администратора.');
-            }
+    managerTableBody.addEventListener('click', async (event) => {
+        if (event.target.closest('.delete-btn')) {
+            const managerId = event.target.closest('.delete-btn').dataset.managerId;
+            await deleteManager(managerId);
         }
-
-        document.getElementById('managerTableBody').addEventListener('click', async (event) => {
-            if (event.target.closest('.delete-btn')) {
-                const managerId = event.target.closest('.delete-btn').dataset.managerId;
-                await deleteManager(managerId);
-            }
-        });
-
-        document.getElementById('addManagerForm').addEventListener('submit', async function(event) {
-            event.preventDefault();
-
-            const formData = new FormData(this);
-            const managerData = Object.fromEntries(formData.entries());
-
-            try {
-                await fetch('http://localhost:3003/api/admin/manager/create', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-                    body: JSON.stringify(managerData)
-                });
-
-                await loadManagers();
-            } catch {
-                alert('Не удалось создать администратора.');
-            }
-        });
-
-        await loadManagers();
     });
 
-    function getCookie(name) {
-        return document.cookie.split('; ').find(row => row.startsWith(name))?.split('=')[1];
-    }
+    addManagerForm.addEventListener('submit', async function(event) {
+        event.preventDefault();
+
+        const managerData = {
+            firstName: document.getElementById('firstName').value,
+            lastName: document.getElementById('lastName').value,
+            patronymic: document.getElementById('patronymic').value,
+            email: document.getElementById('email').value,
+            password: document.getElementById('password').value,
+            gender: document.getElementById('gender').value
+        };
+
+        try {
+            const response = await fetch('http://localhost:3003/api/admin/manager/create', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+                body: JSON.stringify(managerData)
+            });
+
+            if (!response.ok) {
+                throw new Error('Ошибка создания администратора.');
+            }
+
+            alert('Администратор успешно добавлен.');
+
+            addManagerForm.reset(); // Очистка формы, но окно НЕ закрывается
+            await loadManagers(); // Обновление списка администраторов
+        } catch (error) {
+            alert('Не удалось создать администратора.');
+        }
+    });
+
+    await loadManagers();
+});
+
+function getCookie(name) {
+    return document.cookie.split('; ').find(row => row.startsWith(name))?.split('=')[1];
+}
 </script>
+
+
 </body>
 </html>

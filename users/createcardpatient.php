@@ -105,14 +105,14 @@
                     <label for="email" class="form-label">Email:</label>
                     <div class="input-group">
                         <span class="input-group-text"><i class="fas fa-envelope"></i></span>
-                        <input type="email" class="form-control" id="email" placeholder="example@email.com" required>
+                        <input type="email" class="form-control" id="email" placeholder="Введите эл.почту" required>
                     </div>
                 </div>
                 <div class="col-md-4">
                     <label for="phone" class="form-label">Телефон:</label>
                     <div class="input-group">
                         <span class="input-group-text"><i class="fas fa-phone"></i></span>
-                        <input type="tel" class="form-control" id="phone" placeholder="+7 (___) ___-__-__" required>
+                        <input type="tel" class="form-control" id="phone" placeholder="Введите номер телефона" required>
                     </div>
                 </div>
             </div>
@@ -147,9 +147,36 @@
     </div>
 
     <!-- Bootstrap JavaScript -->
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"
-        integrity="sha384-geWF76RCwLtnZ8qwWowPQNguL3RmwHVBC9FhGdlKrxdiJJigb/j/68SIy3Te4Bkz" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-geWF76RCwLtnZ8qwWowPQNguL3RmwHVBC9FhGdlKrxdiJJigb/j/68SIy3Te4Bkz" crossorigin="anonymous"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery.inputmask/5.0.7/jquery.inputmask.min.js"></script>
+    <script type="module">
+    import { getToken, parseJwt } from "/js/auth.js";
 
+    function checkAccess() {
+        const token = getToken();
+
+        if (!token) {
+            alert('Вы не авторизованы!');
+            window.location.replace('/index.php');
+            return;
+        }
+
+        const decodedToken = parseJwt(token);
+        const userRole = decodedToken?.role;
+
+        if (!['manager', 'doctor'].includes(userRole)) {
+            alert('У вас нет доступа к этой странице!');
+            if (document.referrer) {
+                window.location.href = document.referrer; // Возвращаем на предыдущую страницу
+            } else {
+                window.location.replace('/index.php'); // Если истории нет, направляем на index.php
+            }
+        }
+    }
+
+    checkAccess();
+</script>
     <script>
         function getCookie(name) {
             const value = `; ${document.cookie}`;
@@ -213,6 +240,15 @@
             }
         });
     </script>
+    <script>
+    $(document).ready(function(){
+        $("#phone").inputmask("+7 (999) 999-99-99");  // Телефон
+        $("#policy").inputmask("9999 9999 9999 9999"); // Полис
+        $("#snils").inputmask("999-999-999 99");  // СНИЛС
+        $("#passport").inputmask("9999 999999");  // Паспорт
+    });
+</script>
+
 </body>
 
 </html>

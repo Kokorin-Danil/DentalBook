@@ -51,7 +51,7 @@
     </style>
 </head>
 <body>
-<?php include '../users/navbar.php'; ?>
+<?php include '../adminpanel/navbar.php'; ?>
 <div class="container mt-4">
     <h1 class="text-center">Экстренный случай</h1>
 
@@ -154,7 +154,33 @@
         </button>
     </div>
 </div>
+<script type="module">
+    import { getToken, parseJwt } from "/js/auth.js";
 
+    function checkAccess() {
+        const token = getToken();
+
+        if (!token) {
+            alert('Вы не авторизованы!');
+            window.location.replace('/index.php');
+            return;
+        }
+
+        const decodedToken = parseJwt(token);
+        const userRole = decodedToken?.role;
+
+        if (userRole !== 'doctor') {
+            alert('У вас нет доступа к этой странице!');
+            if (document.referrer) {
+                window.location.href = document.referrer; // Возвращаем на предыдущую страницу
+            } else {
+                window.location.replace('/index.php'); // Если истории нет, направляем на auth.php
+            }
+        }
+    }
+
+    checkAccess();
+</script>
 <script>
     // Получение токена из cookies
     function getCookie(name) {

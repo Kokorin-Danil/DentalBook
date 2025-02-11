@@ -111,56 +111,191 @@
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-    <script>
-    document.addEventListener('DOMContentLoaded', async () => {
-        const token = getCookie('token');
-        const patientCardId = new URLSearchParams(window.location.search).get('patientCardId');
+    <script type="module">
+    import { getToken, parseJwt } from "/js/auth.js";
 
-        let userRole;
-        try {
-            const decoded = jwt_decode(token);
-            userRole = decoded.role;
-        } catch (error) {
-            console.error("Ошибка декодирования токена:", error);
-            alert("Ошибка доступа. Перенаправление на страницу входа.");
-            window.location.href = "/login.html";
+    function checkAccess() {
+        const token = getToken();
+
+        if (!token) {
+            alert('Вы не авторизованы!');
+            window.location.replace('/index.php');
             return;
         }
 
-        function hideRestrictedElements() {
-            if (userRole === "admin") {
-                document.getElementById('addVisitButton')?.remove(); // Убираем кнопку "Добавить визит" для админов
-            }
+        const decodedToken = parseJwt(token);
+        const userRole = decodedToken?.role;
 
-            if (userRole !== "doctor") {
-                document.querySelectorAll('.edit-status-btn').forEach(btn => btn.remove()); // Убираем кнопку редактирования статуса для всех, кроме doctor
-            }
-
-            if (userRole !== "admin") {
-                document.querySelectorAll('.delete-visit').forEach(btn => btn.remove()); // Убираем кнопку удаления визита для всех, кроме admin
+        if (!['admin', 'doctor', 'client'].includes(userRole)) {
+            alert('У вас нет доступа к этой странице!');
+            if (document.referrer) {
+                window.location.href = document.referrer; // Возвращаем на предыдущую страницу
+            } else {
+                window.location.replace('/index.php'); // Если истории нет, направляем на auth.php
             }
         }
+    }
 
-        function populateTimeIntervals() {
-            const visitTimeSelect = document.getElementById('visitTime');
-            visitTimeSelect.innerHTML = '';
+    checkAccess();
+</script>
+    <script>
+document.addEventListener('DOMContentLoaded', async () => {
+    const token = getCookie('token');
+    const patientCardId = new URLSearchParams(window.location.search).get('patientCardId');
 
-            const startTime = new Date('1970-01-01T09:00:00');
-            const endTime = new Date('1970-01-01T17:30:00');
+    let userRole;
+    try {
+        const decoded = jwt_decode(token);
+        userRole = decoded.role;
+    } catch (error) {
+        console.error("Ошибка декодирования токена:", error);
+        alert("Ошибка доступа. Перенаправление на страницу входа.");
+        window.location.href = "/login.html";
+        return;
+    }
 
-            while (startTime <= endTime) {
+    function hideRestrictedElements() {
+        if (userRole === "admin" || userRole === "client") {
+            document.getElementById('addVisitButton')?.remove();
+        }
+
+        if (userRole !== "doctor") {
+            document.querySelectorAll('.edit-status-btn').forEach(btn => btn.remove());
+        }
+
+        if (userRole !== "admin") {
+            document.querySelectorAll('.delete-visit').forEach(btn => btn.remove());
+        }
+    }
+
+    async function loadVisits() {
+        const response = await fetch(`http://localhost:3003/api/patient-cards/visit/all/${patientCardId}`, {
+            headers: { Authorization: `Bearer ${token}` }
+        });
+
+        const data = await response.json();
+        data.visits.sort((a, b) => new Date(`${a.visitDate}T${a.visitTime}`) - new Date(`${b.visitDate}T${b.visitTime}`));
+
+        const tableBody = document.getElementById('visitsTableBody');
+        tableBody.innerHTML = data.visits.map(visitToHTML).join('');
+        hideRestrictedElements();
+    }
+
+    function visitToHTML(visit) {
+        const formattedStatus = visit.visitStatus.charAt(0).toUpperCase() + visit.visitStatus.slice(1);
+        return `
+            <tr id="visit-${visit.id}">
+                <td>${visit.id}</td>
+                <td>${visit.visitDate}</td>
+                <td>${visit.visitTime}</td>
+                <td>${visit.visitType}</td>
+                <td>${visit.doctor ? visit.doctor.lastName + " " + visit.doctor.firstName : 'Не указано'}</td>
+                <td id="status-${visit.id}">${formattedStatus}</td>
+                <td>
+                    ${userRole === "doctor" ? `
+                        <button class="btn btn-sm btn-warning edit-status-btn" onclick="openChangeStatusModal(${visit.id}, '${visit.visitStatus}')">
+                            <i class="fas fa-edit"></i>
+                        </button>
+                    ` : ''}
+                </td>
+            </tr>
+        `;
+    }
+
+    async function updateVisitStatus() {
+        const visitId = document.getElementById('visitIdToUpdate').value;
+        const newStatus = document.getElementById('visitStatus').value;
+
+        try {
+            const response = await fetch(`http://localhost:3003/api/patient-cards/visit/change/${visitId}`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                    Authorization: `Bearer ${token}`
+                },
+                body: JSON.stringify({ newStatus: newStatus })
+            });
+
+            if (!response.ok) throw new Error('Ошибка при обновлении статуса.');
+
+            document.getElementById(`status-${visitId}`).textContent = newStatus;
+
+            alert('Статус успешно обновлен!');
+        } catch (error) {
+            console.error('Ошибка обновления статуса:', error);
+            alert('Не удалось обновить статус визита.');
+        }
+    }
+
+    async function saveVisit() {
+        if (userRole !== "doctor") {
+            alert("У вас нет прав для добавления визита.");
+            return;
+        }
+
+        const visitData = {
+            patientCardId: document.getElementById('patientSelect').value,
+            doctorFullName: document.getElementById('doctorSelect').value,
+            visitType: document.getElementById('visitType').value,
+            visitDate: document.getElementById('visitDate').value,
+            visitTime: document.getElementById('visitTime').value
+        };
+
+        try {
+            const response = await fetch('http://localhost:3003/api/patient-cards/visit/create', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    Authorization: `Bearer ${token}`
+                },
+                body: JSON.stringify(visitData)
+            });
+
+            if (!response.ok) throw new Error('Ошибка при добавлении визита.');
+
+            alert('Визит успешно добавлен!');
+            document.getElementById('visitForm').reset();
+            await loadVisits();
+        } catch (error) {
+            console.error('Ошибка сохранения визита:', error);
+            alert(error.message);
+        }
+    }
+
+    async function populateDoctors() {
+        try {
+            const response = await fetch('http://localhost:3003/api/patient-cards/get/all/doctors', {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+
+            if (!response.ok) {
+                throw new Error('Ошибка загрузки списка врачей');
+            }
+
+            const doctors = await response.json();
+            const doctorSelect = document.getElementById('doctorSelect');
+            doctorSelect.innerHTML = '';
+
+            doctors.forEach(doctor => {
                 const option = document.createElement('option');
-                option.value = startTime.toTimeString().substring(0, 5);
-                option.textContent = startTime.toTimeString().substring(0, 5);
-                visitTimeSelect.appendChild(option);
-                startTime.setMinutes(startTime.getMinutes() + 30);
-            }
+                option.value = doctor.fullName;
+                option.textContent = `${doctor.fullName} (${doctor.specialty})`;
+                doctorSelect.appendChild(option);
+            });
+        } catch (error) {
+            console.error('Ошибка загрузки врачей:', error);
+            alert('Не удалось загрузить список врачей.');
         }
+    }
 
-        async function populatePatients() {
+    async function populatePatients() {
+        try {
             const response = await fetch('http://localhost:3003/api/patient-cards/get/all', {
                 headers: { Authorization: `Bearer ${token}` }
             });
+
+            if (!response.ok) throw new Error('Ошибка загрузки пациентов');
+
             const patients = await response.json();
             const patientSelect = document.getElementById('patientSelect');
             patientSelect.innerHTML = '';
@@ -171,148 +306,51 @@
                 option.textContent = `${patient.fullName} (Дата рождения: ${new Date(patient.dateOfBirth).toLocaleDateString()})`;
                 patientSelect.appendChild(option);
             });
+        } catch (error) {
+            console.error('Ошибка загрузки пациентов:', error);
         }
-
-        async function populateDoctors() {
-            try {
-                const response = await fetch('http://localhost:3003/api/patient-cards/get/all/doctors', {
-                    headers: { Authorization: `Bearer ${token}` }
-                });
-
-                if (!response.ok) {
-                    throw new Error('Ошибка загрузки списка врачей');
-                }
-
-                const doctors = await response.json();
-                const doctorSelect = document.getElementById('doctorSelect');
-                doctorSelect.innerHTML = '';
-
-                doctors.forEach(doctor => {
-                    const option = document.createElement('option');
-                    option.value = doctor.fullName;
-                    option.textContent = `${doctor.fullName} (${doctor.specialty})`;
-                    doctorSelect.appendChild(option);
-                });
-            } catch (error) {
-                console.error('Ошибка загрузки врачей:', error);
-                alert('Не удалось загрузить список врачей.');
-            }
-        }
-
-        async function loadVisits() {
-            const response = await fetch(`http://localhost:3003/api/patient-cards/visit/all/${patientCardId}`, {
-                headers: { Authorization: `Bearer ${token}` }
-            });
-
-            const data = await response.json();
-            data.visits.sort((a, b) => new Date(`${a.visitDate}T${a.visitTime}`) - new Date(`${b.visitDate}T${b.visitTime}`));
-
-            const tableBody = document.getElementById('visitsTableBody');
-            tableBody.innerHTML = data.visits.map(visitToHTML).join('');
-            hideRestrictedElements();
-        }
-
-        function visitToHTML(visit) {
-            const doctorName = visit.doctor
-                ? `${visit.doctor.lastName} ${visit.doctor.firstName} ${visit.doctor.patronymic}`
-                : 'Не указано';
-            const formattedVisitType = visit.visitType.charAt(0).toUpperCase() + visit.visitType.slice(1);
-            const formattedStatus = visit.visitStatus.charAt(0).toUpperCase() + visit.visitStatus.slice(1);
-
-            return `
-                <tr id="visit-${visit.id}">
-                    <td>${visit.id}</td>
-                    <td>${visit.visitDate}</td>
-                    <td>${visit.visitTime}</td>
-                    <td>${formattedVisitType}</td>
-                    <td>${doctorName}</td>
-                    <td id="status-${visit.id}">${formattedStatus}</td>
-                    <td>
-                        ${userRole === "doctor" ? `
-                            <button class="btn btn-sm btn-warning edit-status-btn" onclick="openChangeStatusModal(${visit.id}, '${visit.visitStatus}')">
-                                <i class="fas fa-edit"></i>
-                            </button>
-                        ` : ''}
-
-                        ${userRole === "admin" ? `
-                            <button class="btn btn-sm btn-danger delete-visit" data-visit-id="${visit.id}">
-                                <i class="fas fa-trash"></i>
-                            </button>
-                        ` : ''}
-                    </td>
-                </tr>
-            `;
-        }
-
-        async function saveVisit() {
-            if (userRole !== "doctor") {
-                alert("У вас нет прав для добавления визита.");
-                return;
-            }
-
-            const visitData = {
-                patientCardId: document.getElementById('patientSelect').value,
-                doctorFullName: document.getElementById('doctorSelect').value,
-                visitType: document.getElementById('visitType').value,
-                visitDate: document.getElementById('visitDate').value,
-                visitTime: document.getElementById('visitTime').value
-            };
-
-            try {
-                const response = await fetch('http://localhost:3003/api/patient-cards/visit/create', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        Authorization: `Bearer ${token}`
-                    },
-                    body: JSON.stringify(visitData)
-                });
-
-                if (!response.ok) throw new Error('Ошибка при добавлении визита.');
-
-                alert('Визит успешно добавлен!');
-
-                // Очистка формы без закрытия модального окна
-                document.getElementById('visitForm').reset();
-
-                await loadVisits();
-            } catch (error) {
-                console.error('Ошибка сохранения визита:', error);
-                alert(error.message);
-            }
-        }
-
-        document.getElementById('saveVisitButton')?.addEventListener('click', saveVisit);
-
-        document.getElementById('visitsTableBody').addEventListener('click', async (event) => {
-            if (event.target.closest('.delete-visit')) {
-                const visitId = event.target.closest('.delete-visit').getAttribute('data-visit-id');
-                await deleteVisit(visitId);
-            }
-        });
-
-        await loadVisits();
-        populateTimeIntervals();
-        await populatePatients();
-        await populateDoctors();
-    });
-
-    function openChangeStatusModal(visitId, currentStatus) {
-        document.getElementById('visitIdToUpdate').value = visitId;
-        document.getElementById('visitStatus').value = currentStatus;
-        const modal = new bootstrap.Modal(document.getElementById('changeStatusModal'));
-        modal.show();
     }
 
-    function getCookie(name) {
-        const value = `; ${document.cookie}`;
-        const parts = value.split(`; ${name}=`);
-        if (parts.length === 2) return parts.pop().split(';').shift();
+    function populateTimeIntervals() {
+        const visitTimeSelect = document.getElementById('visitTime');
+        visitTimeSelect.innerHTML = '';
+
+        const startTime = new Date('1970-01-01T09:00:00');
+        const endTime = new Date('1970-01-01T17:30:00');
+
+        while (startTime <= endTime) {
+            const option = document.createElement('option');
+            option.value = startTime.toTimeString().substring(0, 5);
+            option.textContent = startTime.toTimeString().substring(0, 5);
+            visitTimeSelect.appendChild(option);
+            startTime.setMinutes(startTime.getMinutes() + 30);
+        }
     }
+
+    document.getElementById('saveVisitButton')?.addEventListener('click', saveVisit);
+    document.getElementById('updateStatusButton')?.addEventListener('click', updateVisitStatus);
+
+    await loadVisits();
+    await populateDoctors();
+    await populatePatients();
+    populateTimeIntervals();
+});
+
+function openChangeStatusModal(visitId, currentStatus) {
+    document.getElementById('visitIdToUpdate').value = visitId;
+    document.getElementById('visitStatus').value = currentStatus;
+    const modal = new bootstrap.Modal(document.getElementById('changeStatusModal'));
+    modal.show();
+}
+
+function getCookie(name) {
+    const value = `; ${document.cookie}`;
+    const parts = value.split(`; ${name}=`);
+    if (parts.length === 2) return parts.pop().split(';').shift();
+}
+
+
 </script>
-
-
-
 
 </body>
 </html>

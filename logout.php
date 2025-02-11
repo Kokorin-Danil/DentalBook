@@ -15,7 +15,7 @@
 
             // Таймер для редиректа через 3 секунды
             setTimeout(() => {
-                window.location.href = "auth.php"; // Перенаправление на страницу входа
+                window.location.href = "index.php"; // Перенаправление на страницу входа
             }, 3000);
         });
     </script>

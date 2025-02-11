@@ -93,167 +93,223 @@
             </div>
         </div>
     </div>
-
-    <script>
-        const API_URL = 'http://localhost:3003/api/patient-cards/examinationsheet/get';
-        const DELETE_URL = 'http://localhost:3003/api/admin/examination-sheet';
-        const patientCardId = new URLSearchParams(window.location.search).get('patientCardId');
-
-        // Функция для получения токена из cookies
-        function getCookie(name) {
-            const value = `; ${document.cookie}`;
-            const parts = value.split(`; ${name}=`);
-            if (parts.length === 2) return parts.pop().split(';').shift();
-        }
-
-        // Функция для загрузки данных
-        async function loadRecords() {
-            const token = getCookie('token');
-            try {
-                const response = await fetch(`${API_URL}/${patientCardId}`, {
-                    method: 'GET',
-                    headers: {
-                        'Authorization': `Bearer ${token}`
-                    }
-                });
-
-                if (!response.ok) {
-                    throw new Error('Ошибка загрузки данных записей');
-                }
-
-                const { data } = await response.json();
-                populateTable(data.simplified);
-            } catch (error) {
-                console.error('Ошибка:', error);
-                alert('Не удалось загрузить данные записей.');
-            }
-        }
-
-        // Функция для заполнения таблицы
-        function populateTable(records) {
-            const tableBody = document.getElementById('recordTableBody');
-            tableBody.innerHTML = ''; // Очищаем таблицу
-
-            records.forEach(record => {
-                const date = new Date(record.createdAt).toLocaleDateString();
-
-                const row = document.createElement('tr');
-                row.id = `record-${record.id}`;
-                row.innerHTML = `
-                    <td>${record.id}</td>
-                    <td>${date}</td>
-                    <td>${record.type}</td>
-                    <td class="table-actions">
-                        <button class="btn btn-info btn-sm" onclick="viewRecordDetails(${record.id})">
-                            <i class="fas fa-eye"></i> Просмотреть
-                        </button>
-                        <button class="btn btn-danger btn-sm" onclick="deleteRecord(${record.id})">
-                            <i class="fas fa-trash"></i> Удалить
-                        </button>
-                    </td>
-                `;
-                tableBody.appendChild(row);
-            });
-        }
-
-        // Функция для отображения подробной информации
-        async function viewRecordDetails(id) {
-            const token = getCookie('token');
-            try {
-                const response = await fetch(`${API_URL}/${patientCardId}`, {
-                    method: 'GET',
-                    headers: {
-                        'Authorization': `Bearer ${token}`
-                    }
-                });
-
-                if (!response.ok) {
-                    throw new Error('Ошибка загрузки данных записи');
-                }
-
-                const { data } = await response.json();
-                const record = Object.values(data.grouped).flat().find(item => item.id === id);
-
-                if (record) {
-                    updateModalContent(record);
-                }
-            } catch (error) {
-                console.error('Ошибка:', error);
-                alert('Не удалось загрузить данные записи.');
-            }
-        }
-
-        // Обновление содержимого модального окна
-        function updateModalContent(record) {
-            document.getElementById('recordDate').value = new Date(record.createdAt).toLocaleDateString() || 'Нет данных';
-            document.getElementById('recordType').value = record.type || 'Нет данных';
-
-            const dynamicFields = document.getElementById('dynamicFields');
-            dynamicFields.innerHTML = '';
-
-            const fields = {
-                'Жалобы': record.complaints,
-                'Диагноз': record.preliminaryDiagnosis,
-                'Рекомендации': record.doctorRecommendations,
-                'Динамика состояния': record.conditionDynamics,
-                'Результаты лечения': record.treatmentResults,
-                'Цель чистки': record.cleaningGoal,
-                'Процедура чистки': record.cleaningProcedure,
-                'Дополнительные процедуры': record.additionalCleaningProcedures,
-                'Состояние после чистки': record.postCleaningCondition,
-                'Описание проблемы': record.problemDescription,
-                'Оценка состояния': record.conditionAssessment,
-                'Принятые меры': record.measuresTaken
-            };
-
-            for (const [label, value] of Object.entries(fields)) {
-                if (value !== null && value !== undefined) {
-                    const field = document.createElement('div');
-                    field.classList.add('mb-3');
-                    field.innerHTML = `
-                        <label class="form-label fw-semibold">${label}</label>
-                        <input type="text" class="form-control" value="${value}" disabled>
-                    `;
-                    dynamicFields.appendChild(field);
-                }
-            }
-
-            const modal = new bootstrap.Modal(document.getElementById('viewRecordModal'));
-            modal.show();
-        }
-
-        // Удаление записи
-        async function deleteRecord(id) {
-            const token = getCookie('token');
-
-            if (!confirm('Вы уверены, что хотите удалить запись?')) return;
-
-            try {
-                const response = await fetch(`${DELETE_URL}/${id}`, {
-                    method: 'DELETE',
-                    headers: {
-                        'Authorization': `Bearer ${token}`
-                    }
-                });
-
-                if (!response.ok) {
-                    throw new Error('Ошибка при удалении записи');
-                }
-
-                // Убираем строку из таблицы после удаления
-                const row = document.getElementById(`record-${id}`);
-                if (row) row.remove();
-
-                alert('Запись успешно удалена');
-            } catch (error) {
-                console.error('Ошибка при удалении:', error);
-                alert('Не удалось удалить запись.');
-            }
-        }
-
-        document.addEventListener('DOMContentLoaded', loadRecords);
-    </script>
-
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script type="module">
+    import { getToken, parseJwt } from "/js/auth.js";
+
+    function checkAccess() {
+        const token = getToken();
+
+        if (!token) {
+            alert('Вы не авторизованы!');
+            window.location.replace('/index.php');
+            return;
+        }
+
+        const decodedToken = parseJwt(token);
+        const userRole = decodedToken?.role;
+
+        if (!['admin', 'doctor', 'client'].includes(userRole)) {
+            alert('У вас нет доступа к этой странице!');
+            if (document.referrer) {
+                window.location.href = document.referrer; // Возвращаем на предыдущую страницу
+            } else {
+                window.location.replace('/index.php'); // Если истории нет, направляем на index.php
+            }
+        }
+    }
+
+    checkAccess();
+</script>
+    <script>
+    const API_URL = 'http://localhost:3003/api/patient-cards/examinationsheet/get';
+    const DELETE_URL = 'http://localhost:3003/api/admin/examination-sheet';
+    const patientCardId = new URLSearchParams(window.location.search).get('patientCardId');
+    let userRole = null; // Переменная для хранения роли пользователя
+
+    // Функция для получения токена из cookies
+    function getCookie(name) {
+        const value = `; ${document.cookie}`;
+        const parts = value.split(`; ${name}=`);
+        if (parts.length === 2) return parts.pop().split(';').shift();
+    }
+
+    // Получение роли из токена
+    function getRoleFromToken() {
+        const token = getCookie('token');
+        if (token) {
+            try {
+                const payload = JSON.parse(atob(token.split('.')[1])); // Расшифровка токена
+                return payload.role;
+            } catch (error) {
+                console.error('Ошибка декодирования токена:', error);
+                return null;
+            }
+        }
+        return null;
+    }
+
+    // Функция для загрузки данных
+    async function loadRecords() {
+        const token = getCookie('token');
+        userRole = getRoleFromToken(); // Получаем роль пользователя
+
+        try {
+            const response = await fetch(`${API_URL}/${patientCardId}`, {
+                method: 'GET',
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            });
+
+            if (!response.ok) {
+                throw new Error('Ошибка загрузки данных записей');
+            }
+
+            const { data } = await response.json();
+            populateTable(data.simplified);
+            hideActionButtons(); // Скрываем кнопки действий для клиентов
+        } catch (error) {
+            console.error('Ошибка:', error);
+            alert('Не удалось загрузить данные записей.');
+        }
+    }
+
+    // Функция для заполнения таблицы
+    function populateTable(records) {
+        const tableBody = document.getElementById('recordTableBody');
+        tableBody.innerHTML = ''; // Очищаем таблицу
+
+        records.forEach(record => {
+            const date = new Date(record.createdAt).toLocaleDateString();
+
+            const row = document.createElement('tr');
+            row.id = `record-${record.id}`;
+            row.innerHTML = `
+                <td>${record.id}</td>
+                <td>${date}</td>
+                <td>${record.type}</td>
+                <td class="table-actions">
+                    <button class="btn btn-info btn-sm" onclick="viewRecordDetails(${record.id})">
+                        <i class="fas fa-eye"></i> Просмотреть
+                    </button>
+                    <button class="btn btn-danger btn-sm" onclick="deleteRecord(${record.id})">
+                        <i class="fas fa-trash"></i> Удалить
+                    </button>
+                </td>
+            `;
+            tableBody.appendChild(row);
+        });
+    }
+
+    // Функция для скрытия кнопок действий для клиентов
+    function hideActionButtons() {
+        if (userRole === 'client') {
+            // Удаляем кнопки действий из таблицы
+            document.querySelectorAll('.table-actions').forEach(actionCell => actionCell.remove());
+            // Скрываем заголовок "Действия"
+            const actionHeader = document.querySelector('thead th:nth-child(4)');
+            if (actionHeader) actionHeader.style.display = 'none';
+        }
+    }
+
+    // Функция для отображения подробной информации
+    async function viewRecordDetails(id) {
+        const token = getCookie('token');
+        try {
+            const response = await fetch(`${API_URL}/${patientCardId}`, {
+                method: 'GET',
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            });
+
+            if (!response.ok) {
+                throw new Error('Ошибка загрузки данных записи');
+            }
+
+            const { data } = await response.json();
+            const record = Object.values(data.grouped).flat().find(item => item.id === id);
+
+            if (record) {
+                updateModalContent(record);
+            }
+        } catch (error) {
+            console.error('Ошибка:', error);
+            alert('Не удалось загрузить данные записи.');
+        }
+    }
+
+    // Обновление содержимого модального окна
+    function updateModalContent(record) {
+        document.getElementById('recordDate').value = new Date(record.createdAt).toLocaleDateString() || 'Нет данных';
+        document.getElementById('recordType').value = record.type || 'Нет данных';
+
+        const dynamicFields = document.getElementById('dynamicFields');
+        dynamicFields.innerHTML = '';
+
+        const fields = {
+            'Жалобы': record.complaints,
+            'Диагноз': record.preliminaryDiagnosis,
+            'Рекомендации': record.doctorRecommendations,
+            'Динамика состояния': record.conditionDynamics,
+            'Результаты лечения': record.treatmentResults,
+            'Цель чистки': record.cleaningGoal,
+            'Процедура чистки': record.cleaningProcedure,
+            'Дополнительные процедуры': record.additionalCleaningProcedures,
+            'Состояние после чистки': record.postCleaningCondition,
+            'Описание проблемы': record.problemDescription,
+            'Оценка состояния': record.conditionAssessment,
+            'Принятые меры': record.measuresTaken
+        };
+
+        for (const [label, value] of Object.entries(fields)) {
+            if (value !== null && value !== undefined) {
+                const field = document.createElement('div');
+                field.classList.add('mb-3');
+                field.innerHTML = `
+                    <label class="form-label fw-semibold">${label}</label>
+                    <input type="text" class="form-control" value="${value}" disabled>
+                `;
+                dynamicFields.appendChild(field);
+            }
+        }
+
+        const modal = new bootstrap.Modal(document.getElementById('viewRecordModal'));
+        modal.show();
+    }
+
+    // Удаление записи
+    async function deleteRecord(id) {
+        const token = getCookie('token');
+
+        if (!confirm('Вы уверены, что хотите удалить запись?')) return;
+
+        try {
+            const response = await fetch(`${DELETE_URL}/${id}`, {
+                method: 'DELETE',
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            });
+
+            if (!response.ok) {
+                throw new Error('Ошибка при удалении записи');
+            }
+
+            // Убираем строку из таблицы после удаления
+            const row = document.getElementById(`record-${id}`);
+            if (row) row.remove();
+
+            alert('Запись успешно удалена');
+        } catch (error) {
+            console.error('Ошибка при удалении:', error);
+            alert('Не удалось удалить запись.');
+        }
+    }
+
+    document.addEventListener('DOMContentLoaded', loadRecords);
+</script>
+
 </body>
 </html>

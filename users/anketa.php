@@ -132,46 +132,108 @@
         <!-- No Survey Message -->
         <div id="noSurveyMessage">Анкета еще не заполнена</div>
     </div>
+    <script type="module">
+    import { getToken, parseJwt } from "/js/auth.js";
 
-    <script>
-        async function fetchSurvey(patientCardId) {
-            try {
-                const response = await fetch(`http://localhost:3003/api/patient-cards/survey/${patientCardId}`);
-                if (!response.ok) throw new Error();
+    function checkAccess() {
+        const token = getToken();
 
-                const survey = await response.json();
-                if (!survey || Object.keys(survey).length === 0) {
-                    throw new Error();
-                }
-
-                let isSurveyFilled = false;
-                for (const [key, value] of Object.entries(survey)) {
-                    const element = document.getElementById(key);
-                    if (element) {
-                        element.textContent = value || 'Не указано';
-                        if (value) isSurveyFilled = true; // Если есть хотя бы один ответ, анкета заполнена
-                    }
-                }
-
-                if (isSurveyFilled) {
-                    document.getElementById('surveyContent').style.display = 'block';
-                    document.getElementById('noSurveyMessage').style.display = 'none';
-                } else {
-                    throw new Error(); // Если нет значимых данных, считаем анкету незаполненной
-                }
-            } catch {
-                document.getElementById('surveyContent').style.display = 'none';
-                document.getElementById('noSurveyMessage').style.display = 'block';
-            }
+        if (!token) {
+            alert('Вы не авторизованы!');
+            window.location.replace('/index.php');
+            return;
         }
 
-        document.addEventListener('DOMContentLoaded', () => {
-            const urlParams = new URLSearchParams(window.location.search);
-            const patientCardId = urlParams.get('patientCardId');
-            if (patientCardId) {
-                fetchSurvey(patientCardId);
+        const decodedToken = parseJwt(token);
+        const userRole = decodedToken?.role;
+
+        if (!['admin', 'doctor', 'client'].includes(userRole)) {
+            alert('У вас нет доступа к этой странице!');
+            if (document.referrer) {
+                window.location.href = document.referrer; // Возвращаем на предыдущую страницу
+            } else {
+                window.location.replace('/index.php'); // Если истории нет, направляем на auth.php
             }
-        });
-    </script>
+        }
+    }
+
+    checkAccess();
+</script>
+    <script>
+    async function fetchSurvey(patientCardId) {
+        try {
+            const response = await fetch(`http://localhost:3003/api/patient-cards/survey/${patientCardId}`);
+            if (!response.ok) throw new Error();
+
+            const survey = await response.json();
+            if (!survey || Object.keys(survey).length === 0) {
+                throw new Error();
+            }
+
+            let isSurveyFilled = false;
+            for (const [key, value] of Object.entries(survey)) {
+                const element = document.getElementById(key);
+                if (element) {
+                    element.textContent = value || 'Не указано';
+                    if (value) isSurveyFilled = true; // Если есть хотя бы один ответ, анкета заполнена
+                }
+            }
+
+            if (isSurveyFilled) {
+                document.getElementById('surveyContent').style.display = 'block';
+                document.getElementById('noSurveyMessage').style.display = 'none';
+            } else {
+                throw new Error(); // Если нет значимых данных, считаем анкету незаполненной
+            }
+        } catch {
+            document.getElementById('surveyContent').style.display = 'none';
+            document.getElementById('noSurveyMessage').style.display = 'block';
+        }
+    }
+
+    // Проверка роли пользователя
+    function getCookie(name) {
+        const value = `; ${document.cookie}`;
+        const parts = value.split(`; ${name}=`);
+        if (parts.length === 2) return parts.pop().split(';').shift();
+    }
+
+    function getRoleFromToken() {
+        const token = getCookie('token');
+        if (token) {
+            try {
+                const payload = JSON.parse(atob(token.split('.')[1]));
+                return payload.role;
+            } catch (error) {
+                console.error('Ошибка декодирования токена:', error);
+                return null;
+            }
+        }
+        return null;
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+        const urlParams = new URLSearchParams(window.location.search);
+        const patientCardId = urlParams.get('patientCardId');
+        const userRole = getRoleFromToken();
+
+        // Изменяем поведение кнопки закрытия для клиента
+        const closeButton = document.querySelector('.close-button');
+        if (userRole === 'client') {
+            closeButton.addEventListener('click', () => {
+                history.back(); // Возвращаем на предыдущую страницу
+            });
+        } else {
+            closeButton.addEventListener('click', () => {
+                window.location.href = '/users/patients.php'; // Перенаправление для других ролей
+            });
+        }
+
+        if (patientCardId) {
+            fetchSurvey(patientCardId);
+        }
+    });
+</script>
+
 </body>
 </html>

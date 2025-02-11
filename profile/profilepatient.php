@@ -21,6 +21,7 @@
     </style>
 </head>
 <body>
+<?php include '../adminpanel/navbar.php'; ?>
     <div id="content" class="container mt-5">
         <h2 class="mb-4">Профиль пациента | DentalBook</h2>
 
@@ -49,39 +50,27 @@
         <!-- Действия -->
         <div class="mb-4">
             <button class="btn btn-primary"><i class="fas fa-file-alt"></i> Анкета</button>
-            <button class="btn btn-secondary"><i class="fas fa-file-contract"></i> Договор</button>
-            <button class="btn btn-info"><i class="fas fa-star"></i> Оценка</button>
-            <button class="btn btn-danger"><i class="fas fa-print"></i> Печать</button>
         </div>
 
         <!-- Tabs -->
         <ul class="nav nav-tabs">
             <li class="nav-item">
-                <a id="visitsTab" class="nav-link" href="/users/view.php"><i class="fas fa-calendar-check"></i> Визиты</a>
+                <a id="visitsTab" class="nav-link"><i class="fas fa-calendar-check"></i> Визиты</a>
             </li>
             <li class="nav-item">
-                <a id="formulaTab" class="nav-link" href="/users/formula.php"><i class="fas fa-tooth"></i> Формула</a>
+                <a id="formulaTab" class="nav-link"><i class="fas fa-tooth"></i> Формула</a>
             </li>
             <li class="nav-item">
-                <a class="nav-link" href="#payments" data-bs-toggle="tab"><i class="fas fa-dollar-sign"></i> Оплаты</a>
+                <a id="picturesLink" class="nav-link"><i class="fas fa-image"></i> Снимки</a>
             </li>
             <li class="nav-item">
-                <a class="nav-link" href="/users/treatmentplan.php"><i class="fas fa-notes-medical"></i> План лечения</a>
+                <a id="notesLink" class="nav-link"><i class="fas fa-sticky-note"></i> Примечания</a>
             </li>
             <li class="nav-item">
-                <a id="picturesLink" class="nav-link" href="#"><i class="fas fa-image"></i> Снимки</a>
+                <a id="personalDataTab" class="nav-link"><i class="fas fa-id-card"></i> Персональные данные</a>
             </li>
             <li class="nav-item">
-                <a id="notesLink" class="nav-link" href="#"><i class="fas fa-sticky-note"></i> Примечания</a>
-            </li>
-            <li class="nav-item">
-                <a class="nav-link" href="#documents" data-bs-toggle="tab"><i class="fas fa-folder"></i> Документы</a>
-            </li>
-            <li class="nav-item">
-                <a id="personalDataTab" class="nav-link" href="#"><i class="fas fa-id-card"></i> Персональные данные</a>
-            </li>
-            <li class="nav-item">
-                <a id="medicalRecordsTab" class="nav-link" href="#"><i class="fas fa-file-medical-alt"></i> История медицинских записей</a>
+                <a id="medicalRecordsTab" class="nav-link"><i class="fas fa-file-medical-alt"></i> История медицинских записей</a>
             </li>
         </ul>
     </div>
@@ -110,80 +99,89 @@
     <!-- Скрипты -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <script>
-        function getCookie(name) {
-            const value = `; ${document.cookie}`;
-            const parts = value.split(`; ${name}=`);
-            if (parts.length === 2) return parts.pop().split(';').shift();
+    function getCookie(name) {
+        const value = `; ${document.cookie}`;
+        const parts = value.split(`; ${name}=`);
+        if (parts.length === 2) return parts.pop().split(';').shift();
+    }
+
+    async function fetchPatientCardId() {
+        const token = getCookie('token');
+        if (!token) {
+            alert('Вы не авторизованы. Пожалуйста, выполните вход.');
+            window.location.href = '/index.php';
+            return;
         }
 
-        async function loadUserProfile() {
-            const token = getCookie('token');
-            if (!token) {
-                alert('Вы не авторизованы. Пожалуйста, выполните вход.');
-                window.location.href = '/auth.php';
-                return;
-            }
+        try {
+            const response = await fetch('http://localhost:3003/api/users/getId/patientCard', {
+                headers: { Authorization: `Bearer ${token}` }
+            });
 
-            try {
-                const response = await fetch('http://localhost:3003/api/users/profile', {
-                    headers: { Authorization: `Bearer ${token}` }
-                });
+            if (!response.ok) throw new Error('Ошибка получения номера карты пациента');
 
-                if (!response.ok) throw new Error('Ошибка загрузки профиля');
+            const data = await response.json();
+            const patientCardId = data.patientCardId;
 
-                const data = await response.json();
-                const profile = data.profile;
-
-                document.querySelector('.card-body').innerHTML = `
-                    <p><strong>ФИО:</strong> ${profile.fullName}</p>
-                    <p><strong>Дата рождения:</strong> ${profile.dateOfBirth}</p>
-                    <p><strong>Телефон:</strong> ${profile.phoneNumber}</p>
-                    <p><strong>Адрес:</strong> ${profile.address}</p>
-                    <p><strong>Email:</strong> ${profile.email}</p>
-                    <p><strong>Последний вход:</strong> ${profile.lastLogin || 'Неизвестно'}</p>
-                `;
-
-                const avatarElement = document.getElementById('avatar');
-                avatarElement.src = profile.avatar || 'default_avatar.png';
-            } catch (error) {
-                console.error('Ошибка загрузки профиля:', error);
-                alert('Не удалось загрузить данные профиля.');
-            }
+            // Обновляем ссылки с ID пациента
+            document.getElementById('visitsTab').href = `/users/view.php?patientCardId=${patientCardId}`;
+            document.getElementById('formulaTab').href = `/users/formula.php?patientCardId=${patientCardId}`;
+            document.getElementById('picturesLink').href = `/users/pictures.php?patientCardId=${patientCardId}`;
+            document.getElementById('notesLink').href = `/users/notes.php?patientCardId=${patientCardId}`;
+            document.getElementById('personalDataTab').href = `/users/personaldata.php?patientCardId=${patientCardId}`;
+            document.getElementById('medicalRecordsTab').href = `/users/medicalrecords.php?patientCardId=${patientCardId}`;
+        } catch (error) {
+            console.error('Ошибка получения номера карты пациента:', error);
+            alert('Не удалось получить номер карты пациента.');
         }
+    }
 
-        async function uploadAvatar() {
-            const avatarInput = document.getElementById('avatarInput');
-            const file = avatarInput.files[0];
-            const token = getCookie('token');
+    async function loadUserProfile() {
+        const token = getCookie('token');
+        let userRole = null;
 
-            if (!file) {
-                alert('Выберите файл для загрузки.');
-                return;
+        try {
+            const decoded = jwt_decode(token);
+            userRole = decoded.role; // Получаем роль пользователя
+
+            if (userRole === "client") {
+                // Скрываем кнопку "Обновить аватар" для клиента
+                const updateAvatarButton = document.querySelector('button[data-bs-target="#avatarModal"]');
+                if (updateAvatarButton) {
+                    updateAvatarButton.style.display = "none";
+                }
             }
 
-            const formData = new FormData();
-            formData.append('avatar', file);
+            const response = await fetch('http://localhost:3003/api/users/profile', {
+                headers: { Authorization: `Bearer ${token}` }
+            });
 
-            try {
-                const response = await fetch('http://localhost:3003/api/users/avatar/upload', {
-                    method: 'POST',
-                    headers: { Authorization: `Bearer ${token}` },
-                    body: formData
-                });
+            if (!response.ok) throw new Error('Ошибка загрузки профиля');
 
-                if (!response.ok) throw new Error('Ошибка загрузки аватара.');
+            const data = await response.json();
+            const profile = data.profile;
 
-                const data = await response.json();
-                alert(data.message);
-                document.getElementById('avatarModal').querySelector('.btn-close').click();
-                loadUserProfile();
-            } catch (error) {
-                console.error('Ошибка загрузки аватара:', error);
-                alert('Не удалось обновить аватар.');
-            }
+            document.querySelector('.card-body').innerHTML = `
+                <p><strong>ФИО:</strong> ${profile.fullName}</p>
+                <p><strong>Дата рождения:</strong> ${profile.dateOfBirth}</p>
+                <p><strong>Телефон:</strong> ${profile.phoneNumber}</p>
+                <p><strong>Адрес:</strong> ${profile.address}</p>
+                <p><strong>Email:</strong> ${profile.email}</p>
+                <p><strong>Последний вход:</strong> ${profile.lastLogin || 'Неизвестно'}</p>
+            `;
+
+            document.getElementById('avatar').src = profile.avatar || 'default_avatar.png';
+        } catch (error) {
+            console.error('Ошибка загрузки профиля:', error);
+            alert('Не удалось загрузить данные профиля.');
         }
+    }
 
-        document.addEventListener('DOMContentLoaded', loadUserProfile);
-    </script>
+    document.addEventListener('DOMContentLoaded', async () => {
+        await fetchPatientCardId();
+        await loadUserProfile();
+    });
+</script>
+
 </body>
 </html>

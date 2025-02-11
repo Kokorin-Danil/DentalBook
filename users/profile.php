@@ -83,7 +83,7 @@
 
             if (!token) {
                 alert('Токен не найден. Выполните вход заново.');
-                window.location.href = '/auth.php';
+                window.location.href = '/index.php';
                 return;
             }
 

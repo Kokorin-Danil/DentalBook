@@ -68,7 +68,7 @@
 
             if (!token) {
                 alert("Ошибка доступа: Войдите в систему!");
-                window.location.href = "/login.html";
+                window.location.href = "/index.php";
                 return;
             }
 
@@ -78,13 +78,12 @@
                 userRole = decoded.role;
             } catch (error) {
                 console.error("Ошибка декодирования токена:", error);
-                window.location.href = "/login.html";
+                window.location.href = "/index.php";
                 return;
             }
 
             const navLinks = document.getElementById("navLinks");
             let menuHTML = `
-                <li><a href="/index.php"><i class="fas fa-home"></i> Главная</a></li>
             `;
 
             if (userRole === "admin") {
@@ -111,7 +110,6 @@
             } else if (userRole === "client") {
                 menuHTML += `
                     <li><a href="/profile/profilepatient.php"><i class="fas fa-user"></i> Мой профиль</a></li>
-                    <li><a href="/kalendar/kalendar.php"><i class="fas fa-calendar-alt"></i> Мои записи</a></li>
                 `;
             } else {
                 alert("Неизвестная роль! Выход...");
@@ -128,7 +126,7 @@
 
         function logout() {
             document.cookie = "token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 UTC;";
-            window.location.href = "/login.html";
+            window.location.href = "/index.php";
         }
 
         function getCookie(name) {

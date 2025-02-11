@@ -105,8 +105,34 @@
             <!-- Верхняя и нижняя челюсти будут загружены динамически -->
         </div>
     </div>
+    <script type="module">
+    import { getToken, parseJwt } from "/js/auth.js";
 
-<script>
+    function checkAccess() {
+        const token = getToken();
+
+        if (!token) {
+            alert('Вы не авторизованы!');
+            window.location.replace('/index.php');
+            return;
+        }
+
+        const decodedToken = parseJwt(token);
+        const userRole = decodedToken?.role;
+
+        if (!['admin', 'doctor', 'client'].includes(userRole)) {
+            alert('У вас нет доступа к этой странице!');
+            if (document.referrer) {
+                window.location.href = document.referrer; // Возвращаем на предыдущую страницу
+            } else {
+                window.location.replace('/index.php'); // Если истории нет, направляем на index.php
+            }
+        }
+    }
+
+    checkAccess();
+</script>
+    <script>
     const statusColors = {
         "Лечение": "treatment",
         "Удаление": "extraction",
@@ -118,8 +144,11 @@
     };
 
     const selectedTeeth = new Set();
+    let userRole = null;
 
     function toggleToothSelection(element) {
+        if (userRole === "client") return; // Запрещаем клиенту взаимодействие
+
         const toothId = element.getAttribute('data-tooth');
         if (selectedTeeth.has(toothId)) {
             selectedTeeth.delete(toothId);
@@ -131,6 +160,8 @@
     }
 
     function setProcedure(proc) {
+        if (userRole === "client") return; // Запрещаем клиенту использовать процедуры
+
         if (selectedTeeth.size === 0) {
             alert('Выберите хотя бы один зуб перед применением процедуры!');
             return;
@@ -155,6 +186,8 @@
     }
 
     function clearProcedures() {
+        if (userRole === "client") return; // Клиент не может очистить процедуры
+
         if (selectedTeeth.size === 0) {
             alert('Выберите зубы для очистки!');
             return;
@@ -174,10 +207,19 @@
         }
 
         try {
-            const response = await fetch(`http://localhost:3003/api/patient-cards/teeth/get/${patientCardId}`);
-            const teethData = await response.json();
+            const token = getCookie('token');
+            const decoded = jwt_decode(token);
+            userRole = decoded.role; // Получаем роль из токена
 
+            const response = await fetch(`http://localhost:3003/api/patient-cards/teeth/get/${patientCardId}`, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+
+            if (!response.ok) throw new Error('Ошибка загрузки данных зубов.');
+
+            const teethData = await response.json();
             renderTeeth(teethData);
+            hideRestrictedElements(); // Прячем кнопки, если нужно
         } catch (error) {
             console.error('Ошибка при загрузке данных зубов:', error);
             alert('Не удалось загрузить данные зубов.');
@@ -201,7 +243,10 @@
             const toothElement = document.createElement('div');
             toothElement.className = 'tooth';
             toothElement.setAttribute('data-tooth', tooth.toothNumber);
-            toothElement.addEventListener('click', () => toggleToothSelection(toothElement));
+
+            if (userRole !== "client") {
+                toothElement.addEventListener('click', () => toggleToothSelection(toothElement));
+            }
 
             const statusesHTML = tooth.statuses
                 .map(statusObj => `<div class="status ${statusColors[statusObj.status] || ''}"></div>`)
@@ -226,6 +271,8 @@
     }
 
     async function saveTeethStatuses() {
+        if (userRole === "client") return; // Клиент не может сохранять данные
+
         const patientCardId = new URLSearchParams(window.location.search).get('patientCardId');
         if (!patientCardId) {
             alert('ID карты пациента не указан.');
@@ -245,7 +292,10 @@
         try {
             const response = await fetch(`http://localhost:3003/api/patient-cards/teeth/update/${patientCardId}`, {
                 method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
+                headers: { 
+                    'Content-Type': 'application/json',
+                    Authorization: `Bearer ${getCookie('token')}`
+                },
                 body: JSON.stringify({ teeth: teethData })
             });
 
@@ -255,6 +305,26 @@
         } catch (error) {
             console.error('Ошибка при сохранении данных:', error);
             alert('Не удалось сохранить данные зубов.');
+        }
+    }
+
+    function getCookie(name) {
+        const value = `; ${document.cookie}`;
+        const parts = value.split(`; ${name}=`);
+        return parts.length === 2 ? parts.pop().split(';').shift() : null;
+    }
+
+    function hideRestrictedElements() {
+        if (userRole === "client") {
+            // Убираем возможность клика по кнопкам для клиента
+            document.querySelectorAll('.controls button').forEach(btn => {
+                if (btn.classList.contains('btn-light') || btn.classList.contains('btn-success')) {
+                    btn.remove(); // Удаляем кнопки "Очистить" и "Сохранить"
+                } else {
+                    btn.disabled = true; // Отключаем остальные кнопки
+                    btn.style.opacity = "1"; // Убираем прозрачность
+                }
+            });
         }
     }
 

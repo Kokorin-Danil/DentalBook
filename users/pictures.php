@@ -99,157 +99,179 @@
             </div>
         </div>
     </div>
+    <script type="module">
+    import { getToken, parseJwt } from "/js/auth.js";
 
+    function checkAccess() {
+        const token = getToken();
+
+        if (!token) {
+            alert('Вы не авторизованы!');
+            window.location.replace('/index.php');
+            return;
+        }
+
+        const decodedToken = parseJwt(token);
+        const userRole = decodedToken?.role;
+
+        if (!['admin', 'doctor', 'client'].includes(userRole)) {
+            alert('У вас нет доступа к этой странице!');
+            if (document.referrer) {
+                window.location.href = document.referrer; // Возвращаем на предыдущую страницу
+            } else {
+                window.location.replace('/auth.php'); // Если истории нет, направляем на auth.php
+            }
+        }
+    }
+
+    checkAccess();
+</script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <script>
-        document.addEventListener('DOMContentLoaded', async () => {
-            const patientCardId = new URLSearchParams(window.location.search).get('patientCardId');
-            const token = getCookie('token');
-            
-            if (!patientCardId || !token) {
-                alert('ID пациента или токен отсутствуют.');
-                return;
-            }
+    document.addEventListener('DOMContentLoaded', async () => {
+        const patientCardId = new URLSearchParams(window.location.search).get('patientCardId');
+        const token = getCookie('token');
 
-            // Проверка роли администратора в токене и скрытие кнопки "Добавить снимок"
-            const role = getRoleFromToken(token);
-            if (role === 'admin') {
-                document.getElementById('addSnapshotButton').style.display = 'none';
-            }
-
-            // Загрузка снимков
-            async function loadSnapshots() {
-                try {
-                    const response = await fetch(`http://localhost:3003/api/patient-cards/snapshots/getall/${patientCardId}`, {
-                        headers: { Authorization: `Bearer ${token}` }
-                    });
-
-                    if (!response.ok) {
-                        throw new Error('Ошибка загрузки снимков');
-                    }
-
-                    const data = await response.json();
-                    const snapshotsTableBody = document.getElementById('snapshotsTableBody');
-                    snapshotsTableBody.innerHTML = data.snapshots.map(snapshot => `
-                        <tr id="snapshot-${snapshot.id}">
-                            <td>${snapshot.id}</td>
-                            <td>${new Date(snapshot.createdAt).toLocaleDateString()}</td>
-                            <td>${snapshot.toothNumbers}</td>
-                            <td>${snapshot.note}</td>
-                            <td>
-                                <button class="btn btn-sm btn-info" data-bs-toggle="modal" data-bs-target="#viewSnapshotModal" onclick="viewSnapshot('${snapshot.snapshotFile}')">
-                                    Посмотреть
-                                </button>
-                            </td>
-                            <td>
-                                <button class="btn btn-sm btn-warning"><i class="fas fa-edit"></i></button>
-                                <button class="btn btn-sm btn-danger" onclick="deleteSnapshot(${snapshot.id})"><i class="fas fa-trash"></i></button>
-                            </td>
-                        </tr>
-                    `).join('');
-                } catch (error) {
-                    console.error('Ошибка загрузки снимков:', error);
-                    alert('Не удалось загрузить снимки.');
-                }
-            }
-
-            // Предпросмотр снимка
-            window.viewSnapshot = function (snapshotFile) {
-                const previewImage = document.getElementById('previewImage');
-                previewImage.src = snapshotFile;
-            };
-
-            // Сохранение нового снимка
-            async function saveSnapshot() {
-                const visit = document.getElementById('snapshotVisit').value;
-                const teeth = document.getElementById('snapshotTeeth').value;
-                const description = document.getElementById('snapshotDescription').value;
-                const file = document.getElementById('snapshotFile').files[0];
-
-                if (!visit || !teeth || !description || !file) {
-                    alert('Пожалуйста, заполните все поля и выберите файл.');
-                    return;
-                }
-
-                const formData = new FormData();
-                formData.append('patientCardId', patientCardId);
-                formData.append('visitId', visit);
-                formData.append('toothNumbers', teeth);
-                formData.append('note', description);
-                formData.append('snapshots', file);
-
-                try {
-                    const response = await fetch('http://localhost:3003/api/patient-cards/snapshots/create', {
-                        method: 'POST',
-                        headers: {
-                            Authorization: `Bearer ${token}`
-                        },
-                        body: formData
-                    });
-
-                    if (!response.ok) {
-                        const textResponse = await response.text();
-                        console.error('Ошибка сервера:', textResponse);
-                        throw new Error('Ошибка сервера или неправильный ответ');
-                    }
-
-                    const result = await response.json();
-                    alert(result.message);
-                    document.getElementById('snapshotForm').reset();
-                    await loadSnapshots();
-                } catch (error) {
-                    console.error('Ошибка сохранения снимка:', error);
-                    alert(`Не удалось сохранить снимок: ${error.message}`);
-                }
-            }
-
-            document.getElementById('saveSnapshotButton').addEventListener('click', saveSnapshot);
-            await loadSnapshots();
-        });
-
-        // Получение токена из cookies
-        function getCookie(name) {
-            const value = `; ${document.cookie}`;
-            const parts = value.split(`; ${name}=`);
-            if (parts.length === 2) return parts.pop().split(';').shift();
+        if (!patientCardId || !token) {
+            alert('ID пациента или токен отсутствуют.');
+            return;
         }
 
-        // Функция для извлечения роли из токена
-        function getRoleFromToken(token) {
-            const payload = atob(token.split('.')[1]);
-            const parsedPayload = JSON.parse(payload);
-            return parsedPayload.role; // Предполагаем, что роль хранится в поле "role"
-        }
-        
-        // Удаление снимка
-        async function deleteSnapshot(snapshotId) {
-            const token = getCookie('token');
-            if (!token) {
-                alert('Необходима авторизация администратора.');
-                return;
+        // Проверка роли пользователя в токене
+        const role = getRoleFromToken(token);
+        if (role === 'client') {
+            // Скрываем кнопку "Добавить снимок" для клиента
+            const addSnapshotButton = document.getElementById('addSnapshotButton');
+            if (addSnapshotButton) {
+                addSnapshotButton.style.display = 'none';
             }
+        }
 
-            if (!confirm('Вы уверены, что хотите удалить этот снимок?')) return;
-
+        async function loadSnapshots() {
             try {
-                const response = await fetch(`http://localhost:3003/api/admin/snapshot/${snapshotId}`, {
-                    method: 'DELETE',
+                const response = await fetch(`http://localhost:3003/api/patient-cards/snapshots/getall/${patientCardId}`, {
                     headers: { Authorization: `Bearer ${token}` }
                 });
 
                 if (!response.ok) {
-                    throw new Error(`Ошибка HTTP: ${response.status}`);
+                    throw new Error('Ошибка загрузки снимков');
                 }
 
-                // Убираем строку снимка из таблицы после удаления
-                document.getElementById(`snapshot-${snapshotId}`).remove();
+                const data = await response.json();
+                const snapshotsTableBody = document.getElementById('snapshotsTableBody');
+                const errorMessage = document.getElementById('errorMessage');
 
-                alert('Снимок успешно удален.');
+                // Если снимков нет, очищаем таблицу, но не показываем ошибку
+                if (!data.snapshots || data.snapshots.length === 0) {
+                    snapshotsTableBody.innerHTML = '<tr><td colspan="6" class="text-center text-muted">Снимки отсутствуют</td></tr>';
+                    errorMessage.style.display = 'none';
+                    return;
+                }
+
+                // Заполняем таблицу снимками
+                snapshotsTableBody.innerHTML = data.snapshots.map(snapshot => `
+                    <tr id="snapshot-${snapshot.id}">
+                        <td>${snapshot.id}</td>
+                        <td>${new Date(snapshot.createdAt).toLocaleDateString()}</td>
+                        <td>${snapshot.toothNumbers}</td>
+                        <td>${snapshot.note}</td>
+                        <td>
+                            <button class="btn btn-sm btn-info" data-bs-toggle="modal" data-bs-target="#viewSnapshotModal" onclick="viewSnapshot('${snapshot.snapshotFile}')">
+                                Посмотреть
+                            </button>
+                        </td>
+                        <td>
+                            ${role === 'admin' ? `<button class="btn btn-sm btn-danger" onclick="deleteSnapshot(${snapshot.id})"><i class="fas fa-trash"></i></button>` : ''}
+                        </td>
+                    </tr>
+                `).join('');
+
+                errorMessage.style.display = 'none';
             } catch (error) {
-                console.error('Ошибка удаления снимка:', error);
-                alert('Не удалось удалить снимок.');
+                console.error('Ошибка загрузки снимков:', error);
+                document.getElementById('errorMessage').textContent = 'Не удалось загрузить снимки.';
+                document.getElementById('errorMessage').style.display = 'block';
             }
         }
-    </script>
+
+        window.viewSnapshot = function (snapshotFile) {
+            document.getElementById('previewImage').src = snapshotFile;
+        };
+
+        async function saveSnapshot() {
+            const visit = document.getElementById('snapshotVisit').value;
+            const teeth = document.getElementById('snapshotTeeth').value;
+            const description = document.getElementById('snapshotDescription').value;
+            const file = document.getElementById('snapshotFile').files[0];
+
+            if (!visit || !teeth || !description || !file) {
+                alert('Пожалуйста, заполните все поля и выберите файл.');
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append('patientCardId', patientCardId);
+            formData.append('visitId', visit);
+            formData.append('toothNumbers', teeth);
+            formData.append('note', description);
+            formData.append('snapshots', file);
+
+            try {
+                const response = await fetch('http://localhost:3003/api/patient-cards/snapshots/create', {
+                    method: 'POST',
+                    headers: { Authorization: `Bearer ${token}` },
+                    body: formData
+                });
+
+                if (!response.ok) {
+                    throw new Error('Ошибка сервера');
+                }
+
+                alert('Снимок успешно добавлен.');
+                document.getElementById('snapshotForm').reset();
+                await loadSnapshots();
+            } catch (error) {
+                console.error('Ошибка сохранения снимка:', error);
+            }
+        }
+
+        document.getElementById('saveSnapshotButton').addEventListener('click', saveSnapshot);
+        await loadSnapshots();
+    });
+
+    function getCookie(name) {
+        const value = `; ${document.cookie}`;
+        const parts = value.split(`; ${name}=`);
+        return parts.length === 2 ? parts.pop().split(';').shift() : null;
+    }
+
+    function getRoleFromToken(token) {
+        try {
+            const payload = JSON.parse(atob(token.split('.')[1]));
+            return payload.role;
+        } catch (error) {
+            console.error('Ошибка декодирования токена:', error);
+            return null;
+        }
+    }
+
+    async function deleteSnapshot(snapshotId) {
+        if (!confirm('Вы уверены, что хотите удалить этот снимок?')) return;
+
+        try {
+            await fetch(`http://localhost:3003/api/admin/snapshot/${snapshotId}`, {
+                method: 'DELETE',
+                headers: { Authorization: `Bearer ${getCookie('token')}` }
+            });
+
+            document.getElementById(`snapshot-${snapshotId}`).remove();
+            alert('Снимок успешно удален.');
+        } catch (error) {
+            alert('Не удалось удалить снимок.');
+        }
+    }
+</script>
+
+
 </body>
 </html>

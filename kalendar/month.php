@@ -80,12 +80,12 @@
     </style>
 </head>
 <body>
-    <?php include '../users/navbar.php'; ?>
+<?php include '../adminpanel/navbar.php'; ?>
 
     <div class="container mt-5">
         <div class="header">
             <h2>Расписание</h2>
-            <button class="btn btn-primary">Новый визит</button>
+            <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addVisitModal">Новый визит</button>
         </div>
 
         <div class="schedule-container">
@@ -97,131 +97,305 @@
                     <option value="week.php">На неделю</option>
                     <option value="month.php" selected>На месяц</option>
                 </select>
-                <label for="doctorFilter" class="form-label">Фильтр:</label>
+                
+                <label for="scheduleDate" class="form-label">Выберите дату:</label>
+                <input type="month" id="scheduleDate" class="form-control d-inline" style="max-width: 200px;">
+                
+                <label for="doctorFilter" class="form-label">Выберите врача:</label>
                 <select class="form-select d-inline" id="doctorFilter" style="max-width: 200px;">
                     <option value="all">Все врачи</option>
                 </select>
-                <input type="month" id="scheduleDate" class="form-control d-inline" style="max-width: 200px;">
             </div>
-
+        <!-- Модальное окно добавления визита -->
+        <div class="modal fade" id="addVisitModal" tabindex="-1" aria-labelledby="addVisitModalLabel" aria-hidden="true">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="addVisitModalLabel">Новый визит</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Закрыть"></button>
+                    </div>
+                    <div class="modal-body">
+                        <form id="visitForm">
+                            <div class="mb-3">
+                                <label for="patientSelect" class="form-label">Пациент</label>
+                                <select id="patientSelect" class="form-select" required></select>
+                            </div>
+                            <div class="mb-3">
+                                <label for="doctorSelect" class="form-label">Выберите врача</label>
+                                <select id="doctorSelect" class="form-select" required>
+                                    <!-- Врачи будут загружены динамически -->
+                                </select>
+                            </div>
+                            <div class="mb-3">
+                                <label for="visitType" class="form-label">Тип визита</label>
+                                <select id="visitType" class="form-select" required>
+                                    <option value="осмотр" selected>Осмотр</option>
+                                    <option value="лечение">Лечение</option>
+                                    <option value="консультация">Консультация</option>
+                                </select>
+                            </div>
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label for="visitDate" class="form-label">Дата визита</label>
+                                    <input type="date" id="visitDate" class="form-control" required>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label for="visitTime" class="form-label">Время визита</label>
+                                    <select id="visitTime" class="form-select" required></select>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+                        <button type="button" id="saveVisitButton" class="btn btn-primary">Сохранить</button>
+                    </div>
+                </div>
+            </div>
+        </div>
             <!-- Month View -->
             <div id="monthView">
                 <div class="month-grid" id="monthScheduleBody"></div>
             </div>
         </div>
     </div>
+    <script type="module">
+    import { getToken, parseJwt } from "/js/auth.js";
 
-    <script>
-        const scheduleDateInput = document.getElementById('scheduleDate');
-        const doctorFilter = document.getElementById('doctorFilter');
-        const viewSelector = document.getElementById('viewSelector');
-        const monthScheduleBody = document.getElementById('monthScheduleBody');
-        const monthView = document.getElementById('monthView');
-        const today = new Date().toISOString().slice(0, 7); // Формат YYYY-MM
+    function checkAccess() {
+        const token = getToken();
 
-        let monthData = {};
-
-        scheduleDateInput.value = today;
-
-        document.addEventListener('DOMContentLoaded', async () => {
-            if (viewSelector.value === 'month.php') {
-                await loadMonthlySchedule(scheduleDateInput.value);
-            }
-        });
-
-        viewSelector.addEventListener('change', () => {
-            const selectedView = viewSelector.value;
-            navigateToView(selectedView);
-        });
-
-        scheduleDateInput.addEventListener('change', async () => {
-            if (viewSelector.value === 'month.php') {
-                await loadMonthlySchedule(scheduleDateInput.value);
-            }
-        });
-
-        doctorFilter.addEventListener('change', () => {
-            if (viewSelector.value === 'month.php') {
-                renderMonthSchedule(monthData);
-            }
-        });
-
-        async function loadMonthlySchedule(month) {
-            try {
-                const response = await fetch(`http://localhost:3003/api/patient-cards/schedule/monthly/${month}`);
-                monthData = await response.json();
-                populateDoctorFilter(monthData);
-                renderMonthSchedule(monthData);
-            } catch (error) {
-                console.error('Ошибка при загрузке расписания на месяц:', error);
-                alert('Не удалось загрузить расписание на месяц');
-            }
+        if (!token) {
+            alert('Вы не авторизованы!');
+            window.location.replace('/index.php');
+            return;
         }
 
-        function populateDoctorFilter(data) {
-            doctorFilter.innerHTML = '<option value="all">Все врачи</option>';
-            const doctors = new Set();
+        const decodedToken = parseJwt(token);
+        const userRole = decodedToken?.role;
 
-            Object.values(data).forEach(dateData => {
-                Object.keys(dateData).forEach(doctor => {
-                    doctors.add(doctor);
-                });
+        if (!['manager', 'doctor'].includes(userRole)) {
+            alert('У вас нет доступа к этой странице!');
+            if (document.referrer) {
+                window.location.href = document.referrer; // Возвращаем на предыдущую страницу
+            } else {
+                window.location.replace('/index.php'); // Если истории нет, направляем на auth.php
+            }
+        }
+    }
+
+    checkAccess();
+</script>
+    <script>
+document.addEventListener('DOMContentLoaded', async () => {
+    const scheduleDateInput = document.getElementById('scheduleDate');
+    const doctorFilter = document.getElementById('doctorFilter');
+    const viewSelector = document.getElementById('viewSelector');
+    const monthScheduleBody = document.getElementById('monthScheduleBody');
+    const saveVisitButton = document.getElementById('saveVisitButton');
+    const visitForm = document.getElementById('visitForm');
+    const today = new Date().toISOString().slice(0, 7); // Формат YYYY-MM
+    let monthData = {};
+    let allDoctors = [];
+
+    scheduleDateInput.value = today;
+
+    await loadMonthlySchedule(today);
+    await populateDoctors();
+    await populatePatients();
+    populateTimeIntervals();
+
+    scheduleDateInput.addEventListener('change', async () => {
+        await loadMonthlySchedule(scheduleDateInput.value);
+    });
+
+    doctorFilter.addEventListener('change', () => {
+        renderMonthSchedule(monthData);
+    });
+
+    viewSelector.addEventListener('change', () => {
+        window.location.href = viewSelector.value;
+    });
+
+    saveVisitButton.addEventListener('click', async () => {
+        const visitData = {
+            patientCardId: document.getElementById('patientSelect').value,
+            doctorFullName: document.getElementById('doctorSelect').value,
+            visitType: document.getElementById('visitType').value,
+            visitDate: document.getElementById('visitDate').value,
+            visitTime: document.getElementById('visitTime').value + ':00'
+        };
+
+        try {
+            const response = await fetch('http://localhost:3003/api/patient-cards/visit/create', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    Authorization: `Bearer ${getCookie('token')}`
+                },
+                body: JSON.stringify(visitData)
             });
+
+            if (!response.ok) {
+                const error = await response.json();
+                throw new Error(error.message || 'Ошибка при добавлении визита');
+            }
+
+            alert('Визит успешно добавлен!');
+            visitForm.reset();
+            await loadMonthlySchedule(scheduleDateInput.value);
+        } catch (error) {
+            alert(`Ошибка: ${error.message}`);
+        }
+    });
+
+    async function loadMonthlySchedule(month) {
+        try {
+            const response = await fetch(`http://localhost:3003/api/patient-cards/schedule/monthly/${month}`);
+            monthData = await response.json();
+            populateDoctorFilter();
+            renderMonthSchedule(monthData);
+        } catch (error) {
+            console.error('Ошибка при загрузке расписания на месяц:', error);
+            alert('Не удалось загрузить расписание на месяц');
+        }
+    }
+
+    async function populateDoctors() {
+        try {
+            const response = await fetch('http://localhost:3003/api/patient-cards/get/all/doctors', {
+                headers: { Authorization: `Bearer ${getCookie('token')}` }
+            });
+
+            if (!response.ok) {
+                throw new Error('Ошибка загрузки списка врачей');
+            }
+
+            const doctors = await response.json();
+            allDoctors = doctors; // Сохраняем всех врачей
+
+            const doctorSelect = document.getElementById('doctorSelect');
+            doctorSelect.innerHTML = '';
 
             doctors.forEach(doctor => {
                 const option = document.createElement('option');
-                option.value = doctor;
-                option.textContent = doctor;
-                doctorFilter.appendChild(option);
+                option.value = doctor.fullName;
+                option.textContent = `${doctor.fullName} (${doctor.specialty})`;
+                doctorSelect.appendChild(option);
             });
+
+            populateDoctorFilter(); // Заполняем фильтр врачей после загрузки данных
+        } catch (error) {
+            console.error('Ошибка загрузки врачей:', error);
+            alert('Не удалось загрузить список врачей.');
         }
+    }
 
-        function renderMonthSchedule(data) {
-            const filter = doctorFilter.value;
-            monthScheduleBody.innerHTML = '';
+    async function populatePatients() {
+        const response = await fetch('http://localhost:3003/api/patient-cards/get/all', {
+            headers: { Authorization: `Bearer ${getCookie('token')}` }
+        });
+        const patients = await response.json();
+        const patientSelect = document.getElementById('patientSelect');
+        patientSelect.innerHTML = '';
 
-            const currentMonth = new Date(scheduleDateInput.value);
-            const year = currentMonth.getFullYear();
-            const month = currentMonth.getMonth();
-            const daysInMonth = new Date(year, month + 1, 0).getDate();
+        patients.forEach(patient => {
+            const option = document.createElement('option');
+            option.value = patient.id;
+            option.textContent = `${patient.fullName} (Дата рождения: ${new Date(patient.dateOfBirth).toLocaleDateString()})`;
+            patientSelect.appendChild(option);
+        });
+    }
 
-            for (let day = 1; day <= daysInMonth; day++) {
-                const dateKey = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
-                const cell = document.createElement('div');
-                cell.className = 'month-cell';
+    function populateDoctorFilter() {
+        doctorFilter.innerHTML = '<option value="all">Все врачи</option>';
+        const doctorsSet = new Set();
 
-                const cellHeader = document.createElement('div');
-                cellHeader.className = 'month-cell-header';
-                cellHeader.textContent = `${day} ${currentMonth.toLocaleString('default', { month: 'long' })}`;
-                cell.appendChild(cellHeader);
+        allDoctors.forEach(doctor => {
+            doctorsSet.add(doctor.fullName);
+        });
 
-                const visitInfo = document.createElement('div');
-                visitInfo.className = 'month-cell-visit';
+        Object.values(monthData).forEach(dateData => {
+            Object.keys(dateData).forEach(doctor => {
+                doctorsSet.add(doctor);
+            });
+        });
 
-                if (data[dateKey]) {
-                    const doctors = filter === 'all' ? Object.keys(data[dateKey]) : [filter];
-                    const totalVisits = doctors.reduce((sum, doctor) => sum + (data[dateKey][doctor] || 0), 0);
+        Array.from(doctorsSet).sort().forEach(doctor => {
+            const option = document.createElement('option');
+            option.value = doctor;
+            option.textContent = doctor;
+            doctorFilter.appendChild(option);
+        });
+    }
 
-                    if (totalVisits > 0) {
-                        visitInfo.classList.add('has-visit');
-                        visitInfo.textContent = `${totalVisits} Визит`;
-                    } else {
-                        visitInfo.classList.add('no-visit');
-                        visitInfo.textContent = 'Визитов нет';
-                    }
+    function renderMonthSchedule(data) {
+        const filter = doctorFilter.value;
+        monthScheduleBody.innerHTML = '';
+
+        const currentMonth = new Date(scheduleDateInput.value);
+        const year = currentMonth.getFullYear();
+        const month = currentMonth.getMonth();
+        const daysInMonth = new Date(year, month + 1, 0).getDate();
+
+        for (let day = 1; day <= daysInMonth; day++) {
+            const dateKey = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+            const cell = document.createElement('div');
+            cell.className = 'month-cell';
+
+            const cellHeader = document.createElement('div');
+            cellHeader.className = 'month-cell-header';
+            cellHeader.textContent = `${day} ${currentMonth.toLocaleString('default', { month: 'long' })}`;
+            cell.appendChild(cellHeader);
+
+            const visitInfo = document.createElement('div');
+            visitInfo.className = 'month-cell-visit';
+
+            if (data[dateKey]) {
+                const doctors = filter === 'all' ? Object.keys(data[dateKey]) : [filter];
+                const totalVisits = doctors.reduce((sum, doctor) => sum + (data[dateKey][doctor] || 0), 0);
+
+                if (totalVisits > 0) {
+                    visitInfo.classList.add('has-visit');
+                    visitInfo.textContent = `${totalVisits} Визит`;
                 } else {
                     visitInfo.classList.add('no-visit');
                     visitInfo.textContent = 'Визитов нет';
                 }
-
-                cell.appendChild(visitInfo);
-                monthScheduleBody.appendChild(cell);
+            } else {
+                visitInfo.classList.add('no-visit');
+                visitInfo.textContent = 'Визитов нет';
             }
-        }
 
-        function navigateToView(viewUrl) {
-            window.location.href = viewUrl;
+            cell.appendChild(visitInfo);
+            monthScheduleBody.appendChild(cell);
         }
+    }
+
+    function populateTimeIntervals() {
+        const visitTimeSelect = document.getElementById('visitTime');
+        visitTimeSelect.innerHTML = '';
+
+        const startTime = new Date('1970-01-01T09:00:00');
+        const endTime = new Date('1970-01-01T17:30:00');
+
+        while (startTime <= endTime) {
+            const option = document.createElement('option');
+            option.value = startTime.toTimeString().substring(0, 5);
+            option.textContent = startTime.toTimeString().substring(0, 5);
+            visitTimeSelect.appendChild(option);
+            startTime.setMinutes(startTime.getMinutes() + 30);
+        }
+    }
+
+    function getCookie(name) {
+        const value = `; ${document.cookie}`;
+        const parts = value.split(`; ${name}=`);
+        if (parts.length === 2) return parts.pop().split(';').shift();
+    }
+});
+
+
     </script>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>

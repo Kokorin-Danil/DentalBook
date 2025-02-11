@@ -210,6 +210,37 @@
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery.inputmask/5.0.7/jquery.inputmask.min.js"></script>
+    <script type="module">
+    import { getToken, parseJwt } from "/js/auth.js";
+
+    function checkAccess() {
+        const token = getToken();
+
+        if (!token) {
+            alert('Вы не авторизованы!');
+            window.location.replace('/index.php');
+            return;
+        }
+
+        const decodedToken = parseJwt(token);
+        const userRole = decodedToken?.role;
+
+        if (userRole !== 'admin') {
+            alert('У вас нет доступа к этой странице!');
+            if (document.referrer) {
+                window.location.href = document.referrer; // Возвращаем на предыдущую страницу
+            } else {
+                window.location.replace('/index.php'); // Если истории нет, направляем на auth.php
+            }
+        }
+    }
+
+    checkAccess();
+</script>
+
+
     <script>
     function getAdminToken() {
         const cookies = document.cookie.split('; ');
@@ -357,7 +388,7 @@
 
             const result = await response.json();
             alert(result.message);
-            bootstrap.Modal.getInstance(document.getElementById('addDoctorModal')).hide();
+
             loadDoctors();
         } catch (error) {
             console.error('Ошибка добавления:', error);
@@ -367,9 +398,18 @@
 
     document.getElementById('addDoctorForm').addEventListener('submit', addDoctor);
     document.getElementById('editDoctorForm').addEventListener('submit', async (event) => {
-        event.preventDefault();
+    event.preventDefault();
 
-        const doctorId = document.getElementById('editDoctorId').value;
+    const doctorId = document.getElementById('editDoctorId').value;
+    const token = getAdminToken();
+    
+    if (!token) {
+        alert('Необходима авторизация администратора.');
+        return;
+    }
+
+    try {
+        // 1. Обновление основных данных
         const payload = {
             firstName: document.getElementById('editFirstName').value,
             lastName: document.getElementById('editLastName').value,
@@ -380,38 +420,58 @@
             specialty: document.getElementById('editSpecialty').value,
         };
 
-        const token = getAdminToken();
-        if (!token) {
-            alert('Необходима авторизация администратора.');
-            return;
+        const dataResponse = await fetch(`http://localhost:3003/api/admin/doctors/data/update/${doctorId}`, {
+            method: 'PUT',
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(payload),
+        });
+
+        if (!dataResponse.ok) {
+            throw new Error(`Ошибка обновления данных: ${dataResponse.status}`);
         }
 
-        try {
-            const response = await fetch(`http://localhost:3003/api/admin/doctors/data/update/${doctorId}`, {
+        // 2. Загрузка аватарки (если выбран файл)
+        const avatarFile = document.getElementById('editAvatar').files[0];
+        if (avatarFile) {
+            const formData = new FormData();
+            formData.append('avatar', avatarFile);
+
+            const avatarResponse = await fetch(`http://localhost:3003/api/admin/doctors/avatar/update/${doctorId}`, {
                 method: 'PUT',
                 headers: {
                     'Authorization': `Bearer ${token}`,
-                    'Content-Type': 'application/json',
                 },
-                body: JSON.stringify(payload),
+                body: formData,
             });
 
-            if (!response.ok) {
-                throw new Error(`Ошибка HTTP: ${response.status}`);
+            if (!avatarResponse.ok) {
+                throw new Error(`Ошибка загрузки аватарки: ${avatarResponse.status}`);
             }
-
-            const result = await response.json();
-            alert(result.message);
-            bootstrap.Modal.getInstance(document.getElementById('editDoctorModal')).hide();
-            loadDoctors();
-        } catch (error) {
-            console.error('Ошибка обновления:', error);
-            alert('Не удалось обновить данные доктора.');
         }
-    });
+
+        // Общие действия после успешного выполнения
+        const result = await dataResponse.json();
+        alert(result.message);
+        bootstrap.Modal.getInstance(document.getElementById('editDoctorModal')).hide();
+        loadDoctors();
+
+    } catch (error) {
+        console.error('Ошибка обновления:', error);
+        alert(error.message || 'Не удалось обновить данные доктора.');
+    }
+});
 
     document.addEventListener('DOMContentLoaded', () => {
         loadDoctors();
+    });
+</script>
+<script>
+    $(document).ready(function(){
+        $("#mobilePhone").inputmask("+7 (999) 999-99-99");  // Телефон
+        $("#editMobilePhone").inputmask("+7 (999) 999-99-99");
     });
 </script>
 

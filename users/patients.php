@@ -39,8 +39,6 @@
             <h2 class="mb-4">Пациенты</h2>
 
             <div class="search-bar">
-                <input type="text" id="searchInput" class="form-control" placeholder="Поиск по ФИО">
-                <i class="fas fa-search"></i>
                 <a href="/users/createcardpatient.php" class="btn btn-success ms-2"><i class="fas fa-plus"></i> Добавить пациента</a>
             </div>
 
@@ -80,7 +78,34 @@
             </div>
         </div>
     </div>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script type="module">
+    import { getToken, parseJwt } from "/js/auth.js";
 
+    function checkAccess() {
+        const token = getToken();
+
+        if (!token) {
+            alert('Вы не авторизованы!');
+            window.location.replace('/index.php');
+            return;
+        }
+
+        const decodedToken = parseJwt(token);
+        const userRole = decodedToken?.role;
+
+        if (!['admin', 'doctor'].includes(userRole)) {
+            alert('У вас нет доступа к этой странице!');
+            if (document.referrer) {
+                window.location.href = document.referrer; // Возвращаем на предыдущую страницу
+            } else {
+                window.location.replace('/index.php'); // Если истории нет, направляем на index.php
+            }
+        }
+    }
+
+    checkAccess();
+</script>
     <script>
         let patientIdToDelete = null;
 
@@ -191,6 +216,5 @@
 
         document.addEventListener('DOMContentLoaded', loadPatients);
     </script>
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>

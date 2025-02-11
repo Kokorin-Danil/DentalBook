@@ -132,152 +132,223 @@
             </div>
         </div>
     </div>
+<script type="module">
+    import { getToken, parseJwt } from "/js/auth.js";
 
-    <script>
-        const scheduleTableBody = document.getElementById('scheduleTableBody');
-        const tableHeader = document.getElementById('tableHeader');
-        const scheduleDateInput = document.getElementById('scheduleDate');
-        const doctorFilter = document.getElementById('doctorFilter');
-        const viewSelector = document.getElementById('viewSelector');
-        const saveVisitButton = document.getElementById('saveVisitButton');
-        const visitForm = document.getElementById('visitForm');
-        const today = new Date().toISOString().split('T')[0];
+    function checkAccess() {
+        const token = getToken();
 
-        let scheduleData = {};
+        if (!token) {
+            alert('Вы не авторизованы!');
+            window.location.replace('/index.php');
+            return;
+        }
 
-        scheduleDateInput.value = today;
+        const decodedToken = parseJwt(token);
+        const userRole = decodedToken?.role;
 
-        // Заполняем временные интервалы
-        document.addEventListener('DOMContentLoaded', () => {
-            const visitTimeSelect = document.getElementById('visitTime');
-            const startTime = new Date('1970-01-01T09:00:00');
-            const endTime = new Date('1970-01-01T17:30:00');
-            const interval = 30;
-
-            while (startTime <= endTime) {
-                const option = document.createElement('option');
-                option.value = startTime.toTimeString().substring(0, 5);
-                option.textContent = startTime.toTimeString().substring(0, 5);
-                visitTimeSelect.appendChild(option);
-                startTime.setMinutes(startTime.getMinutes() + interval);
+        if (!['manager', 'doctor'].includes(userRole)) {
+            alert('У вас нет доступа к этой странице!');
+            if (document.referrer) {
+                window.location.href = document.referrer; // Возвращаем на предыдущую страницу
+            } else {
+                window.location.replace('/index.php'); // Если истории нет, направляем на auth.php
             }
-        });
+        }
+    }
 
-        // Загрузка расписания
-        document.addEventListener('DOMContentLoaded', async () => {
-            await loadSchedule(today);
-        });
+    checkAccess();
+</script>
 
-        scheduleDateInput.addEventListener('change', async () => {
+<script>
+    const scheduleTableBody = document.getElementById('scheduleTableBody');
+    const tableHeader = document.getElementById('tableHeader');
+    const scheduleDateInput = document.getElementById('scheduleDate');
+    const doctorFilter = document.getElementById('doctorFilter');
+    const viewSelector = document.getElementById('viewSelector');
+    const saveVisitButton = document.getElementById('saveVisitButton');
+    const visitForm = document.getElementById('visitForm');
+    const today = new Date().toISOString().split('T')[0];
+
+    let scheduleData = {};
+    scheduleDateInput.value = today;
+
+    document.addEventListener('DOMContentLoaded', async () => {
+        await loadSchedule(today);
+        await populateDoctors();
+        await populatePatients();
+        populateTimeIntervals();
+    });
+
+    scheduleDateInput.addEventListener('change', async () => {
+        await loadSchedule(scheduleDateInput.value);
+    });
+
+    doctorFilter.addEventListener('change', () => {
+        renderDaySchedule(scheduleData);
+    });
+
+    viewSelector.addEventListener('change', () => {
+        const selectedView = viewSelector.value;
+        if (selectedView === 'week') {
+            window.location.href = '/kalendar/week.php';
+        } else if (selectedView === 'month') {
+            window.location.href = '/kalendar/month.php';
+        }
+    });
+
+    saveVisitButton.addEventListener('click', async () => {
+        const visitData = {
+            patientCardId: document.getElementById('patientSelect').value,
+            doctorFullName: document.getElementById('doctorSelect').value,
+            visitType: document.getElementById('visitType').value,
+            visitDate: document.getElementById('visitDate').value,
+            visitTime: document.getElementById('visitTime').value + ':00'
+        };
+
+        try {
+            const response = await fetch('http://localhost:3003/api/patient-cards/visit/create', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    Authorization: `Bearer ${getCookie('token')}`
+                },
+                body: JSON.stringify(visitData)
+            });
+
+            if (!response.ok) {
+                const error = await response.json();
+                throw new Error(error.message || 'Ошибка при добавлении визита');
+            }
+
+            alert('Визит успешно добавлен!');
+            visitForm.reset();
             await loadSchedule(scheduleDateInput.value);
-        });
+        } catch (error) {
+            alert(`Ошибка: ${error.message}`);
+        }
+    });
 
-        doctorFilter.addEventListener('change', () => {
+    async function loadSchedule(date) {
+        try {
+            const response = await fetch(`http://localhost:3003/api/patient-cards/schedule/${date}`);
+            scheduleData = await response.json();
+            populateDoctorFilter(scheduleData);
             renderDaySchedule(scheduleData);
-        });
-
-        viewSelector.addEventListener('change', () => {
-            const selectedView = viewSelector.value;
-            if (selectedView === 'week') {
-                window.location.href = '/kalendar/week.php';
-            } else if (selectedView === 'month') {
-                window.location.href = '/kalendar/month.php';
-            }
-        });
-
-        saveVisitButton.addEventListener('click', async () => {
-            const visitData = {
-                patientFullName: document.getElementById('visitPatient').value,
-                doctorFullName: document.getElementById('visitDoctor').value,
-                visitType: document.getElementById('visitType').value,
-                visitDate: document.getElementById('visitDate').value,
-                visitTime: document.getElementById('visitTime').value + ':00'
-            };
-
-            try {
-                const response = await fetch('http://localhost:3003/api/patient-cards/visit/create', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        Authorization: `Bearer ${getCookie('token')}`
-                    },
-                    body: JSON.stringify(visitData)
-                });
-
-                if (!response.ok) {
-                    const error = await response.json();
-                    throw new Error(error.message || 'Ошибка при добавлении визита');
-                }
-
-                alert('Визит успешно добавлен!');
-                visitForm.reset();
-                await loadSchedule(scheduleDateInput.value);
-            } catch (error) {
-                alert(`Ошибка: ${error.message}`);
-            }
-        });
-
-        async function loadSchedule(date) {
-            try {
-                const response = await fetch(`http://localhost:3003/api/patient-cards/schedule/${date}`);
-                scheduleData = await response.json();
-                populateDoctorFilter(scheduleData);
-                renderDaySchedule(scheduleData);
-            } catch (error) {
-                console.error('Ошибка при загрузке расписания:', error);
-                alert('Не удалось загрузить расписание');
-            }
+        } catch (error) {
+            console.error('Ошибка при загрузке расписания:', error);
+            alert('Не удалось загрузить расписание');
         }
+    }
 
-        function populateDoctorFilter(data) {
-            doctorFilter.innerHTML = '<option value="all">Все врачи</option>';
-            Object.keys(data).forEach(doctor => {
-                const option = document.createElement('option');
-                option.value = doctor;
-                option.textContent = doctor.replace(/\d+-/, '');
-                doctorFilter.appendChild(option);
-            });
-        }
+    function populateDoctorFilter(data) {
+        doctorFilter.innerHTML = '<option value="all">Все врачи</option>';
+        Object.keys(data).forEach(doctor => {
+            const option = document.createElement('option');
+            option.value = doctor;
+            option.textContent = doctor.replace(/\d+-/, '');
+            doctorFilter.appendChild(option);
+        });
+    }
 
-        function renderDaySchedule(data) {
-            const filter = doctorFilter.value;
-            const filteredData = filter === 'all' ? data : { [filter]: data[filter] };
+    function renderDaySchedule(data) {
+        const filter = doctorFilter.value;
+        const filteredData = filter === 'all' ? data : { [filter]: data[filter] };
 
-            scheduleTableBody.innerHTML = '';
-            tableHeader.innerHTML = '<th>Время</th>';
+        scheduleTableBody.innerHTML = '';
+        tableHeader.innerHTML = '<th>Время</th>';
 
-            const doctors = Object.keys(filteredData);
+        const doctors = Object.keys(filteredData);
+        doctors.forEach(doctor => {
+            const th = document.createElement('th');
+            th.textContent = doctor.replace(/\d+-/, '');
+            tableHeader.appendChild(th);
+        });
+
+        const timeSlots = doctors.length > 0 ? filteredData[doctors[0]].map(item => item.time) : [];
+        timeSlots.forEach(time => {
+            const row = document.createElement('tr');
+            const timeCell = document.createElement('td');
+            timeCell.textContent = time;
+            row.appendChild(timeCell);
+
             doctors.forEach(doctor => {
-                const th = document.createElement('th');
-                th.textContent = doctor.replace(/\d+-/, '');
-                tableHeader.appendChild(th);
+                const appointment = filteredData[doctor]?.find(item => item.time === time);
+                const cell = document.createElement('td');
+                cell.textContent = appointment ? (appointment.status === 'available' ? 'Свободно' : 'Занято') : 'Свободно';
+                cell.className = `appointment ${appointment?.status === 'available' ? 'free' : 'occupied'}`;
+                row.appendChild(cell);
             });
 
-            const timeSlots = doctors.length > 0 ? filteredData[doctors[0]].map(item => item.time) : [];
-            timeSlots.forEach(time => {
-                const row = document.createElement('tr');
-                const timeCell = document.createElement('td');
-                timeCell.textContent = time;
-                row.appendChild(timeCell);
+            scheduleTableBody.appendChild(row);
+        });
+    }
 
-                doctors.forEach(doctor => {
-                    const appointment = filteredData[doctor]?.find(item => item.time === time);
-                    const cell = document.createElement('td');
-                    cell.textContent = appointment ? (appointment.status === 'available' ? 'Свободно' : 'Занято') : 'Свободно';
-                    cell.className = `appointment ${appointment?.status === 'available' ? 'free' : 'occupied'}`;
-                    row.appendChild(cell);
-                });
+    async function populatePatients() {
+        const response = await fetch('http://localhost:3003/api/patient-cards/get/all', {
+            headers: { Authorization: `Bearer ${getCookie('token')}` }
+        });
+        const patients = await response.json();
+        const patientSelect = document.getElementById('patientSelect');
+        patientSelect.innerHTML = '';
 
-                scheduleTableBody.appendChild(row);
+        patients.forEach(patient => {
+            const option = document.createElement('option');
+            option.value = patient.id;
+            option.textContent = `${patient.fullName} (Дата рождения: ${new Date(patient.dateOfBirth).toLocaleDateString()})`;
+            patientSelect.appendChild(option);
+        });
+    }
+
+    async function populateDoctors() {
+        try {
+            const response = await fetch('http://localhost:3003/api/patient-cards/get/all/doctors', {
+                headers: { Authorization: `Bearer ${getCookie('token')}` }
             });
-        }
 
-        function getCookie(name) {
-            const value = `; ${document.cookie}`;
-            const parts = value.split(`; ${name}=`);
-            if (parts.length === 2) return parts.pop().split(';').shift();
+            if (!response.ok) {
+                throw new Error('Ошибка загрузки списка врачей');
+            }
+
+            const doctors = await response.json();
+            const doctorSelect = document.getElementById('doctorSelect');
+            doctorSelect.innerHTML = '';
+
+            doctors.forEach(doctor => {
+                const option = document.createElement('option');
+                option.value = doctor.fullName;
+                option.textContent = `${doctor.fullName} (${doctor.specialty})`;
+                doctorSelect.appendChild(option);
+            });
+        } catch (error) {
+            console.error('Ошибка загрузки врачей:', error);
+            alert('Не удалось загрузить список врачей.');
         }
-    </script>
+    }
+
+    function populateTimeIntervals() {
+        const visitTimeSelect = document.getElementById('visitTime');
+        visitTimeSelect.innerHTML = '';
+
+        const startTime = new Date('1970-01-01T09:00:00');
+        const endTime = new Date('1970-01-01T17:30:00');
+
+        while (startTime <= endTime) {
+            const option = document.createElement('option');
+            option.value = startTime.toTimeString().substring(0, 5);
+            option.textContent = startTime.toTimeString().substring(0, 5);
+            visitTimeSelect.appendChild(option);
+            startTime.setMinutes(startTime.getMinutes() + 30);
+        }
+    }
+
+    function getCookie(name) {
+        const value = `; ${document.cookie}`;
+        const parts = value.split(`; ${name}=`);
+        if (parts.length === 2) return parts.pop().split(';').shift();
+    }
+</script>
+
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 </body>
