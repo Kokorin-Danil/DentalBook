@@ -139,7 +139,7 @@
 
         // Проверка роли пользователя в токене
         const role = getRoleFromToken(token);
-        if (role === 'client') {
+        if (role === "admin" || role === "client") {
             // Скрываем кнопку "Добавить снимок" для клиента
             const addSnapshotButton = document.getElementById('addSnapshotButton');
             if (addSnapshotButton) {

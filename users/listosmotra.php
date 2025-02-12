@@ -204,7 +204,7 @@
 
     // Функция для скрытия кнопок действий для клиентов
     function hideActionButtons() {
-        if (userRole === 'client') {
+        if (userRole === "doctor" || userRole === "client") {
             // Удаляем кнопки действий из таблицы
             document.querySelectorAll('.table-actions').forEach(actionCell => actionCell.remove());
             // Скрываем заголовок "Действия"

@@ -112,153 +112,157 @@
     checkAccess();
 </script>
     <script>
-    // Получение ID карты пациента из URL
-    function getPatientCardId() {
-        const params = new URLSearchParams(window.location.search);
-        return params.get('patientCardId');
-    }
+   // Проверка роли из токена и скрытие элементов (кнопки и столбцы)
+function checkRoleAndHideElements() {
+    const token = getCookie('token');
+    if (token) {
+        try {
+            const payload = JSON.parse(atob(token.split('.')[1])); // Расшифровка токена
+            const userRole = payload.role;
 
-    // Получение токена из cookies
-    function getCookie(name) {
-        const value = `; ${document.cookie}`;
-        const parts = value.split(`; ${name}=`);
-        if (parts.length === 2) return parts.pop().split(';').shift();
-    }
-
-    // Проверка роли из токена и скрытие кнопки
-    function checkRoleAndHideButton() {
-        const token = getCookie('token');
-        if (token) {
-            try {
-                const payload = JSON.parse(atob(token.split('.')[1])); // Расшифровка токена
-                if (payload.role === 'client') {
-                    const addNoteButton = document.getElementById('addNoteButton');
-                    if (addNoteButton) {
-                        addNoteButton.style.display = 'none'; // Скрываем кнопку для клиентов
-                    }
+            // Скрываем кнопку "Добавить примечание" для admin и client
+            if (userRole === 'admin' || userRole === 'client') {
+                const addNoteButton = document.getElementById('addNoteButton');
+                if (addNoteButton) {
+                    addNoteButton.style.display = 'none';
                 }
-            } catch (error) {
-                console.error('Ошибка декодирования токена:', error);
             }
+
+            // Скрываем столбец "Действия" и кнопки удаления примечаний для doctor
+            if (userRole === "doctor") {
+                document.querySelectorAll("td:last-child, th:last-child").forEach(el => el.style.display = "none");
+            }
+
+        } catch (error) {
+            console.error('Ошибка декодирования токена:', error);
         }
     }
+}
 
-    // Загрузка примечаний
-    async function loadNotes() {
-        const patientCardId = getPatientCardId();
-        const token = getCookie('token');
+// Функция получения токена из cookies
+function getCookie(name) {
+    const value = `; ${document.cookie}`;
+    const parts = value.split(`; ${name}=`);
+    return parts.length === 2 ? parts.pop().split(';').shift() : null;
+}
 
-        if (!patientCardId || !token) {
-            alert('ID пациента или токен отсутствуют.');
-            return;
-        }
+// Функция загрузки примечаний
+async function loadNotes() {
+    const patientCardId = new URLSearchParams(window.location.search).get('patientCardId');
+    const token = getCookie('token');
 
-        try {
-            const response = await fetch(`http://localhost:3003/api/patient-cards/notes/getall/${patientCardId}`, {
-                headers: { Authorization: `Bearer ${token}` },
-            });
-
-            if (!response.ok) {
-                throw new Error('Ошибка загрузки примечаний');
-            }
-
-            const data = await response.json();
-            const notesTableBody = document.getElementById('notesTableBody');
-            notesTableBody.innerHTML = data.notes.map(note => `
-                <tr id="note-${note.id}">
-                    <td>${note.id}</td>
-                    <td>${note.name}</td>
-                    <td>${note.description}</td>
-                    <td class="${note.importance === 'Высокая' ? 'text-danger' : note.importance === 'Средняя' ? 'text-warning' : 'text-success'}">${note.importance}</td>
-                    <td>${note.doctor.firstName} ${note.doctor.lastName}</td>
-                    <td>${new Date(note.createdAt).toLocaleDateString()}</td>
-                    <td>
-                        <button class="btn btn-sm btn-danger" onclick="deleteNote(${note.id})"><i class="fas fa-trash"></i></button>
-                    </td>
-                </tr>
-            `).join('');
-        } catch (error) {
-            console.error('Ошибка загрузки примечаний:', error);
-        }
+    if (!patientCardId || !token) {
+        alert('ID пациента или токен отсутствуют.');
+        return;
     }
 
-    // Обработчик для сохранения нового примечания
-    document.getElementById('saveNoteButton').addEventListener('click', async () => {
-        const patientCardId = getPatientCardId();
-        const token = getCookie('token');
+    try {
+        const response = await fetch(`http://localhost:3003/api/patient-cards/notes/getall/${patientCardId}`, {
+            headers: { Authorization: `Bearer ${token}` },
+        });
 
-        if (!patientCardId || !token) {
-            alert('ID пациента или токен отсутствуют.');
-            return;
+        if (!response.ok) {
+            throw new Error('Ошибка загрузки примечаний');
         }
 
-        const noteData = {
-            name: document.getElementById('noteName').value,
-            description: document.getElementById('noteDescription').value,
-            importance: document.getElementById('notePriority').value,
-        };
+        const data = await response.json();
+        const notesTableBody = document.getElementById('notesTableBody');
+        notesTableBody.innerHTML = data.notes.map(note => `
+            <tr id="note-${note.id}">
+                <td>${note.id}</td>
+                <td>${note.name}</td>
+                <td>${note.description}</td>
+                <td class="${note.importance === 'Высокая' ? 'text-danger' : note.importance === 'Средняя' ? 'text-warning' : 'text-success'}">${note.importance}</td>
+                <td>${note.doctor.firstName} ${note.doctor.lastName}</td>
+                <td>${new Date(note.createdAt).toLocaleDateString()}</td>
+                <td>
+                    <button class="btn btn-sm btn-danger delete-note-btn" onclick="deleteNote(${note.id})">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </td>
+            </tr>
+        `).join('');
 
-        try {
-            const response = await fetch(`http://localhost:3003/api/patient-cards/notes/create/${patientCardId}`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    Authorization: `Bearer ${token}`,
-                },
-                body: JSON.stringify(noteData),
-            });
+        // Проверяем роль и скрываем кнопки удаления после загрузки примечаний
+        checkRoleAndHideElements();
+    } catch (error) {
+        console.error('Ошибка загрузки примечаний:', error);
+    }
+}
 
-            if (!response.ok) {
-                const error = await response.json();
-                throw new Error(error.message || 'Ошибка создания примечания');
-            }
-
-            alert('Примечание успешно добавлено!');
-            document.getElementById('noteForm').reset();
-
-            // Перезагрузка списка примечаний
-            await loadNotes();
-        } catch (error) {
-            console.error('Ошибка сохранения примечания:', error);
-            alert(`Не удалось сохранить примечание: ${error.message}`);
-        }
-    });
-
-    // Удаление примечания
-    async function deleteNote(noteId) {
-        const token = getCookie('token');
-        if (!token) {
-            alert('Необходима авторизация администратора.');
-            return;
-        }
-
-        if (!confirm('Вы уверены, что хотите удалить это примечание?')) return;
-
-        try {
-            const response = await fetch(`http://localhost:3003/api/admin/patientNote/${noteId}`, {
-                method: 'DELETE',
-                headers: { Authorization: `Bearer ${token}` },
-            });
-
-            if (!response.ok) {
-                throw new Error(`Ошибка HTTP: ${response.status}`);
-            }
-
-            // Убираем строку примечания из таблицы после удаления
-            document.getElementById(`note-${noteId}`).remove();
-
-            alert('Примечание успешно удалено.');
-        } catch (error) {
-            console.error('Ошибка удаления примечания:', error);
-            alert('Не удалось удалить примечание.');
-        }
+// Функция удаления примечания
+async function deleteNote(noteId) {
+    const token = getCookie('token');
+    if (!token) {
+        alert('Необходима авторизация администратора.');
+        return;
     }
 
-    // Инициализация страницы
-    document.addEventListener('DOMContentLoaded', () => {
-        loadNotes();
-        checkRoleAndHideButton();
-    });
+    if (!confirm('Вы уверены, что хотите удалить это примечание?')) return;
+
+    try {
+        const response = await fetch(`http://localhost:3003/api/admin/patientNote/${noteId}`, {
+            method: 'DELETE',
+            headers: { Authorization: `Bearer ${token}` },
+        });
+
+        if (!response.ok) {
+            throw new Error(`Ошибка HTTP: ${response.status}`);
+        }
+
+        document.getElementById(`note-${noteId}`).remove();
+        alert('Примечание успешно удалено.');
+    } catch (error) {
+        console.error('Ошибка удаления примечания:', error);
+        alert('Не удалось удалить примечание.');
+    }
+}
+
+// Сохранение нового примечания
+document.getElementById('saveNoteButton').addEventListener('click', async () => {
+    const patientCardId = new URLSearchParams(window.location.search).get('patientCardId');
+    const token = getCookie('token');
+
+    if (!patientCardId || !token) {
+        alert('ID пациента или токен отсутствуют.');
+        return;
+    }
+
+    const noteData = {
+        name: document.getElementById('noteName').value,
+        description: document.getElementById('noteDescription').value,
+        importance: document.getElementById('notePriority').value,
+    };
+
+    try {
+        const response = await fetch(`http://localhost:3003/api/patient-cards/notes/create/${patientCardId}`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                Authorization: `Bearer ${token}`,
+            },
+            body: JSON.stringify(noteData),
+        });
+
+        if (!response.ok) {
+            const error = await response.json();
+            throw new Error(error.message || 'Ошибка создания примечания');
+        }
+
+        alert('Примечание успешно добавлено!');
+        document.getElementById('noteForm').reset();
+        await loadNotes();
+    } catch (error) {
+        console.error('Ошибка сохранения примечания:', error);
+        alert(`Не удалось сохранить примечание: ${error.message}`);
+    }
+});
+
+// Инициализация страницы
+document.addEventListener('DOMContentLoaded', () => {
+    loadNotes();
+});
+
 </script>
 
 </body>

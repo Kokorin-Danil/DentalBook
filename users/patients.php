@@ -107,6 +107,31 @@
     checkAccess();
 </script>
     <script>
+        document.addEventListener("DOMContentLoaded", () => {
+            const token = getCookie('token');
+
+            if (!token) return;
+
+            const role = getRoleFromToken(token);
+
+            if (role === "admin") {
+                const addPatientButton = document.querySelector('.btn-success.ms-2');
+                if (addPatientButton) {
+                    addPatientButton.style.display = 'none';
+                }
+            }
+        });
+
+        function getRoleFromToken(token) {
+            try {
+                const payload = JSON.parse(atob(token.split('.')[1]));
+                return payload.role;
+            } catch (error) {
+                console.error('Ошибка декодирования токена:', error);
+                return null;
+            }
+        }
+        
         let patientIdToDelete = null;
 
         function getCookie(name) {
