@@ -745,7 +745,8 @@ export const getWeeklySchedule = async (req, res) => {
         {
           model: Doctor,
           as: "doctor", // Псевдоним, указанный в ассоциации
-          attributes: ["id", "firstName", "lastName", "patronymic"], // Поля доктора
+          attributes: ["id", "firstName", "lastName", "patronymic"],
+          where: { isDeleted: false }, // Поля доктора
         },
       ],
       order: [
@@ -821,7 +822,8 @@ export const getMonthlySchedule = async (req, res) => {
         {
           model: Doctor,
           as: "doctor",
-          attributes: ["id", "firstName", "lastName", "patronymic"], // Указаны все необходимые поля врача
+          attributes: ["id", "firstName", "lastName", "patronymic"],
+          where: { isDeleted: false }, // Указаны все необходимые поля врача
         },
       ],
       order: [
