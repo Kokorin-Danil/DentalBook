@@ -6,6 +6,7 @@ import {
   updateUser,
   uploadUserAvatar,
   getPatientCardNumber,
+  checkPatientCard,
 } from "./controllerUser.js";
 import { authenticateToken } from "../utils/authMiddleware.js";
 import { uploadAvatar } from "../utils/middleware.js";
@@ -24,5 +25,6 @@ authRouter.put(
 );
 authRouter.post("/avatar/upload", authenticateToken, uploadUserAvatar);
 authRouter.get("/getId/patientCard", authenticateToken, getPatientCardNumber);
+authRouter.get("/check/:patientCardId", authenticateToken, checkPatientCard);
 
 export default authRouter;

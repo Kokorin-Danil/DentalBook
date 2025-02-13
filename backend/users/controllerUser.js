@@ -312,3 +312,34 @@ export const getPatientCardNumber = async (req, res) => {
       .json({ message: "Ошибка сервера при получении карты пациента" });
   }
 };
+
+export const checkPatientCard = async (req, res) => {
+  try {
+    const { patientCardId } = req.params;
+    const { id: userId, role } = req.user; // Данные пользователя из authenticateToken
+
+    if (role === "client") {
+      const patientCard = await PatientCard.findOne({
+        where: { id: patientCardId, clientId: userId },
+      });
+
+      if (!patientCard) {
+        return res.status(403).json({ message: "Доступ запрещен" });
+      }
+
+      return res.status(200).json(patientCard);
+    }
+
+    // Если пользователь не клиент, просто получаем карту пациента
+    const patientCard = await PatientCard.findByPk(patientCardId);
+
+    if (!patientCard) {
+      return res.status(404).json({ message: "Карта пациента не найдена" });
+    }
+
+    return res.status(200).json(patientCard);
+  } catch (error) {
+    console.error("Ошибка получения карты пациента:", error);
+    return res.status(500).json({ message: "Ошибка сервера" });
+  }
+};
