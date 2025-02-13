@@ -374,6 +374,7 @@ const getVisitsByDate = async (date) => {
         model: Doctor,
         as: "doctor",
         attributes: ["id", "firstName", "lastName", "patronymic" || null],
+        where: { isDeleted: false },
       },
     ],
   });
