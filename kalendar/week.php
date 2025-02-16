@@ -74,7 +74,7 @@
 <body>
 <?php include '../adminpanel/navbar.php'; ?>
 
-    <div class="container mt-5">
+    <div class="main-content">
         <div class="header">
             <h2>Расписание</h2>
             <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addVisitModal">Новый визит</button>
@@ -265,21 +265,29 @@ document.addEventListener('DOMContentLoaded', async () => {
         doctorFilter.innerHTML = '<option value="all">Все врачи</option>';
         const doctorsSet = new Set();
 
-        Object.keys(data).forEach(doctorFullName => {
-            if (doctorFullName) {
-                doctorsSet.add(doctorFullName);
+        Object.keys(data).forEach(doctorKey => {
+            let doctorName = doctorKey.replace(/^\d+-/, '').trim(); // Убираем ID врача
+            if (doctorName) {
+                doctorsSet.add(doctorName);
             }
         });
 
+        if (doctorsSet.size === 0) {
+            console.warn("Нет данных о врачах в расписании!");
+            return;
+        }
+
         Array.from(doctorsSet)
             .sort()
-            .forEach(doctorFullName => {
+            .forEach(doctorName => {
                 const option = document.createElement('option');
-                option.value = doctorFullName;
-                option.textContent = doctorFullName;
+                option.value = doctorName;
+                option.textContent = doctorName;
                 doctorFilter.appendChild(option);
             });
     }
+
+
 
     function renderWeekSchedule(data) {
         const filter = doctorFilter.value;
@@ -305,9 +313,15 @@ document.addEventListener('DOMContentLoaded', async () => {
             dayHeader.textContent = `${date.getDate()} ${daysOfWeek[i]}`;
             dayColumn.appendChild(dayHeader);
 
-            Object.keys(data).forEach(doctor => {
+            // Преобразуем ключи врачей (убираем ID)
+            const formattedDoctorKeys = Object.keys(data).reduce((acc, key) => {
+                acc[key.replace(/^\d+-/, '').trim()] = data[key];
+                return acc;
+            }, {});
+
+            Object.keys(formattedDoctorKeys).forEach(doctor => {
                 if (filter === 'all' || doctor === filter) {
-                    const appointments = data[doctor]?.[date.toISOString().split('T')[0]] || [];
+                    const appointments = formattedDoctorKeys[doctor]?.[date.toISOString().split('T')[0]] || [];
                     appointments.forEach(app => {
                         const appointmentDiv = document.createElement('div');
                         const statusClass = statusClassMap[app.status] || 'unconfirmed';
@@ -324,6 +338,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             weekScheduleBody.appendChild(dayColumn);
         }
     }
+
 
     async function populatePatients() {
         const response = await fetch('http://localhost:3003/api/patient-cards/get/all', {

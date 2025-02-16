@@ -89,11 +89,16 @@
                 throw new Error('Роль пользователя отсутствует в токене');
             }
 
-            // Перенаправляем пользователя в зависимости от его роли
-            if (role === 'doctor') {
+            // Если пользователь - клиент, получаем его patientCardId
+            if (role === 'client') {
+                const patientCardId = await getPatientCardId(token);
+                if (patientCardId) {
+                    window.location.href = `/users/view.php?patientCardId=${patientCardId}`;
+                } else {
+                    throw new Error('Не удалось получить ID карты пациента');
+                }
+            } else if (role === 'doctor') {
                 window.location.href = '/personal/profiledoctor.php';
-            } else if (role === 'client') {
-                window.location.href = '/profile/profilepatient.php';
             } else if (role === 'admin') {
                 window.location.href = '/adminpanel/doctors.php';
             } else if (role === 'manager') {
@@ -106,6 +111,28 @@
             alert(`Ошибка: ${error.message}`);
         }
     });
+
+    async function getPatientCardId(token) {
+        try {
+            const response = await fetch('http://localhost:3003/api/users/getId/patientCard', {
+                method: 'GET',
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            });
+
+            if (!response.ok) {
+                throw new Error('Ошибка получения ID карты пациента');
+            }
+
+            const data = await response.json();
+            return data.patientCardId; // API должен возвращать объект с patientCardId
+        } catch (error) {
+            console.error('Ошибка получения patientCardId:', error);
+            return null;
+        }
+    }
 </script>
+
 </body>
 </html>

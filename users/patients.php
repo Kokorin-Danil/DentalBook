@@ -35,7 +35,7 @@
     <?php include '../adminpanel/navbar.php'; ?>
 
     <div id="content">
-        <div class="container mt-5">
+        <div class="main-content">
             <h2 class="mb-4">Пациенты</h2>
 
             <div class="search-bar">
@@ -49,7 +49,6 @@
                         <th>ФИО</th>
                         <th>Телефон</th>
                         <th>Дата рождения</th>
-                        <th>Последний визит</th>
                         <th>Действия</th>
                     </tr>
                 </thead>
@@ -183,7 +182,7 @@
                     <td>${patient.fullName}</td>
                     <td>${patient.phoneNumber}</td>
                     <td>${dateOfBirthDisplay}</td>
-                    <td>${lastVisitDisplay}</td>
+
                     <td class="table-actions">
                         <a href="/users/view.php?patientCardId=${patient.id}" class="btn btn-sm btn-info">
                             <i class="fas fa-eye"></i> Просмотреть

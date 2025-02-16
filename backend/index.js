@@ -24,68 +24,6 @@ app.use("/api/doctors", doctorRouter);
 app.use("/api/admin", adminRouter);
 app.use("/uploads", express.static("uploads"));
 
-// async function createUser() {
-//   try {
-//     const email = "kokorindanil474@gmail.com"; // Укажите email
-//     const password = "1234"; // Укажите пароль
-//     const role = "doctor"; // Укажите роль (можно "admin", "doctor", "client")
-
-//     // Проверяем, существует ли уже пользователь с таким email
-//     const existingUser = await User.findOne({ where: { email } });
-//     if (existingUser) {
-//       console.log("Пользователь с таким email уже существует");
-//       return;
-//     }
-
-//     // Создаем нового пользователя
-//     const newUser = await User.create({
-//       email,
-//       password: password,
-//       role,
-//       firstName: 'Данил',
-//       lastName: 'Кокорин'
-//     });
-
-//     console.log("Пользователь успешно создан:");
-//     console.log(newUser);
-//   } catch (error) {
-//     console.error("Ошибка при создании пользователя:", error);
-//   } finally {
-//     // Закрытие соединения с базой данных
-//     await dbST.close();
-//   }
-// }
-
-// const create = createUser();
-
-// const createDoctorWithUser = async () => {
-//   try {
-//     // Создание пользователя
-//     const user = await User.create({
-//       email: "doctor@example.com",
-//       password: "1234", // Пройдет через хук хэширования
-//       role: "doctor",
-//     });
-
-//     // Создание врача и связывание с пользователем
-//     const doctor = await Doctor.create({
-//       firstName: "John",
-//       lastName: "Doe",
-//       email: "doctor@example.com",
-//       specialty: "Dentist",
-//       userId: user.id, // Ссылка на пользователя
-//     });
-
-//     console.log("Doctor created:", doctor);
-//   } catch (error) {
-//     console.error("Error creating doctor:", error);
-//   }
-// };
-
-// createDoctorWithUser();
-
-// const create = createDoctorWithUser;
-
 // Синхронизация моделей и запуск сервера
 dbST.sync({ alter: true }).then(() => {
   app.listen(PORT, () => {

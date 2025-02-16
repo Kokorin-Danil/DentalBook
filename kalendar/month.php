@@ -82,7 +82,7 @@
 <body>
 <?php include '../adminpanel/navbar.php'; ?>
 
-    <div class="container mt-5">
+    <div class="main-content">
         <div class="header">
             <h2>Расписание</h2>
             <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addVisitModal">Новый визит</button>
@@ -214,7 +214,12 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
 
     viewSelector.addEventListener('change', () => {
-        window.location.href = viewSelector.value;
+        const selectedValue = viewSelector.value;
+        if (selectedValue && selectedValue.trim() !== '') {
+            window.location.href = selectedValue;
+        } else {
+            console.error("Ошибка: некорректное значение переключателя вида.");
+        }
     });
 
     saveVisitButton.addEventListener('click', async () => {
@@ -311,10 +316,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         doctorFilter.innerHTML = '<option value="all">Все врачи</option>';
         const doctorsSet = new Set();
 
-        allDoctors.forEach(doctor => {
-            doctorsSet.add(doctor.fullName);
-        });
-
+        // Добавляем в список только врачей с визитами
         Object.values(monthData).forEach(dateData => {
             Object.keys(dateData).forEach(doctor => {
                 doctorsSet.add(doctor);
@@ -394,8 +396,6 @@ document.addEventListener('DOMContentLoaded', async () => {
         if (parts.length === 2) return parts.pop().split(';').shift();
     }
 });
-
-
     </script>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>

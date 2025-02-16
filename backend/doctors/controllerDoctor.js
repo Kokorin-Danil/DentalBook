@@ -36,7 +36,7 @@ const createDoctor = async (req, res) => {
     if (existingUser) {
       return res
         .status(400)
-        .json({ message: "User with this email already exists" });
+        .json({ message: "Пользователь с таким адресом электронной почты уже существует" });
     }
 
     // Создание нового пользователя с ролью doctor

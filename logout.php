@@ -13,10 +13,10 @@
             // Удаляем токен из localStorage (если используется)
             localStorage.removeItem("token");
 
-            // Таймер для редиректа через 3 секунды
+            // Таймер для редиректа через 1 секунды
             setTimeout(() => {
                 window.location.href = "index.php"; // Перенаправление на страницу входа
-            }, 3000);
+            }, 1000);
         });
     </script>
     <style>

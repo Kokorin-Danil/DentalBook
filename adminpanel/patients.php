@@ -36,7 +36,7 @@
 <body>
 <?php include 'navbar.php'; ?>
 
-    <div class="container mt-4">
+    <div class="main-content">
         <!-- Tabs Navigation -->
         <ul class="nav nav-tabs">
             <li class="nav-item">

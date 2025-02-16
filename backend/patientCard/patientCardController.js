@@ -124,7 +124,7 @@ export const createVisit = async (req, res) => {
   if (visitStartTime.isBefore(today)) {
     return res
       .status(400)
-      .json({ message: "Visits cannot be scheduled for past dates" });
+      .json({ message: "Визиты не могут быть запланированы на прошлые даты." });
   }
 
   try {
@@ -144,7 +144,7 @@ export const createVisit = async (req, res) => {
     const user = await User.findByPk(decoded.id);
     if (!user || !(user.role === "manager" || user.role === "doctor")) {
       return res.status(403).json({
-        message: "Access denied, only admins or doctors can create visits",
+        message: "Доступ запрещен, только администраторы или врачи могут создавать визиты.",
       });
     }
 
@@ -198,7 +198,7 @@ export const createVisit = async (req, res) => {
     if (existingVisit) {
       return res
         .status(400)
-        .json({ message: "The doctor already has a visit at this time" });
+        .json({ message: "На это время у врача уже назначен визит." });
     }
 
     // Проверка на пересечение с лечением
@@ -222,7 +222,7 @@ export const createVisit = async (req, res) => {
 
         if (visitStartTime.isBefore(treatmentEndTime)) {
           return res.status(400).json({
-            message: `The doctor already has a treatment visit that ends at ${treatmentEndTime.format(
+            message: `У врача уже есть визит, который заканчивается в ${treatmentEndTime.format(
               "HH:mm:ss"
             )}.`,
           });
@@ -325,7 +325,7 @@ export const getClientVisits = async (req, res) => {
     if (!patientCard) {
       return res
         .status(404)
-        .json({ message: "Patient card not found for this client" });
+        .json({ message: "Карточка пациента не найдена для этого клиента" });
     }
 
     // Получаем все визиты для карты пациента

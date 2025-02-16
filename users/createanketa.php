@@ -53,7 +53,7 @@
 </head>
 <body>
 <?php include '../adminpanel/navbar.php'; ?>
-    <div class="container">
+    <div class="main-content">
         <!-- Header -->
         <div class="header">
             <h2>Анкета</h2>

@@ -12,7 +12,7 @@
     <?php include 'profile.php'; ?>
     <?php include '../adminpanel/navbar.php'; ?>
 
-    <div class="container mt-5">
+    <div class="main-content">
         <!-- Таблица визитов -->
         <div class="table-container">
             <button class="btn btn-primary btn-add" id="addVisitButton" data-bs-toggle="modal" data-bs-target="#addVisitModal">Добавить визит</button>
@@ -136,7 +136,65 @@
         }
     }
 
+// Функция проверки доступа к карте пациента
+async function checkPatientAccess(token, patientCardId) {
+    try {
+        const response = await fetch(`http://localhost:3003/api/users/check/${patientCardId}`, {
+            headers: { Authorization: `Bearer ${token}` }
+        });
+
+        if (response.status === 403) {
+            alert('У вас нет доступа к этой карте пациента.');
+            if (document.referrer) {
+                window.location.href = document.referrer; // Возвращает на предыдущую страницу
+            } else {
+                window.location.href = '/index.php'; // Перенаправляет на страницу авторизации
+            }
+            return false;
+        }
+
+        return true;
+    } catch (error) {
+        console.error('Ошибка проверки доступа:', error);
+        alert('Ошибка при проверке доступа. Попробуйте снова.');
+        return false;
+    }
+}
+
+document.addEventListener('DOMContentLoaded', async () => {
+    const token = getCookie('token');
+    const patientCardId = new URLSearchParams(window.location.search).get('patientCardId');
+
+    if (!token || !patientCardId) {
+        alert("Ошибка доступа. Перенаправление на страницу входа.");
+        window.location.href = "/index.php";
+        return;
+    }
+
+    // Проверяем доступ пользователя к карте пациента
+    const hasAccess = await checkPatientAccess(token, patientCardId);
+    if (!hasAccess) return;
+
+    let userRole;
+    try {
+        const decoded = jwt_decode(token);
+        userRole = decoded.role;
+    } catch (error) {
+        console.error("Ошибка декодирования токена:", error);
+        alert("Ошибка доступа. Перенаправление на страницу входа.");
+        window.location.href = "/index.php";
+        return;
+    }
+
+    await loadVisits();
+    await populateDoctors();
+    await populatePatients();
+    populateTimeIntervals();
+});
+
+    
     checkAccess();
+
 </script>
     <script>
 document.addEventListener('DOMContentLoaded', async () => {
@@ -150,7 +208,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     } catch (error) {
         console.error("Ошибка декодирования токена:", error);
         alert("Ошибка доступа. Перенаправление на страницу входа.");
-        window.location.href = "/login.html";
+        window.location.href = "/index.php";
         return;
     }
 

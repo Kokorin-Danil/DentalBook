@@ -52,7 +52,7 @@
 </head>
 <body>
 <?php include '../adminpanel/navbar.php'; ?>
-<div class="container mt-4">
+<div class="main-content">
     <h1 class="text-center">Первичный осмотр</h1>
 
     <!-- Выбор типа процедуры -->

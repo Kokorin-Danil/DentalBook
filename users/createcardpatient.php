@@ -41,7 +41,7 @@
 
 <body>
     <?php include '../adminpanel/navbar.php'; ?>
-    <div class="container">
+    <div class="main-content">
         <h1 class="mb-4">Создание карты пациента</h1>
         <div id="responseMessage"></div> <!-- Для отображения ответа от сервера -->
         <form id="patientForm">

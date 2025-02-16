@@ -8,7 +8,7 @@
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/jwt-decode/build/jwt-decode.min.js"></script>
     <style>
-        /* Стили навигационного меню */
+        /* Стили боковой панели */
         #sidebar {
             width: 250px;
             background-color: #f8f9fa;
@@ -20,8 +20,18 @@
             overflow-y: auto;
             border-right: 1px solid #ddd;
             box-shadow: 2px 0 8px rgba(0, 0, 0, 0.05);
+            transition: all 0.3s ease-in-out;
         }
 
+        /* Контент страницы */
+        .main-content {
+            margin-left: 250px;
+            padding: 20px;
+            width: calc(100% - 250px);
+            transition: all 0.3s ease-in-out;
+        }
+
+        /* Стиль заголовка */
         #sidebar h4 {
             font-weight: bold;
             color: #007bff;
@@ -29,6 +39,7 @@
             margin-bottom: 1.5rem;
         }
 
+        /* Стили ссылок навбара */
         #sidebar a {
             font-size: 1rem;
             color: #495057;
@@ -50,17 +61,42 @@
             font-size: 1.2rem;
             margin-right: 10px;
         }
+
+        /* Адаптивность */
+        @media (max-width: 768px) {
+            #sidebar {
+                width: 200px;
+            }
+            .main-content {
+                margin-left: 200px;
+                width: calc(100% - 200px);
+            }
+        }
+
+        @media (max-width: 576px) {
+            #sidebar {
+                width: 100%;
+                height: auto;
+                position: relative;
+                border-right: none;
+            }
+            .main-content {
+                margin-left: 0;
+                width: 100%;
+            }
+        }
     </style>
 </head>
 <body>
 
-    <!-- Навигационное меню слева -->
+    <!-- Боковая панель -->
     <nav id="sidebar">
         <h4>DentalBook</h4>
         <ul class="list-unstyled" id="navLinks">
             <!-- Навигационные ссылки будут добавлены через JS -->
         </ul>
     </nav>
+
 
     <script>
         document.addEventListener("DOMContentLoaded", () => {
@@ -83,8 +119,7 @@
             }
 
             const navLinks = document.getElementById("navLinks");
-            let menuHTML = `
-            `;
+            let menuHTML = ``;
 
             if (userRole === "admin") {
                 menuHTML += `
@@ -109,7 +144,6 @@
                 `;
             } else if (userRole === "client") {
                 menuHTML += `
-                    <li><a href="/profile/profilepatient.php"><i class="fas fa-user"></i> Мой профиль</a></li>
                 `;
             } else {
                 alert("Неизвестная роль! Выход...");

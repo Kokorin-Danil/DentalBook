@@ -33,7 +33,7 @@
 <body>
 <?php include 'navbar.php'; ?>
 
-<div class="container mt-4">
+<div class="main-content">
     <ul class="nav nav-tabs">
         <li class="nav-item">
             <a class="nav-link" href="doctors.php">

@@ -50,7 +50,7 @@
 <body>
 <?php include '../adminpanel/navbar.php'; ?>
 
-    <div class="container mt-5">
+    <div class="main-content">
         <div class="header">
             <h2>Расписание</h2>
             <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addVisitModal">Новый визит</button>
